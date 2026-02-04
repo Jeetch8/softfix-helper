@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: tts_api
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      MONGODB_URI: ${MONGODB_URI}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      NODE_ENV: production
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    command: node server.js

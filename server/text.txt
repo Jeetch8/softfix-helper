@@ -1,0 +1,21 @@
+In this video, I’ll show you how to clear cache in Google Chrome. Clearing the cache can help fix loading issues, free up space, and make websites work properly again. This process is quick and works the same on Windows and macOS.
+
+First, open Google Chrome on your computer.
+
+Next, look at the top-right corner and click on the three-dot menu.
+
+From the menu, select Settings.
+
+On the left side, click Privacy and security, then choose delete browsing data.
+
+A new window will appear. Make sure the Time range is set to All time if you want to completely clear the cache.
+
+Now, check the box that says Cached images and files.
+
+You can uncheck Browsing history and Cookies if you don’t want to remove them.
+
+Once everything is selected, click the Clear data button.
+
+That’s it. Chrome will now remove the cached files, and your browser should run smoother and load updated versions of websites.
+
+If this video helped you, make sure to like, share, and subscribe for more quick Chrome tips.
