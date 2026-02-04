@@ -131,7 +131,7 @@ async function main() {
     console.log('🎯 Initializing Gemini AI...');
     const ai = new GoogleGenAI({
       apiKey:
-        process.env.GEMINI_API_KEY || 'AIzaSyChjx26eWQfkg41XjlBPKZH8rbIumXSOTo',
+        process.env.GEMINI_API_KEY,
     });
 
     console.log('🗣️  Converting text to speech using Gemini AI...');
