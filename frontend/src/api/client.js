@@ -1,10 +1,39 @@
 import axios from 'axios';
 
 // Detect API URL based on current environment
-const API_BASE_URL =
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? `http://localhost:3000`
-    : process.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// Priority: 1) Environment variable, 2) Auto-detect based on hostname, 3) Fallback to localhost
+const getApiBaseUrl = () => {
+  // First check if VITE_API_BASE_URL is set in environment
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
+  // Auto-detect based on window location (for development/production)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    // If on localhost, use localhost backend
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:3000';
+    }
+
+    // If on a remote server, assume backend is on same host with port 3000
+    // This works for Digital Ocean droplets where both frontend and backend are on same server
+    return `${protocol}//${hostname}:3000`;
+  }
+
+  // Fallback
+  return 'http://localhost:3000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Log the API URL for debugging (only in development)
+if (import.meta.env.DEV) {
+  console.log('🔗 API Base URL:', API_BASE_URL);
+}
+
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
