@@ -3,6 +3,7 @@ import multer from 'multer';
 import * as XLSX from 'xlsx';
 import QuestionKeyword from '../models/QuestionKeyword.js';
 import Topic from '../models/Topic.js';
+import Idea from '../models/Idea.js';
 import {
     importKeywordsFromDirectory,
     importKeywordsFromFile,
@@ -350,9 +351,6 @@ router.get('/keywords/stats', async (req, res) => {
                     avgOverall: { $avg: '$overall' },
                     avgCompetition: { $avg: '$competition' },
                     avgSearchVolume: { $avg: '$searchVolume' },
-                    addedToTitleCount: {
-                        $sum: { $cond: ['$addedToTitle', 1, 0] },
-                    },
                     highScoreCount: {
                         $sum: { $cond: [{ $gte: ['$overall', 70] }, 1, 0] },
                     },
@@ -368,7 +366,6 @@ router.get('/keywords/stats', async (req, res) => {
             avgOverall: 0,
             avgCompetition: 0,
             avgSearchVolume: 0,
-            addedToTitleCount: 0,
             highScoreCount: 0,
             lowCompetitionCount: 0,
         };
@@ -497,14 +494,13 @@ router.delete('/keywords/:id', async (req, res) => {
 });
 
 /**
- * POST /api/keywords/:id/add-to-title
- * Mark keyword as added to title AND create a new Topic with the keyword as topicName
+ * POST /api/keywords/:id/add-to-ideas
+ * Create an Idea from the keyword data and delete the keyword
  */
-router.post('/keywords/:id/add-to-title', async (req, res) => {
+router.post('/keywords/:id/add-to-ideas', async (req, res) => {
     try {
         const { id } = req.params;
 
-        // First, get the keyword to retrieve its text
         const keyword = await QuestionKeyword.findById(id);
 
         if (!keyword) {
@@ -514,74 +510,89 @@ router.post('/keywords/:id/add-to-title', async (req, res) => {
             });
         }
 
-        // Create a new Topic with the keyword as the topicName
-        const newTopic = await Topic.create({
-            topicName: keyword.keyword,
+        // Create an Idea from the keyword data
+        const newIdea = await Idea.create({
+            title: keyword.keyword,
+            description: '',
+            competition: keyword.competition,
+            overall: keyword.overall,
+            searchVolume: keyword.searchVolume,
+            thirtyDayAgoSearches: keyword.thirtyDayAgoSearches,
+            numberOfWords: keyword.numberOfWords,
             userId: keyword.userId || 'default-user',
-            status: 'pending',
-            level: 'scripting',
         });
 
-        // Mark the keyword as added to title
-        keyword.addedToTitle = true;
-        await keyword.save();
+        // Delete the keyword from the keywords list
+        await QuestionKeyword.findByIdAndDelete(id);
 
         res.json({
             success: true,
-            message: 'Keyword added to title queue and topic created',
+            message: 'Keyword added to ideas and removed from keywords',
             data: {
-                keyword,
-                topic: newTopic,
+                idea: newIdea,
             },
         });
     } catch (error) {
-        console.error('❌ Error adding keyword to title:', error.message);
+        console.error('❌ Error adding keyword to ideas:', error.message);
         res.status(500).json({
             success: false,
-            message: 'Error adding keyword to title',
+            message: 'Error adding keyword to ideas',
             error: error.message,
         });
     }
 });
 
 /**
- * POST /api/keywords/:id/remove-from-title
- * Remove keyword from title queue AND delete the corresponding Topic
+ * POST /api/keywords/:id/remove-from-ideas
+ * Remove keyword from ideas - recreate the keyword and delete the idea
  */
-router.post('/keywords/:id/remove-from-title', async (req, res) => {
+router.post('/keywords/:id/remove-from-ideas', async (req, res) => {
     try {
-        const { id } = req.params;
+        const { ideaId } = req.body;
 
-        // First, get the keyword to retrieve its text
-        const keyword = await QuestionKeyword.findById(id);
-
-        if (!keyword) {
-            return res.status(404).json({
+        if (!ideaId) {
+            return res.status(400).json({
                 success: false,
-                message: 'Keyword not found',
+                message: 'ideaId is required in request body',
             });
         }
 
-        // Delete the corresponding Topic (if it exists)
-        await Topic.deleteOne({
-            topicName: keyword.keyword,
-            userId: keyword.userId || 'default-user',
+        const idea = await Idea.findById(ideaId);
+
+        if (!idea) {
+            return res.status(404).json({
+                success: false,
+                message: 'Idea not found',
+            });
+        }
+
+        // Recreate the keyword from the idea data
+        const restoredKeyword = await QuestionKeyword.create({
+            keyword: idea.title,
+            competition: idea.competition,
+            overall: idea.overall || 51,
+            searchVolume: idea.searchVolume,
+            thirtyDayAgoSearches: idea.thirtyDayAgoSearches,
+            numberOfWords: idea.numberOfWords,
+            userId: idea.userId || 'default-user',
+            addedToTitle: false,
         });
 
-        // Mark the keyword as not added to title
-        keyword.addedToTitle = false;
-        await keyword.save();
+        // Delete the idea
+        await Idea.findByIdAndDelete(ideaId);
 
         res.json({
             success: true,
-            message: 'Keyword removed from title queue and topic deleted',
-            data: keyword,
+            message: 'Idea removed and keyword restored',
+            data: {
+                keyword: restoredKeyword,
+            },
         });
     } catch (error) {
-        console.error('❌ Error removing keyword from title:', error.message);
+        console.error('❌ Error removing from ideas:', error.message);
         res.status(500).json({
             success: false,
-            message: 'Error removing keyword from title',
+            message: 'Error removing from ideas',
             error: error.message,
         });
     }

@@ -10,6 +10,7 @@ import { connectDB } from './config/database.js';
 import { startCronJob, stopCronJob } from './services/cronService.js';
 import topicRoutes from './routes/topicRoutes.js';
 import keywordRoutes from './routes/keywordRoutes.js';
+import ideaRoutes from './routes/ideaRoutes.js';
 import dns from 'node:dns/promises';
 dns.setServers(['1.1.1.1']);
 
@@ -55,6 +56,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api', topicRoutes);
 app.use('/api', keywordRoutes);
+app.use('/api', ideaRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

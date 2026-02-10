@@ -127,12 +127,12 @@ export const deleteKeyword = (id) => {
   return apiClient.delete(`/api/keywords/${id}`);
 };
 
-export const addKeywordToTitle = (id) => {
-  return apiClient.post(`/api/keywords/${id}/add-to-title`);
+export const addKeywordToIdeas = (id) => {
+  return apiClient.post(`/api/keywords/${id}/add-to-ideas`);
 };
 
-export const removeKeywordFromTitle = (id) => {
-  return apiClient.post(`/api/keywords/${id}/remove-from-title`);
+export const removeFromIdeas = (ideaId) => {
+  return apiClient.post(`/api/keywords/remove/remove-from-ideas`, { ideaId });
 };
 
 export const uploadKeywords = (files, userId = 'default-user') => {
@@ -152,6 +152,33 @@ export const uploadKeywords = (files, userId = 'default-user') => {
 export const getKeywordStats = (userId = null) => {
   const params = userId ? { userId } : {};
   return apiClient.get('/api/keywords/stats', { params });
+};
+
+// ==================== IDEAS API ====================
+
+export const getIdeas = (params = {}) => {
+  return apiClient.get('/api/ideas', { params });
+};
+
+export const getIdea = (id) => {
+  return apiClient.get(`/api/ideas/${id}`);
+};
+
+export const updateIdea = (id, data) => {
+  return apiClient.put(`/api/ideas/${id}`, data);
+};
+
+export const deleteIdea = (id) => {
+  return apiClient.delete(`/api/ideas/${id}`);
+};
+
+export const getIdeaStats = (userId = null) => {
+  const params = userId ? { userId } : {};
+  return apiClient.get('/api/ideas/stats', { params });
+};
+
+export const convertIdeaToTopic = (id) => {
+  return apiClient.post(`/api/ideas/${id}/convert-to-topic`);
 };
 
 export default apiClient;

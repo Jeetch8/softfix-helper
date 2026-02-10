@@ -3,12 +3,9 @@ import {
   getKeywords,
   getKeywordStats,
   deleteKeyword,
-  updateKeyword,
-  addKeywordToTitle,
-  removeKeywordFromTitle,
+  addKeywordToIdeas,
   uploadKeywords,
 } from '../api/client';
-import KeywordEditModal from './KeywordEditModal';
 
 const KeywordsList = () => {
   const [keywords, setKeywords] = useState([]);
@@ -28,15 +25,10 @@ const KeywordsList = () => {
   const [maxCompetition, setMaxCompetition] = useState('');
   const [sortBy, setSortBy] = useState('overall');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [filterAddedToTitle, setFilterAddedToTitle] = useState('');
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
-
-  // Edit Modal
-  const [editKeyword, setEditKeyword] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Show filters toggle
   const [showFilters, setShowFilters] = useState(false);
@@ -64,7 +56,6 @@ const KeywordsList = () => {
       if (maxSearchVolume) params.maxSearchVolume = maxSearchVolume;
       if (minCompetition) params.minCompetition = minCompetition;
       if (maxCompetition) params.maxCompetition = maxCompetition;
-      if (filterAddedToTitle) params.addedToTitle = filterAddedToTitle;
 
       const response = await getKeywords(params);
       setKeywords(response.data.data || []);
@@ -99,7 +90,6 @@ const KeywordsList = () => {
     setMaxSearchVolume('');
     setMinCompetition('');
     setMaxCompetition('');
-    setFilterAddedToTitle('');
     setPage(1);
     setTimeout(() => fetchKeywords(), 0);
   };
@@ -148,34 +138,13 @@ const KeywordsList = () => {
     }
   };
 
-  const handleEdit = (keyword) => {
-    setEditKeyword(keyword);
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveEdit = async (id, data) => {
-    await updateKeyword(id, data);
-    fetchKeywords();
-    fetchStats();
-  };
-
-  const handleAddToTitle = async (id) => {
+  const handleAddToIdeas = async (id) => {
     try {
-      await addKeywordToTitle(id);
+      await addKeywordToIdeas(id);
       fetchKeywords();
       fetchStats();
     } catch (err) {
-      setError('Failed to add keyword to title');
-    }
-  };
-
-  const handleRemoveFromTitle = async (id) => {
-    try {
-      await removeKeywordFromTitle(id);
-      fetchKeywords();
-      fetchStats();
-    } catch (err) {
-      setError('Failed to remove keyword from title');
+      setError('Failed to add keyword to ideas');
     }
   };
 
@@ -212,7 +181,7 @@ const KeywordsList = () => {
 
         {/* Stats Dashboard */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow p-4 text-center">
               <p className="text-2xl font-bold text-indigo-600">{stats.totalKeywords}</p>
               <p className="text-gray-600 text-xs">Total Keywords</p>
@@ -228,10 +197,6 @@ const KeywordsList = () => {
             <div className="bg-white rounded-lg shadow p-4 text-center">
               <p className="text-2xl font-bold text-blue-600">{stats.avgSearchVolume?.toLocaleString()}</p>
               <p className="text-gray-600 text-xs">Avg Search Vol</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">{stats.addedToTitleCount}</p>
-              <p className="text-gray-600 text-xs">In Title Queue</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
               <p className="text-2xl font-bold text-emerald-600">{stats.highScoreCount}</p>
@@ -400,20 +365,6 @@ const KeywordsList = () => {
                 </select>
               </div>
 
-              {/* Added to Title Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title Queue</label>
-                <select
-                  value={filterAddedToTitle}
-                  onChange={(e) => setFilterAddedToTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value="">All</option>
-                  <option value="true">In Queue</option>
-                  <option value="false">Not in Queue</option>
-                </select>
-              </div>
-
               {/* Action Buttons */}
               <div className="flex items-end gap-2">
                 <button
@@ -462,7 +413,6 @@ const KeywordsList = () => {
                       <th className="px-4 py-3 text-center text-sm font-semibold">Overall</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold">Search Vol</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold">Competition</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Status</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -475,14 +425,7 @@ const KeywordsList = () => {
                         }`}
                       >
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-800 font-medium">{keyword.keyword}</span>
-                            {keyword.addedToTitle && (
-                              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-                                ✓ In Queue
-                              </span>
-                            )}
-                          </div>
+                          <span className="text-gray-800 font-medium">{keyword.keyword}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span
@@ -513,39 +456,14 @@ const KeywordsList = () => {
                             {roundDecimal(keyword.competition)}
                           </span>
                         </td>
-
-                        <td className="px-4 py-3 text-center">
-                          {keyword.addedToTitle ? (
-                            <span className="text-green-600 font-medium">Added</span>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
-                            {!keyword.addedToTitle ? (
-                              <button
-                                onClick={() => handleAddToTitle(keyword._id)}
-                                className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded-lg transition-colors"
-                                title="Add to Topic List"
-                              >
-                                ➕
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleRemoveFromTitle(keyword._id)}
-                                className="px-3 py-1 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors"
-                                title="Remove from Topic List"
-                              >
-                                ➖
-                              </button>
-                            )}
                             <button
-                              onClick={() => handleEdit(keyword)}
-                              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
-                              title="Edit"
+                              onClick={() => handleAddToIdeas(keyword._id)}
+                              className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-colors"
+                              title="Add to Ideas"
                             >
-                              ✏️
+                              💡 Add
                             </button>
                             <button
                               onClick={() => handleDelete(keyword._id)}
@@ -588,14 +506,6 @@ const KeywordsList = () => {
           </>
         )}
       </div>
-
-      {/* Edit Modal */}
-      <KeywordEditModal
-        keyword={editKeyword}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSave={handleSaveEdit}
-      />
     </div>
   );
 };

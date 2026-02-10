@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TopicsList from './components/TopicsList';
 import KeywordsList from './components/KeywordsList';
+import IdeasList from './components/IdeasList';
 import './index.css';
 
 function App() {
@@ -23,6 +24,16 @@ function App() {
               🎬 YouTube Topics
             </button>
             <button
+              onClick={() => setActiveTab('ideas')}
+              className={`px-6 py-2 font-medium rounded-lg transition-all duration-200 ${
+                activeTab === 'ideas'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              💡 Ideas
+            </button>
+            <button
               onClick={() => setActiveTab('keywords')}
               className={`px-6 py-2 font-medium rounded-lg transition-all duration-200 ${
                 activeTab === 'keywords'
@@ -37,10 +48,11 @@ function App() {
       </nav>
 
       {/* Content */}
-      {activeTab === 'topics' ? <TopicsList /> : <KeywordsList />}
+      {activeTab === 'topics' && <TopicsList />}
+      {activeTab === 'ideas' && <IdeasList />}
+      {activeTab === 'keywords' && <KeywordsList />}
     </div>
   );
 }
 
 export default App;
-
