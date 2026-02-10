@@ -657,4 +657,90 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/topics/:id/mark-editing
+ * Mark a topic as editing (before uploaded)
+ */
+router.post('/topics/:id/mark-editing', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    if (!topic.seoDescription || !topic.audioUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Extra assets must be generated before marking as editing',
+      });
+    }
+
+    topic.level = 'editing';
+    await topic.save();
+
+    console.log(`✏️ Topic marked as editing: "${topic.topicName}"`);
+
+    res.json({
+      success: true,
+      message: 'Topic marked as editing successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error marking topic as editing:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking topic as editing',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/topics/:id/mark-uploaded
+ * Mark a topic as uploaded (final step)
+ */
+router.post('/topics/:id/mark-uploaded', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    if (!topic.seoDescription || !topic.audioUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Extra assets must be generated before marking as uploaded',
+      });
+    }
+
+    topic.level = 'uploaded';
+    await topic.save();
+
+    console.log(`📤 Topic marked as uploaded: "${topic.topicName}"`);
+
+    res.json({
+      success: true,
+      message: 'Topic marked as uploaded successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error marking topic as uploaded:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking topic as uploaded',
+      error: error.message,
+    });
+  }
+});
+
 export default router;

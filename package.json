@@ -1,0 +1,24 @@
+{
+  "name": "softfix-helper",
+  "version": "1.0.0",
+  "description": "YouTube Narration Script Generator",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:frontend\" --names \"SERVER,FRONTEND\" --prefix-colors \"blue,green\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "youtube",
+    "narration",
+    "tts",
+    "gemini",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT"
+}

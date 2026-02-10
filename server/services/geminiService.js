@@ -49,17 +49,41 @@ Topic: "${topic}"${descriptionText}
 Script Summary: ${script.substring(0, 500)}...
 
 Requirements for the titles:
-- Each title should be 50-60 characters (optimal for YouTube)
-- Include relevant keywords for SEO
-- Be compelling and clickable
-- Start with power words when appropriate
-- Different angles and approaches (how-to, tips, guide, tutorial, etc.)
-- Make them engaging and curiosity-inducing
+
+1. SEO OPTIMIZATION:
+   - Front-load MAIN KEYWORDS at the beginning of each title (first 3-5 words)
+   - Include numbers when relevant (e.g., "5 Ways", "10 Tips", "2024 Guide")
+   - Add year (2024/2025) for time-sensitive content
+   - Use exact search terms people actually type in YouTube search
+
+2. CLARITY & READABILITY:
+   - Keep titles between 50-60 characters (YouTube displays ~60 chars in search)
+   - Use simple, clear language - avoid jargon or vague terms
+   - Make the benefit/outcome immediately obvious
+   - Each word should add value - no filler words
+
+3. TITLE FORMATS (use variety):
+   - How-To: "How to [Specific Result] in [Timeframe]"
+   - Listicle: "[Number] [Adjective] Ways to [Outcome]"
+   - Tutorial: "[Action] Like a Pro: Step-by-Step Guide"
+   - Problem-Solution: "Fix [Problem] Fast - [Solution]"
+   - Ultimate Guide: "Complete Guide to [Topic] (2024)"
+
+4. POWER WORDS (use strategically):
+   - Action: Complete, Ultimate, Essential, Proven, Easy, Fast
+   - Urgency: Now, Today, Must-Know, Don't Miss
+   - Value: Best, Top, Master, Expert, Pro
+
+5. WHAT TO AVOID:
+   - Clickbait or misleading phrases
+   - ALL CAPS or excessive punctuation
+   - Over-complicated sentence structures
+   - Generic titles like "Amazing Video About X"
 
 Return ONLY the 10 titles, one per line, numbered 1-10. No additional text or explanation.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
     });
 
@@ -77,74 +101,41 @@ Return ONLY the 10 titles, one per line, numbered 1-10. No additional text or ex
   }
 }
 
+
 export async function generateYouTubeThumbnails(topic, title, script) {
   try {
     const thumbnails = [];
-
     console.log(`🎨 Starting thumbnail generation for: "${title}"`);
 
-    // Generate 10 images sequentially
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 2; i++) {
       try {
-        const designPrompt = `You are a YouTube thumbnail designer. Design #${i + 1}.
-
-Create a YouTube thumbnail image for a video with:
-- Topic: "${topic}"
-- Title: "${title}"
+        const designPrompt = `You are a professional YouTube thumbnail designer. Create a single high-quality image containing a 3x3 grid of 9 distinct and creative thumbnail variations for a video about: "${topic}" with the title: "${title}".
 
 Requirements:
-- Eye-catching and attention-grabbing
-- High contrast colors
-- Bold, readable text overlay
-- Professional YouTube thumbnail style
-- Clear focal point
-- Vibrant and engaging
+- Each of the 9 designs must be professional, clean, and easy to understand at a glance.
+- Avoid flashy or cluttered layouts; focus on clarity and impact.
+- Use high contrast and bold, readable text overlays.
+- Ensure all 9 variations are creatively different from each other.
+- The output must be a single image showing these 9 concepts in a grid.`;
 
-This is design variation ${i + 1} of 10. Make it unique and different from typical thumbnails.`;
-
-        console.log(`⏳ Generating thumbnail ${i + 1}/10...`);
+        console.log(`⏳ Generating thumbnail set ${i + 1}/2...`);
 
         const response = await ai.models.generateContent({
           model: 'gemini-3-pro-image-preview',
-          contents: [
-            {
-              text: designPrompt,
-            },
-          ],
+          contents: [{ text: designPrompt }],
         });
 
-        if (response && response.candidates && response.candidates.length > 0) {
-          const candidate = response.candidates[0];
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData) {
-                const base64Image = part.inlineData.data;
-
-                // Convert base64 to buffer
-                const imageBuffer = Buffer.from(base64Image, 'base64');
-
-                // Upload to S3
-                const s3Url = await uploadImageToS3(
-                  imageBuffer,
-                  `thumbnail_${i + 1}.png`,
-                );
-
-                thumbnails.push({
-                  index: i + 1,
-                  url: s3Url,
-                });
-                console.log(`✅ Generated and uploaded thumbnail ${i + 1}/10`);
-                break;
-              }
-            }
-          }
+        const part = response?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+        if (part) {
+          const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
+          const s3Url = await uploadImageToS3(imageBuffer, `thumbnail_set_${i + 1}.png`);
+          thumbnails.push({ index: i + 1, url: s3Url });
+          console.log(`✅ Generated and uploaded thumbnail set ${i + 1}/2`);
         }
 
-        // Small delay between requests to avoid rate limiting
         await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (err) {
-        console.error(`⚠️ Error generating thumbnail ${i + 1}:`, err.message);
-        // Continue with next image even if one fails
+        console.error(`⚠️ Error generating thumbnail set ${i + 1}:`, err.message);
       }
     }
 
@@ -152,13 +143,13 @@ This is design variation ${i + 1} of 10. Make it unique and different from typic
       throw new Error('Failed to generate any thumbnails. Please try again.');
     }
 
-    console.log(`✅ Successfully generated ${thumbnails.length} thumbnails`);
     return thumbnails;
   } catch (error) {
     console.error('❌ Error generating thumbnails:', error.message);
     throw new Error(`Failed to generate thumbnails: ${error.message}`);
   }
 }
+
 
 export async function generateSEODescription(topic, script) {
   try {

@@ -16,8 +16,9 @@ const TopicsList = () => {
   const [error, setError] = useState(null);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterLevel, setFilterLevel] = useState('all');
   const [processingLoading, setProcessingLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchTopics();
@@ -86,10 +87,18 @@ const TopicsList = () => {
     }
   };
 
-  const filteredTopics =
-    filterStatus === 'all'
+  // Filter by level
+  const levelFilteredTopics =
+    filterLevel === 'all'
       ? topics
-      : topics.filter((t) => t.status === filterStatus);
+      : topics.filter((t) => t.level === filterLevel);
+
+  // Filter by search query (searches in topicName)
+  const filteredTopics = searchQuery.trim() === ''
+    ? levelFilteredTopics
+    : levelFilteredTopics.filter((t) =>
+        t.topicName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -135,6 +144,35 @@ const TopicsList = () => {
         {/* Create Topic Form */}
         <CreateTopicForm onSuccess={fetchTopics} />
 
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="🔍 Search topics by title..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          {searchQuery && (
+            <p className="text-sm text-gray-600 mt-2">
+              Found {filteredTopics.length} topic{filteredTopics.length !== 1 ? 's' : ''} matching "{searchQuery}"
+            </p>
+          )}
+        </div>
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
@@ -159,23 +197,31 @@ const TopicsList = () => {
           </button>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {['all', 'pending', 'processing', 'completed', 'failed'].map(
-            (status) => (
+        {/* Level Tabs */}
+        <div className="bg-white rounded-lg shadow-md p-1 mb-6">
+          <div className="flex gap-1 overflow-x-auto">
+            {[
+              { value: 'all', label: '📋 All', emoji: '📋' },
+              { value: 'scripting', label: '📝 Scripting', emoji: '📝' },
+              { value: 'title', label: '🎬 Title', emoji: '🎬' },
+              { value: 'thumbnail', label: '🎨 Thumbnail', emoji: '🎨' },
+              { value: 'finished', label: '✅ Finished', emoji: '✅' },
+              { value: 'editing', label: '✏️ Editing', emoji: '✏️' },
+              { value: 'uploaded', label: '📤 Uploaded', emoji: '📤' },
+            ].map((level) => (
               <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-                  filterStatus === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
+                key={level.value}
+                onClick={() => setFilterLevel(level.value)}
+                className={`flex-1 px-4 py-3 rounded-md font-medium whitespace-nowrap transition-all duration-200 ${filterLevel === level.value
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md transform scale-105'
+                  : 'text-gray-700 hover:bg-gray-100'
+                  }`}
               >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                <span className="hidden sm:inline">{level.label}</span>
+                <span className="sm:hidden">{level.emoji}</span>
               </button>
-            ),
-          )}
+            ))}
+          </div>
         </div>
 
         {/* Topics List */}
@@ -186,9 +232,9 @@ const TopicsList = () => {
         ) : filteredTopics.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg">
             <p className="text-gray-600 text-lg">
-              {filterStatus === 'all'
+              {filterLevel === 'all'
                 ? 'No topics yet. Create one to get started! 📝'
-                : `No ${filterStatus} topics found.`}
+                : `No topics in ${filterLevel} stage found.`}
             </p>
           </div>
         ) : (

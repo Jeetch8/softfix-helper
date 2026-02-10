@@ -22,7 +22,7 @@ const topicSchema = new mongoose.Schema(
     },
     level: {
       type: String,
-      enum: ['scripting', 'title', 'thumbnail', 'finished'],
+      enum: ['scripting', 'title', 'thumbnail', 'finished', 'editing', 'uploaded'],
       default: 'scripting',
     },
     generatedTitles: [

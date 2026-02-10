@@ -4,31 +4,35 @@ import StatusBadge from './StatusBadge';
 const TopicCard = ({ topic, onDelete, onView }) => {
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">
-            {topic.topicName}
-          </h3>
-          {topic.description && (
-            <p className="text-gray-600 text-sm mb-2">{topic.description}</p>
-          )}
-        </div>
+      <div className=" justify-between items-start">
         <div className="flex gap-2">
           <StatusBadge status={topic.status} />
           {topic.level && (
             <span
-              className={`px-2 py-1 rounded text-xs font-semibold text-white ${
-                topic.level === 'scripting'
+              className={`px-2 py-1 rounded text-xs font-semibold text-white ${topic.level === 'scripting'
                   ? 'bg-blue-500'
                   : topic.level === 'title'
                     ? 'bg-purple-500'
                     : topic.level === 'thumbnail'
                       ? 'bg-orange-500'
-                      : 'bg-green-500'
-              }`}
+                      : topic.level === 'finished'
+                        ? 'bg-green-500'
+                        : topic.level === 'uploaded'
+                          ? 'bg-emerald-600'
+                          : 'bg-gray-500'
+                }`}
             >
+              {topic.level === 'uploaded' ? '📤 ' : ''}
               {topic.level.charAt(0).toUpperCase() + topic.level.slice(1)}
             </span>
+          )}
+        </div>
+        <div className="flex-1 mt-2">
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">
+            {topic.topicName}
+          </h3>
+          {topic.description && (
+            <p className="text-gray-600 text-sm mb-2">{topic.description}</p>
           )}
         </div>
       </div>

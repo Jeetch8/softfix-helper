@@ -9,37 +9,14 @@ import { fileURLToPath } from 'url';
 import { connectDB } from './config/database.js';
 import { startCronJob, stopCronJob } from './services/cronService.js';
 import topicRoutes from './routes/topicRoutes.js';
+import keywordRoutes from './routes/keywordRoutes.js';
 import dns from 'node:dns/promises';
 dns.setServers(['1.1.1.1']);
 
-// Load environment variables from root directory
-// const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// import { GoogleGenAI } from '@google/genai';
 
-// async function listAvailableModels() {
-//   try {
-//     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-//     const models = await ai.models.list();
-
-//     console.log('✅ Available Gemini Models:');
-//     console.log(models);
-//     models.forEach((model) => {
-//       console.log(`  - ${model.name}`);
-//     });
-
-//     return models;
-//   } catch (error) {
-//     console.error('❌ Error listing models:', error.message);
-//   }
-// }
-
-// listAvailableModels();
-
-// Middleware
 app.use(
   cors({
     origin: ['http://localhost:5173', 'http://localhost:3000'],
@@ -68,6 +45,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api', topicRoutes);
+app.use('/api', keywordRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -75,13 +53,26 @@ app.get('/', (req, res) => {
     message: 'TTS Narration API Server',
     version: '1.0.0',
     endpoints: {
-      'POST /api/topics': 'Create a new topic for narration script generation',
-      'GET /api/topics': 'Get all topics (supports ?userId=xxx filter)',
-      'GET /api/topics/:id': 'Get a specific topic by ID',
-      'GET /api/status/all': 'Get topic status statistics',
-      'POST /api/process-now': 'Manually trigger topic processing',
-      'DELETE /api/topics/:id': 'Delete a topic',
-      'GET /health': 'Health check',
+      topics: {
+        'POST /api/topics': 'Create a new topic for narration script generation',
+        'GET /api/topics': 'Get all topics (supports ?userId=xxx filter)',
+        'GET /api/topics/:id': 'Get a specific topic by ID',
+        'GET /api/status/all': 'Get topic status statistics',
+        'POST /api/process-now': 'Manually trigger topic processing',
+        'DELETE /api/topics/:id': 'Delete a topic',
+      },
+      keywords: {
+        'GET /api/keywords': 'Get all keywords with filtering/search',
+        'GET /api/keywords/stats': 'Get keyword statistics',
+        'POST /api/keywords/upload': 'Upload Excel files to import keywords',
+        'GET /api/keywords/local/list': 'List Excel files in a local directory',
+        'POST /api/keywords/local/import-directory': 'Import all Excel files from a local directory',
+        'POST /api/keywords/local/import-file': 'Import a single local Excel file',
+        'PUT /api/keywords/:id': 'Update a keyword',
+        'DELETE /api/keywords/:id': 'Delete a keyword',
+        'POST /api/keywords/:id/add-to-title': 'Add keyword to title queue',
+      },
+      health: 'GET /health',
     },
   });
 });

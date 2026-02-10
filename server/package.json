@@ -10,7 +10,8 @@
     "scripts": {
         "start": "node server.js",
         "dev": "node server.js",
-        "test": "node tts-converter.js 'Hello, this is a test' -o test-output.mp3"
+        "test": "node tts-converter.js 'Hello, this is a test' -o test-output.mp3",
+        "import-keywords": "node scripts/import-csv-keywords.js"
     },
     "keywords": [
         "text-to-speech",
@@ -33,8 +34,10 @@
         "express": "^4.18.2",
         "fluent-ffmpeg": "^2.1.2",
         "mongoose": "^7.0.0",
+        "multer": "^2.0.2",
         "node-cron": "^3.0.2",
-        "wav": "^1.0.2"
+        "wav": "^1.0.2",
+        "xlsx": "^0.18.5"
     },
     "engines": {
         "node": ">=18.0.0"

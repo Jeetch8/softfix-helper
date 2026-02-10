@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getTopic, updateScript, regenerateScript } from '../api/client';
+import { getTopic, updateScript, regenerateScript, markAsEditing, markAsUploaded } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
 import ThumbnailSelector from './ThumbnailSelector';
@@ -14,6 +14,8 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isMarkingEditing, setIsMarkingEditing] = useState(false);
+  const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
 
   useEffect(() => {
     if (isOpen && topicId) {
@@ -86,6 +88,42 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       setError('Failed to copy to clipboard');
+    }
+  };
+
+  const handleMarkAsEditing = async () => {
+    if (!window.confirm('Mark this topic as editing? This indicates you are reviewing and editing the content.')) {
+      return;
+    }
+
+    setIsMarkingEditing(true);
+    try {
+      const response = await markAsEditing(topicId);
+      setTopic(response.data.data);
+      setError(null);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to mark as editing');
+    } finally {
+      setIsMarkingEditing(false);
+    }
+  };
+
+  const handleMarkAsUploaded = async () => {
+    if (!window.confirm('Mark this topic as uploaded? This indicates you have uploaded all assets to YouTube.')) {
+      return;
+    }
+
+    setIsMarkingUploaded(true);
+    try {
+      const response = await markAsUploaded(topicId);
+      setTopic(response.data.data);
+      setError(null);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to mark as uploaded');
+    } finally {
+      setIsMarkingUploaded(false);
     }
   };
 
@@ -162,11 +200,10 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                       <div className="flex gap-2">
                         <button
                           onClick={handleCopyToClipboard}
-                          className={`px-3 py-1 ${
-                            copySuccess
-                              ? 'bg-green-500'
-                              : 'bg-gray-500 hover:bg-gray-600'
-                          } text-white text-sm font-medium rounded transition-colors`}
+                          className={`px-3 py-1 ${copySuccess
+                            ? 'bg-green-500'
+                            : 'bg-gray-500 hover:bg-gray-600'
+                            } text-white text-sm font-medium rounded transition-colors`}
                         >
                           {copySuccess ? '✓ Copied!' : '📋 Copy'}
                         </button>
@@ -274,11 +311,11 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                     extraAssets={
                       topic.seoDescription
                         ? {
-                            seoDescription: topic.seoDescription,
-                            tags: topic.tags,
-                            timestamps: topic.timestamps,
-                            audioUrl: topic.audioUrl,
-                          }
+                          seoDescription: topic.seoDescription,
+                          tags: topic.tags,
+                          timestamps: topic.timestamps,
+                          audioUrl: topic.audioUrl,
+                        }
                         : null
                     }
                     onAssetsGenerated={() => {
@@ -286,6 +323,38 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                       if (onUpdate) onUpdate();
                     }}
                   />
+                </div>
+              )}
+
+              {/* Mark as Editing Button - visible only if extra assets exist and not yet in editing or uploaded */}
+              {topic.seoDescription && topic.audioUrl && topic.level !== 'editing' && topic.level !== 'uploaded' && (
+                <div className="pt-4 border-t border-gray-200">
+                  <button
+                    onClick={handleMarkAsEditing}
+                    disabled={isMarkingEditing}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                  >
+                    {isMarkingEditing ? '⏳ Marking as Editing...' : '✏️ Mark as Editing'}
+                  </button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Click this when you are ready to review and edit the content
+                  </p>
+                </div>
+              )}
+
+              {/* Mark as Uploaded Button - visible only if in editing level and not yet uploaded */}
+              {topic.seoDescription && topic.audioUrl && topic.level === 'editing' && (
+                <div className="pt-4 border-t border-gray-200">
+                  <button
+                    onClick={handleMarkAsUploaded}
+                    disabled={isMarkingUploaded}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                  >
+                    {isMarkingUploaded ? '⏳ Marking as Uploaded...' : '📤 Mark as Uploaded'}
+                  </button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Click this after you have uploaded all assets to YouTube
+                  </p>
                 </div>
               )}
 

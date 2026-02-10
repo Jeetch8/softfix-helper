@@ -141,7 +141,7 @@ async function main() {
         {
           parts: [
             {
-              text: `Read aloud in a warm,friendly tone and human voice with no background noise and echo: ${text}`,
+              text: `Read aloud in a warm,friendly tone with no background noise and echo: ${text}`,
             },
           ],
         },
