@@ -27,6 +27,13 @@ const IdeasList = () => {
   const [editDescription, setEditDescription] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Convert Modal
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [convertIdea, setConvertIdea] = useState(null);
+  const [topicName, setTopicName] = useState('');
+  const [topicDescription, setTopicDescription] = useState('');
+  const [converting, setConverting] = useState(false);
+
   useEffect(() => {
     fetchIdeas();
     fetchStats();
@@ -123,19 +130,52 @@ const IdeasList = () => {
     }
   };
 
-  const handleConvertToTopic = async (id) => {
+  const handleOpenConvertModal = (idea) => {
+    setConvertIdea(idea);
+    setTopicName(idea.title);
+    setTopicDescription(idea.description || '');
+    setIsConvertModalOpen(true);
+  };
+
+  const handleCloseConvertModal = () => {
+    setIsConvertModalOpen(false);
+    setConvertIdea(null);
+    setTopicName('');
+    setTopicDescription('');
+    setConverting(false);
+  };
+
+  const handleConvertToTopic = async () => {
+    if (!convertIdea) return;
+    if (!topicName.trim()) {
+      setError('Topic name is required');
+      return;
+    }
+
+    setConverting(true);
     try {
-      await convertIdeaToTopic(id);
+      // Convert idea to topic with custom name and description
+      await convertIdeaToTopic(convertIdea._id, {
+        topicName: topicName.trim(),
+        description: topicDescription.trim(),
+      });
       fetchIdeas();
       fetchStats();
-      if (selectedIdea && selectedIdea._id === id) {
+      if (selectedIdea && selectedIdea._id === convertIdea._id) {
         setSelectedIdea((prev) => ({ ...prev, convertedToTopic: true }));
       }
       setError(null);
+      handleCloseConvertModal();
+      // Close the detail modal if it's open for the same idea
+      if (selectedIdea && selectedIdea._id === convertIdea._id) {
+        handleCloseModal();
+      }
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Failed to convert idea to topic'
+        err.response?.data?.message || 'Failed to convert idea to topic',
       );
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -308,7 +348,7 @@ const IdeasList = () => {
                           >
                             {!idea.convertedToTopic && (
                               <button
-                                onClick={() => handleConvertToTopic(idea._id)}
+                                onClick={() => handleOpenConvertModal(idea)}
                                 className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors"
                                 title="Convert to Topic"
                               >
@@ -466,7 +506,10 @@ const IdeasList = () => {
                 </button>
                 {!selectedIdea.convertedToTopic && (
                   <button
-                    onClick={() => handleConvertToTopic(selectedIdea._id)}
+                    onClick={() => {
+                      handleCloseModal();
+                      handleOpenConvertModal(selectedIdea);
+                    }}
                     className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors"
                   >
                     🚀 Convert to Topic
@@ -477,6 +520,80 @@ const IdeasList = () => {
                   className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
                 >
                   🗑️ Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Convert to Topic Modal */}
+      {isConvertModalOpen && convertIdea && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold">🚀 Convert to Topic</h2>
+                <button
+                  onClick={handleCloseConvertModal}
+                  className="text-white hover:text-gray-200 text-2xl leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <p className="text-gray-600 text-sm">
+                Review and customize the topic details before converting this
+                idea.
+              </p>
+
+              {/* Topic Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Topic Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={topicName}
+                  onChange={(e) => setTopicName(e.target.value)}
+                  placeholder="Enter topic name..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  autoFocus
+                />
+              </div>
+
+              {/* Topic Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={topicDescription}
+                  onChange={(e) => setTopicDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Add a description for this topic..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleCloseConvertModal}
+                  disabled={converting}
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConvertToTopic}
+                  disabled={converting || !topicName.trim()}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {converting ? '⏳ Converting...' : '✓ Convert to Topic'}
                 </button>
               </div>
             </div>

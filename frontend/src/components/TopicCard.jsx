@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 
-const TopicCard = ({ topic, onDelete, onView }) => {
+const TopicCard = ({ topic, onDelete }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200">
       <div className=" justify-between items-start">
@@ -64,7 +67,7 @@ const TopicCard = ({ topic, onDelete, onView }) => {
 
       <div className="flex gap-2 flex-wrap">
         <button
-          onClick={() => onView(topic._id)}
+          onClick={() => navigate(`/topics/${topic._id}`)}
           className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors"
         >
           📖 View

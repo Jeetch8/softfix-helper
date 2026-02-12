@@ -10,30 +10,305 @@ export async function generateNarrationScript(topic, description = '') {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const prompt = `You are a professional YouTube video scriptwriter. Create a comprehensive narration script for a YouTube video about the topic: "${topic}".${descriptionText}
+    const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic.topicName}".${topic.description}
 
-Generate a straight forward narration script for YouTube video. Start with "in this video..." Say what the video is about, give a short intro about video and start explaining steps.the steps should be precious and detailed. The end should be short something like (not eaxctly this but something simillar), thank you for watching,like and subscribe if you liked, comment if you want me to make video on a specific topic. Do not include any headings or sub headings in the output.
+SCRIPT STRUCTURE:
 
-Please provide only the script without any additional commentary.`;
+OPENING (vary the phrasing each time):
+- Begin with "In this video, [topic/what viewers will learn]"
+- Smoothly transition to asking viewers to subscribe and like
+- Include "let's get straight into this video" or a natural variation
+- Flow should feel conversational, not formulaic
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        tools: [
-          {
-            googleSearch: {},
-          },
-        ],
-      },
+INTRODUCTION (100-200 characters):
+Provide a brief, engaging setup that does ONE or MORE of these:
+- Identify the problem viewers are facing
+- Explain why this matters or when they'd need this
+- Preview what will be covered
+- Keep it concise and relevant
+
+MAIN CONTENT:
+- Present steps as flowing, continuous paragraphs—NOT numbered or bulleted lists
+- Be precise and detailed, anticipating user questions
+- Use transitional phrases like "Next," "Now," "After that," or "Once you've done this"
+- Maintain a professional but approachable tone
+- Assume viewers are following along in real-time
+
+CLOSING (vary the phrasing each time):
+- Brief thank you for watching
+- Invite viewers to comment with questions or video requests
+- Keep it under 30 words and natural
+
+CRITICAL RULES:
+- No headings, subheadings, or section labels in the output
+- No numbered steps or bullet points
+- Vary the subscribe/like call-to-action wording each time
+- Vary the closing wording each time
+- Smooth transitions between all sections
+- Output ONLY the script—no meta-commentary, no explanations, no formatting markers
+
+The script should sound like a knowledgeable friend walking someone through a process—direct, clear, and efficient.`;
+
+    // Generate 2 variations with the same prompt
+    const promises = [1, 2].map(async (i) => {
+      console.log(`⏳ Generating script variation ${i}...`);
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          tools: [
+            {
+              googleSearch: {},
+            },
+          ],
+        },
+      });
+      console.log(`✅ Generated script variation ${i}`);
+      return response.text;
     });
 
-    const text = response.text;
-
-    return text;
+    const scripts = await Promise.all(promises);
+    return scripts;
   } catch (error) {
     console.error('❌ Error generating narration script:', error.message);
     throw new Error(`Failed to generate narration script: ${error.message}`);
+  }
+}
+
+/**
+ * Generate multiple narration script variations using different prompts
+ * @param {string} topic - The topic name
+ * @param {string} description - Topic description
+ * @param {Array<string>} prompts - Array of 4 custom prompts (user will add these in code)
+ * @returns {Array<{prompt: string, result: string}>}
+ */
+export async function generateNarrationScriptVariations(
+  topic,
+  description = '',
+  prompts,
+) {
+  console.log(
+    `🎬 Generating ${prompts.length} narration script variations for topic: ${topic}`,
+  );
+
+  try {
+    // Generate all variations in parallel
+    const results = await Promise.all(
+      prompts.map(async (customPrompt, index) => {
+        try {
+          console.log(
+            `⏳ Generating variation ${index + 1}/${prompts.length}...`,
+          );
+
+          const descriptionText = description
+            ? `\n\nAdditional context: ${description}`
+            : '';
+          const fullPrompt = `${customPrompt}
+
+Topic: "${topic}"${descriptionText}`;
+
+          const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: fullPrompt,
+            config: {
+              tools: [
+                {
+                  googleSearch: {},
+                },
+              ],
+            },
+          });
+
+          const result = response.text;
+          console.log(`✅ Generated variation ${index + 1}/${prompts.length}`);
+
+          return {
+            prompt: customPrompt,
+            result: result,
+          };
+        } catch (err) {
+          console.error(
+            `❌ Error generating variation ${index + 1}:`,
+            err.message,
+          );
+          return {
+            prompt: customPrompt,
+            result: `Error: ${err.message}`,
+          };
+        }
+      }),
+    );
+
+    return results;
+  } catch (error) {
+    console.error(
+      '❌ Error generating narration script variations:',
+      error.message,
+    );
+    throw new Error(
+      `Failed to generate narration script variations: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * Generate multiple thumbnail variations using different prompts
+ * @param {string} topic - The topic name
+ * @param {string} title - The selected title
+ * @param {Array<string>} prompts - Array of 4 custom prompts (user will add these in code)
+ * @returns {Array<{prompt: string, url: string}>}
+ */
+export async function generateThumbnailVariations(topic, title, prompts) {
+  console.log(
+    `🎨 Generating ${prompts.length} thumbnail variations for topic: ${topic}`,
+  );
+
+  try {
+    // Generate all variations in parallel (but we'll add small delays to avoid rate limits)
+    const results = [];
+
+    for (let i = 0; i < prompts.length; i++) {
+      try {
+        console.log(
+          `⏳ Generating thumbnail variation ${i + 1}/${prompts.length}...`,
+        );
+
+        const customPrompt = prompts[i];
+        const fullPrompt = `${customPrompt}
+
+Topic: "${topic}"
+Title: "${title}"`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3-pro-image-preview',
+          contents: [{ text: fullPrompt }],
+        });
+
+        const part = response?.candidates?.[0]?.content?.parts?.find(
+          (p) => p.inlineData,
+        );
+        if (part) {
+          const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
+          const s3Url = await uploadImageToS3(
+            imageBuffer,
+            `thumbnail_variation_${i + 1}_${Date.now()}.png`,
+          );
+
+          results.push({
+            prompt: customPrompt,
+            url: s3Url,
+          });
+
+          console.log(
+            `✅ Generated thumbnail variation ${i + 1}/${prompts.length}`,
+          );
+        } else {
+          results.push({
+            prompt: customPrompt,
+            url: null,
+          });
+        }
+
+        // Add delay between requests to avoid rate limits
+        if (i < prompts.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+      } catch (err) {
+        console.error(
+          `❌ Error generating thumbnail variation ${i + 1}:`,
+          err.message,
+        );
+        results.push({
+          prompt: prompts[i],
+          url: null,
+        });
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('❌ Error generating thumbnail variations:', error.message);
+    throw new Error(
+      `Failed to generate thumbnail variations: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * Generate multiple title variations using different prompts
+ * @param {string} topic - The topic name
+ * @param {string} description - Topic description
+ * @param {string} narrationScript - The narration script
+ * @param {Array<string>} prompts - Array of 4 custom prompts (user will add these in code)
+ * @returns {Array<{prompt: string, result: string}>}
+ */
+export async function generateTitleVariations(
+  topic,
+  description = '',
+  narrationScript = '',
+  prompts,
+) {
+  console.log(
+    `🎬 Generating ${prompts.length} title variations for topic: ${topic}`,
+  );
+
+  try {
+    // Generate all variations in parallel
+    const results = await Promise.all(
+      prompts.map(async (customPrompt, index) => {
+        try {
+          console.log(
+            `⏳ Generating title variation ${index + 1}/${prompts.length}...`,
+          );
+
+          const descriptionText = description
+            ? `\n\nAdditional context: ${description}`
+            : '';
+          const scriptText = narrationScript
+            ? `\n\nScript Summary: ${narrationScript.substring(0, 500)}...`
+            : '';
+          const fullPrompt = `${customPrompt}
+
+Topic: "${topic}"${descriptionText}${scriptText}`;
+
+          const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: fullPrompt,
+            config: {
+              tools: [
+                {
+                  googleSearch: {},
+                },
+              ],
+            },
+          });
+
+          const result = response.text;
+          console.log(
+            `✅ Generated title variation ${index + 1}/${prompts.length}`,
+          );
+
+          return {
+            prompt: customPrompt,
+            result: result,
+          };
+        } catch (err) {
+          console.error(
+            `❌ Error generating title variation ${index + 1}:`,
+            err.message,
+          );
+          return {
+            prompt: customPrompt,
+            result: `Error: ${err.message}`,
+          };
+        }
+      }),
+    );
+
+    return results;
+  } catch (error) {
+    console.error('❌ Error generating title variations:', error.message);
+    throw new Error(`Failed to generate title variations: ${error.message}`);
   }
 }
 
@@ -42,45 +317,47 @@ export async function generateYouTubeTitles(topic, script, description = '') {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const prompt = `You are a YouTube SEO expert. Generate exactly 10 highly optimized YouTube video titles based on the following information:
+    const prompt = `You are a title creator for "Softfix Central," a YouTube channel known for straightforward, efficient tech tutorials. Generate exactly 20 optimized video titles based on:
 
 Topic: "${topic}"${descriptionText}
 
-Script Summary: ${script.substring(0, 500)}...
+Script: ${script}
 
-Requirements for the titles:
+SOFTFIX CENTRAL TITLE PRINCIPLES:
 
-1. SEO OPTIMIZATION:
-   - Front-load MAIN KEYWORDS at the beginning of each title (first 3-5 words)
-   - Include numbers when relevant (e.g., "5 Ways", "10 Tips", "2024 Guide")
-   - Add year (2024/2025) for time-sensitive content
-   - Use exact search terms people actually type in YouTube search
+CLARITY FIRST:
+- Front-load the main action or solution (first 3-5 words are critical)
+- Make the outcome immediately clear—viewers should know exactly what they'll learn
+- Keep titles between 50-65 characters for optimal display
+- Every word must earn its place—no filler
 
-2. CLARITY & READABILITY:
-   - Keep titles between 50-60 characters (YouTube displays ~60 chars in search)
-   - Use simple, clear language - avoid jargon or vague terms
-   - Make the benefit/outcome immediately obvious
-   - Each word should add value - no filler words
+SEO ELEMENTS (use naturally):
+- Include primary keywords early in the title
+- Add specific software/OS version when relevant (e.g., "Windows 11", "iPhone 15")
+- Use year (2025) only for time-sensitive content
+- Use numbers when they add value ("3 Ways", "5 Steps")
 
-3. TITLE FORMATS (use variety):
-   - How-To: "How to [Specific Result] in [Timeframe]"
-   - Listicle: "[Number] [Adjective] Ways to [Outcome]"
-   - Tutorial: "[Action] Like a Pro: Step-by-Step Guide"
-   - Problem-Solution: "Fix [Problem] Fast - [Solution]"
-   - Ultimate Guide: "Complete Guide to [Topic] (2024)"
+TITLE PATTERNS FOR TECH TUTORIALS:
+- Direct How-To: "How to [Specific Action] in [Software/OS]"
+- Problem-Solution: "Fix [Specific Problem] in [Software] - Quick Guide"
+- Feature Tutorial: "[Action] Using [Feature] in [Software]"
+- Complete Process: "[Task] in [Software]: Complete Tutorial"
+- Comparison: "[Option A] vs [Option B] in [Software] - Which is Better?"
 
-4. POWER WORDS (use strategically):
-   - Action: Complete, Ultimate, Essential, Proven, Easy, Fast
-   - Urgency: Now, Today, Must-Know, Don't Miss
-   - Value: Best, Top, Master, Expert, Pro
+TONE REQUIREMENTS:
+- Professional and straightforward—no hype or clickbait
+- Descriptive, not mysterious—tell them exactly what's in the video
+- Use action verbs: Fix, Create, Enable, Disable, Change, Set Up, Configure
+- Avoid: "Amazing", "You Won't Believe", "Secret", excessive punctuation
 
-5. WHAT TO AVOID:
-   - Clickbait or misleading phrases
-   - ALL CAPS or excessive punctuation
-   - Over-complicated sentence structures
-   - Generic titles like "Amazing Video About X"
+WHAT MAKES A GOOD SOFTFIX CENTRAL TITLE:
+✓ "How to Enable Dark Mode in Windows 11"
+✓ "Fix Bluetooth Connection Issues on Mac - 3 Methods"
+✓ "Create Custom Shortcuts in Excel (2025 Guide)"
+✗ "This Windows Feature Will BLOW YOUR MIND!"
+✗ "The Secret Mac Setting Everyone's Talking About"
 
-Return ONLY the 10 titles, one per line, numbered 1-10. No additional text or explanation.`;
+Return ONLY the 20 titles, numbered 1-20, one per line. No additional commentary.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
@@ -91,16 +368,15 @@ Return ONLY the 10 titles, one per line, numbered 1-10. No additional text or ex
     const titles = text
       .split('\n')
       .filter((line) => line.trim())
-      .map((line) => line.replace(/^[\d]+[\.\)]\s*/, '').trim())
+      .map((line) => line.replace(/^[\d]+[\.)]\s*/, '').trim())
       .filter((title) => title.length > 0);
 
-    return titles.slice(0, 10);
+    return titles.slice(0, 20);
   } catch (error) {
     console.error('❌ Error generating YouTube titles:', error.message);
     throw new Error(`Failed to generate YouTube titles: ${error.message}`);
   }
 }
-
 
 export async function generateYouTubeThumbnails(topic, title, script) {
   try {
@@ -109,14 +385,72 @@ export async function generateYouTubeThumbnails(topic, title, script) {
 
     for (let i = 0; i < 2; i++) {
       try {
-        const designPrompt = `You are a professional YouTube thumbnail designer. Create a single high-quality image containing a 3x3 grid of 9 distinct and creative thumbnail variations for a video about: "${topic}" with the title: "${title}".
+        const designPrompt = `You are a thumbnail designer for "Softfix Central," a YouTube channel known for clear, professional tech tutorials. Create a single high-quality image containing a 3x3 grid of 9 distinct thumbnail variations for:
 
-Requirements:
-- Each of the 9 designs must be professional, clean, and easy to understand at a glance.
-- Avoid flashy or cluttered layouts; focus on clarity and impact.
-- Use high contrast and bold, readable text overlays.
-- Ensure all 9 variations are creatively different from each other.
-- The output must be a single image showing these 9 concepts in a grid.`;
+Topic: "${topic.topicName}"
+Title: "${topic.selectedTitle}"
+Description: "${topic.selectedDescription}"
+Script: "${topic.selectedScript}"
+
+SOFTFIX CENTRAL THUMBNAIL PRINCIPLES:
+
+BRAND IDENTITY:
+- Professional and clean—no flashy, clickbait-style designs
+- Straightforward and informative—viewers should immediately understand what the video covers
+- Trust-building—design should convey credibility and expertise
+- Tech-focused—appropriate for educational tutorial content
+
+DESIGN REQUIREMENTS:
+
+Visual Clarity:
+- High contrast for easy viewing at small sizes
+- Clean layouts with clear focal points
+- Minimal clutter—every element must serve a purpose
+- Use whitespace effectively to improve readability
+
+Text Elements:
+- Bold, highly readable sans-serif fonts
+- Keep text concise (3-6 words maximum per thumbnail)
+- Use actual software/feature names, not vague descriptions
+- Text should complement, not overwhelm, the visual
+
+Color Palette:
+- Use colors that match the software/OS being discussed (Windows blue, Mac gray, etc.)
+- Maintain professional color schemes—avoid overly bright or neon colors
+- Ensure strong contrast between text and background
+- Consistency with tech brand colors when relevant
+
+Visual Content (use variety across the 9 thumbnails):
+- Clean screenshots of the actual software/interface
+- Simple icons or symbols related to the tech topic
+- Device mockups (laptop, phone, desktop) when relevant
+- Before/after comparisons for fix/solution videos
+- Arrows or highlights pointing to specific features
+- Minimal human elements—focus on the technology
+
+VARIATION STRATEGY (ensure all 9 are different):
+- Different text placements (left, right, center, top, bottom)
+- Different visual approaches (screenshot-focused, icon-based, split-screen)
+- Different color schemes while maintaining professionalism
+- Different composition styles (close-up, full interface, detail focus)
+- Mix of text-heavy and visual-heavy designs
+
+WHAT TO AVOID:
+- Exaggerated facial expressions or reaction shots
+- Excessive emojis or symbols
+- Red circles/arrows pointing to nothing specific
+- All-caps sensationalized text
+- Busy backgrounds that distract from the message
+- Stock photos unrelated to the actual content
+- Overly dramatic lighting or effects
+
+GRID OUTPUT:
+- Single image containing all 9 thumbnails in a 3x3 grid
+- Each thumbnail clearly separated and labeled (1-9)
+- Consistent aspect ratio (16:9) for each thumbnail
+- High enough resolution that text remains readable when zoomed
+
+The thumbnails should look like they belong to a trusted, professional tech tutorial channel—not a clickbait entertainment channel.`;
 
         console.log(`⏳ Generating thumbnail set ${i + 1}/2...`);
 
@@ -125,17 +459,25 @@ Requirements:
           contents: [{ text: designPrompt }],
         });
 
-        const part = response?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+        const part = response?.candidates?.[0]?.content?.parts?.find(
+          (p) => p.inlineData,
+        );
         if (part) {
           const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
-          const s3Url = await uploadImageToS3(imageBuffer, `thumbnail_set_${i + 1}.png`);
+          const s3Url = await uploadImageToS3(
+            imageBuffer,
+            `thumbnail_set_${i + 1}.png`,
+          );
           thumbnails.push({ index: i + 1, url: s3Url });
           console.log(`✅ Generated and uploaded thumbnail set ${i + 1}/2`);
         }
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (err) {
-        console.error(`⚠️ Error generating thumbnail set ${i + 1}:`, err.message);
+        console.error(
+          `⚠️ Error generating thumbnail set ${i + 1}:`,
+          err.message,
+        );
       }
     }
 
@@ -150,24 +492,87 @@ Requirements:
   }
 }
 
-
 export async function generateSEODescription(topic, script) {
   try {
-    const prompt = `You are a YouTube SEO expert. Generate a compelling and SEO-optimized YouTube video description based on the following:
+    const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
 Topic: "${topic}"
+Title: "${title}"
+Script: ${script}
 
-Script: ${script.substring(0, 1000)}...
+DESCRIPTION STRUCTURE (300-500 words total):
 
-Requirements:
-- 300-500 words (optimal for YouTube)
-- Include main keywords naturally
-- Be compelling and encourage clicks
-- Include call-to-action (like, subscribe, comment)
-- Professional and informative tone
-- Front-load important information
+HOOK - First 150 Characters (appears before "Show more"):
+- Open with the main keyword and core benefit/solution
+- Make it compelling enough to encourage clicking "Show more"
+- Include a clear value proposition
+- This text also appears in search results—make it count
 
-Return ONLY the description text, no additional formatting or explanation.`;
+MAIN DESCRIPTION (Paragraphs 2-3):
+- Expand on what viewers will learn with specific details
+- Naturally incorporate 3-5 primary keywords related to the topic
+- Mention the software/OS version and relevant technical terms
+- Explain the problem being solved and the outcome viewers will achieve
+- Keep sentences clear and scannable
+
+VIDEO BREAKDOWN (if script is detailed):
+- Brief overview of what's covered, using natural language (not a numbered list)
+- Mention key features, settings, or tools discussed
+- Include secondary keywords and related search terms
+
+CALL-TO-ACTION:
+- Subscribe request (vary the phrasing)
+- Like and comment invitation
+- Mention turning on notifications if relevant
+- Keep it brief and natural
+
+HASHTAGS (3-5 maximum, placed at the end):
+- Use specific, relevant hashtags: #[Software/OS], #TechTutorial, #HowTo
+- Include the main topic keyword as a hashtag
+- Avoid generic or overused hashtags
+- Format: #WordsLikeThis (no spaces)
+
+SEO OPTIMIZATION REQUIREMENTS:
+
+Keyword Placement:
+- Primary keyword in the first sentence
+- Primary keyword appears 2-3 times naturally throughout
+- Include 5-8 related/secondary keywords (software names, features, problem terms)
+- Use exact phrases people search for (e.g., "how to fix", "enable dark mode")
+
+Readability:
+- Write for humans first, search engines second
+- Use natural language—no keyword stuffing
+- Short paragraphs (2-3 sentences each)
+- Professional but conversational tone matching Softfix Central's brand
+
+Technical Elements:
+- Mention specific software/OS versions (e.g., "Windows 11," "macOS Sonoma")
+- Include year (2025) for time-sensitive content
+- Reference related features or settings that viewers might also search for
+- Use proper technical terminology
+
+WHAT TO INCLUDE (if relevant):
+- Prerequisites or system requirements
+- Related videos or topics (in text, not links)
+- Common problems this solves
+- Alternative methods or related features
+
+WHAT TO AVOID:
+- Clickbait language or exaggeration
+- Excessive emoji usage
+- Keyword stuffing or unnatural repetition
+- More than 5 hashtags
+- Vague descriptions that could apply to any video
+- Walls of text without paragraph breaks
+
+TONE:
+- Professional and informative (matching Softfix Central's brand)
+- Helpful and straightforward
+- No hype or sensationalism
+- Focus on value delivery
+
+Return ONLY the description text with hashtags at the end. No additional commentary, formatting markers, or explanations.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -183,20 +588,89 @@ Return ONLY the description text, no additional formatting or explanation.`;
 
 export async function generateTags(topic, script, title) {
   try {
-    const prompt = `You are a YouTube SEO expert. Generate 12-15 highly relevant tags for a YouTube video based on:
+    const prompt = `You are a tag strategist for "Softfix Central," a tech tutorial YouTube channel. Generate 15-25 highly targeted tags for:
 
 Topic: "${topic}"
 Title: "${title}"
-Script excerpt: ${script.substring(0, 500)}...
+Script: ${script}
 
-Requirements:
-- Tags should be specific and relevant
-- Include short tags (1-3 words) and longer tags (2-4 words)
-- Cover main topic, subtopics, and related searches
-- Include trending keywords if relevant
-- Mix broad and specific terms
+TAG STRATEGY FOR SOFTFIX CENTRAL:
 
-Return ONLY the tags, one per line, WITHOUT the # symbol. No additional text.`;
+TAG HIERARCHY (use this order of priority):
+
+PRIMARY TAGS (3-5 tags):
+- Exact main keyword from the title
+- Specific software/OS name and version (e.g., "Windows 11", "Excel 2025")
+- Core action or problem being solved (e.g., "fix bluetooth", "enable dark mode")
+- These should match what people actually type in YouTube search
+
+SECONDARY TAGS (5-8 tags):
+- Related features or settings mentioned in the video
+- Alternative ways people might search for this topic
+- Specific tools, menus, or functions covered
+- Problem-based phrases (e.g., "bluetooth not working", "connection issues")
+
+BROAD TAGS (3-5 tags):
+- General category tags (e.g., "tech tutorial", "how to guide")
+- Platform/software category (e.g., "Windows tutorial", "Mac tips")
+- General problem area (e.g., "troubleshooting", "productivity tips")
+
+LONG-TAIL TAGS (4-7 tags):
+- 3-5 word specific phrases people search for
+- Complete questions or problems (e.g., "how to fix bluetooth on windows 11")
+- Step-by-step related terms (e.g., "windows 11 settings tutorial")
+
+TAG OPTIMIZATION RULES:
+
+Relevance:
+- Every tag must be directly relevant to the video content
+- Use exact terminology from the software/OS being discussed
+- Include specific version numbers when applicable
+- Match the actual search intent of your target audience
+
+Format:
+- Use lowercase for better matching (YouTube is case-insensitive, but lowercase is standard)
+- Multi-word tags should be natural phrases, not keyword stuffing
+- Mix of 1-word, 2-word, and 3-5 word tags
+- Keep individual tags under 30 characters when possible
+
+Strategic Inclusion:
+- Channel name: "softfix central" (helps with brand searches)
+- Software/platform name (exact spelling)
+- Year (2025) if content is time-sensitive or version-specific
+- Related tech topics viewers might also search for
+- Common misspellings ONLY if they're frequently searched
+
+WHAT TO INCLUDE (if relevant):
+- Specific error messages or error codes
+- Feature names exactly as they appear in the software
+- Alternative names for the same feature
+- Related problems this video also solves
+- Competitor software (if doing comparisons)
+
+WHAT TO AVOID:
+- Irrelevant trending tags just for views
+- Tags for topics not covered in the video
+- Spam or repeated variations of the same tag
+- Single-letter or overly generic tags (e.g., "video", "tutorial" alone)
+- Tags with special characters or excessive punctuation
+- Misleading tags that don't match content
+- More than 25 tags total (focus on quality over quantity)
+
+TAG EXAMPLES FOR TECH TUTORIALS:
+✓ "windows 11 dark mode"
+✓ "enable dark mode windows"
+✓ "windows 11 settings"
+✓ "how to enable dark mode"
+✓ "windows customization"
+✗ "BEST TUTORIAL EVER"
+✗ "viral"
+✗ "trending"
+
+PRIORITY PRINCIPLE:
+Better to have 15 highly relevant tags than 25 mediocre ones. Focus on tags that will bring the RIGHT viewers who are actually looking for this specific solution.
+
+Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbering, no additional text or explanation.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -213,51 +687,5 @@ Return ONLY the tags, one per line, WITHOUT the # symbol. No additional text.`;
   } catch (error) {
     console.error('❌ Error generating tags:', error.message);
     throw new Error(`Failed to generate tags: ${error.message}`);
-  }
-}
-
-export async function generateTimestamps(script) {
-  try {
-    const prompt = `You are a YouTube video editor. Analyze the following script and generate 5-7 important timestamps with descriptions for chapter markers.
-
-Script: ${script}
-
-Requirements:
-- Extract 5-7 key sections/moments from the script
-- Each timestamp should be in MM:SS format (assuming ~5-10 minute video)
-- Include brief description of what happens at that timestamp (5-10 words)
-- Start with "0:00" for introduction
-- Make timestamps progressively later
-- Descriptions should be clear and clickable
-
-Format ONLY as:
-MM:SS - Description
-
-One per line. No additional text or formatting.`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-    });
-
-    const timestamps = response.text
-      .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => {
-        const match = line.match(/^(\d{1,2}:\d{2})\s*-\s*(.+)$/);
-        if (match) {
-          return {
-            time: match[1],
-            description: match[2].trim(),
-          };
-        }
-        return null;
-      })
-      .filter((ts) => ts !== null);
-
-    return timestamps;
-  } catch (error) {
-    console.error('❌ Error generating timestamps:', error.message);
-    throw new Error(`Failed to generate timestamps: ${error.message}`);
   }
 }

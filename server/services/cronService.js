@@ -44,13 +44,19 @@ async function processPendingTopics() {
         );
 
         // Generate narration script using Gemini AI
-        const script = await generateNarrationScript(
+        const scripts = await generateNarrationScript(
           topic.topicName,
           topic.description,
         );
 
-        // Update topic with generated script
-        topic.narrationScript = script;
+        // Update topic with generated scripts
+        // scripts is an array of strings
+        topic.narrationScript = scripts[0]; // Default to first variation
+        topic.narrationScriptVariations = scripts.map((script, index) => ({
+          prompt: `Auto-generated Variation ${index + 1}`,
+          result: script,
+        }));
+
         topic.status = 'completed';
         topic.processedAt = new Date();
         await topic.save();

@@ -7,15 +7,12 @@ import {
 } from '../api/client';
 import CreateTopicForm from './CreateTopicForm';
 import TopicCard from './TopicCard';
-import TopicModal from './TopicModal';
 
 const TopicsList = () => {
   const [topics, setTopics] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTopicId, setSelectedTopicId] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterLevel, setFilterLevel] = useState('all');
   const [processingLoading, setProcessingLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,11 +62,6 @@ const TopicsList = () => {
     }
   };
 
-  const handleViewTopic = (id) => {
-    setSelectedTopicId(id);
-    setIsModalOpen(true);
-  };
-
   const handleProcessNow = async () => {
     setProcessingLoading(true);
     try {
@@ -94,11 +86,12 @@ const TopicsList = () => {
       : topics.filter((t) => t.level === filterLevel);
 
   // Filter by search query (searches in topicName)
-  const filteredTopics = searchQuery.trim() === ''
-    ? levelFilteredTopics
-    : levelFilteredTopics.filter((t) =>
-        t.topicName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const filteredTopics =
+    searchQuery.trim() === ''
+      ? levelFilteredTopics
+      : levelFilteredTopics.filter((t) =>
+          t.topicName.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -168,7 +161,8 @@ const TopicsList = () => {
           </div>
           {searchQuery && (
             <p className="text-sm text-gray-600 mt-2">
-              Found {filteredTopics.length} topic{filteredTopics.length !== 1 ? 's' : ''} matching "{searchQuery}"
+              Found {filteredTopics.length} topic
+              {filteredTopics.length !== 1 ? 's' : ''} matching "{searchQuery}"
             </p>
           )}
         </div>
@@ -212,10 +206,11 @@ const TopicsList = () => {
               <button
                 key={level.value}
                 onClick={() => setFilterLevel(level.value)}
-                className={`flex-1 px-4 py-3 rounded-md font-medium whitespace-nowrap transition-all duration-200 ${filterLevel === level.value
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md transform scale-105'
-                  : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                className={`flex-1 px-4 py-3 rounded-md font-medium whitespace-nowrap transition-all duration-200 ${
+                  filterLevel === level.value
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md transform scale-105'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
               >
                 <span className="hidden sm:inline">{level.label}</span>
                 <span className="sm:hidden">{level.emoji}</span>
@@ -244,23 +239,11 @@ const TopicsList = () => {
                 key={topic._id}
                 topic={topic}
                 onDelete={handleDelete}
-                onView={handleViewTopic}
               />
             ))}
           </div>
         )}
       </div>
-
-      {/* Topic Modal */}
-      <TopicModal
-        topicId={selectedTopicId}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onUpdate={() => {
-          fetchTopics();
-          fetchStats();
-        }}
-      />
     </div>
   );
 };

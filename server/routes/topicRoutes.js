@@ -6,7 +6,6 @@ import {
   generateYouTubeThumbnails,
   generateSEODescription,
   generateTags,
-  generateTimestamps,
 } from '../services/geminiService.js';
 import { generateMP3Audio } from '../services/audioService.js';
 import { deleteImageFromS3 } from '../services/s3Service.js';
@@ -524,7 +523,7 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
         topicName: topic.topicName,
         generatedThumbnails: thumbnails.map((t) => ({
           index: t.index,
-          image: t.image,
+          url: t.url,
         })),
       },
     });
@@ -620,17 +619,15 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
     console.log(`🎯 Generating extra assets for topic "${topic.topicName}"...`);
 
     // Generate all assets simultaneously
-    const [seoDescription, tags, timestamps, audioUrl] = await Promise.all([
+    const [seoDescription, tags, audioUrl] = await Promise.all([
       generateSEODescription(topic.topicName, topic.narrationScript),
       generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle),
-      generateTimestamps(topic.narrationScript),
       generateMP3Audio(topic.narrationScript, topic._id),
     ]);
 
     // Update topic with generated assets
     topic.seoDescription = seoDescription;
     topic.tags = tags;
-    topic.timestamps = timestamps;
     topic.audioUrl = audioUrl;
 
     await topic.save();
@@ -643,7 +640,6 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
       data: {
         seoDescription,
         tags,
-        timestamps,
         audioUrl,
       },
     });

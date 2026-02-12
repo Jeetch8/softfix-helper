@@ -79,7 +79,7 @@ export async function generateMP3Audio(script, topicId) {
         {
           parts: [
             {
-              text: `Read aloud in a warm, friendly, professional tone with no background noise: ${script}`,
+              text: `Read aloud in a warm, friendly, professional tone with no background noise, Professional yet approachable, Clear, precise instructions, Confident and knowledgeable tone: ${script}`,
             },
           ],
         },

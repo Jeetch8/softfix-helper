@@ -17,7 +17,6 @@ const ExtraAssetsSelector = ({ topicId, extraAssets, onAssetsGenerated }) => {
       setAssets({
         seoDescription: data.seoDescription,
         tags: data.tags,
-        timestamps: data.timestamps,
         audioUrl: data.audioUrl,
       });
       setShowAssets(true);
@@ -123,41 +122,6 @@ const ExtraAssetsSelector = ({ topicId, extraAssets, onAssetsGenerated }) => {
                 }`}
               >
                 {copiedIndex === 1 ? '✓' : '📋'}
-              </button>
-            </div>
-          </div>
-
-          {/* Timestamps */}
-          <div className="bg-orange-50 border border-orange-200 rounded p-4">
-            <div className="flex justify-between items-start gap-3">
-              <div className="flex-1">
-                <p className="text-orange-700 text-xs font-semibold mb-2">
-                  ⏱️ Timestamps
-                </p>
-                <div className="space-y-1">
-                  {assets.timestamps.map((ts, idx) => (
-                    <p key={idx} className="text-orange-900 text-sm">
-                      <strong>{ts.time}</strong> - {ts.description}
-                    </p>
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  handleCopy(
-                    assets.timestamps
-                      .map((ts) => `${ts.time} - ${ts.description}`)
-                      .join('\n'),
-                    2,
-                  )
-                }
-                className={`flex-shrink-0 px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                  copiedIndex === 2
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-orange-600 hover:bg-orange-700 text-white'
-                }`}
-              >
-                {copiedIndex === 2 ? '✓' : '📋'}
               </button>
             </div>
           </div>

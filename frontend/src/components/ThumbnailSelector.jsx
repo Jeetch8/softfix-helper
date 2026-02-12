@@ -38,7 +38,7 @@ const ThumbnailSelector = ({
     } catch (err) {
       setError(
         'Failed to generate thumbnails: ' +
-        (err.response?.data?.message || err.message),
+          (err.response?.data?.message || err.message),
       );
       setShowThumbnails(false);
     } finally {
@@ -107,7 +107,7 @@ const ThumbnailSelector = ({
         <div className="space-y-3">
           <div className="flex justify-between items-center mb-3">
             <h4 className="font-semibold text-gray-800">
-              Select a Thumbnail (10 options)
+              Select a Thumbnail Set
             </h4>
             <button
               onClick={handleGenerateThumbnails}

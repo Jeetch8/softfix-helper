@@ -98,7 +98,6 @@ const TitleSelector = ({
     setEditedTitle('');
   };
 
-
   return (
     <div className="space-y-4">
       {localSelectedTitle && (
@@ -124,10 +123,11 @@ const TitleSelector = ({
                 <button
                   onClick={handleSaveEdit}
                   disabled={isSaving}
-                  className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${isSaving
+                  className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
+                    isSaving
                       ? 'bg-gray-400 text-white cursor-not-allowed'
                       : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
+                  }`}
                 >
                   {isSaving ? '⏳ Saving...' : '✓ Save'}
                 </button>
@@ -148,10 +148,11 @@ const TitleSelector = ({
               <div className="flex gap-2 flex-shrink-0">
                 <button
                   onClick={handleCopyTitle}
-                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${copySuccess
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    copySuccess
                       ? 'bg-green-500 text-white'
                       : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
+                  }`}
                 >
                   {copySuccess ? '✓ Copied!' : '📋 Copy'}
                 </button>
@@ -192,7 +193,7 @@ const TitleSelector = ({
         <div className="space-y-3">
           <div className="flex justify-between items-center mb-3">
             <h4 className="font-semibold text-gray-800">
-              Select a YouTube Title (10 options)
+              Select a YouTube Title (20 options)
             </h4>
             <button
               onClick={handleGenerateTitles}

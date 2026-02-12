@@ -15,6 +15,17 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Store 4 variations of narration scripts with their prompts
+    narrationScriptVariations: [
+      {
+        prompt: String,
+        result: String,
+        generatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     status: {
       type: String,
       enum: ['pending', 'processing', 'completed', 'failed'],
@@ -30,6 +41,17 @@ const topicSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    // Store 4 variations of title prompts and their results
+    titlePromptVariations: [
+      {
+        prompt: String,
+        result: String,
+        generatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     selectedTitle: {
       type: String,
       default: null,
@@ -38,6 +60,17 @@ const topicSchema = new mongoose.Schema(
       {
         index: Number,
         url: String, // S3 URL
+      },
+    ],
+    // Store 4 variations of thumbnail prompts and their results
+    thumbnailPromptResults: [
+      {
+        prompt: String,
+        url: String, // S3 URL
+        generatedAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
     selectedThumbnail: {

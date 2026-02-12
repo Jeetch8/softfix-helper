@@ -34,7 +34,6 @@ if (import.meta.env.DEV) {
   console.log('🔗 API Base URL:', API_BASE_URL);
 }
 
-
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -87,7 +86,6 @@ export const selectTitle = (id, title) => {
 export const updateTitle = (id, title) => {
   return apiClient.put(`/api/topics/${id}/update-title`, { title });
 };
-
 
 export const generateThumbnails = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-thumbnails`);
@@ -177,8 +175,8 @@ export const getIdeaStats = (userId = null) => {
   return apiClient.get('/api/ideas/stats', { params });
 };
 
-export const convertIdeaToTopic = (id) => {
-  return apiClient.post(`/api/ideas/${id}/convert-to-topic`);
+export const convertIdeaToTopic = (id, topicData = {}) => {
+  return apiClient.post(`/api/ideas/${id}/convert-to-topic`, topicData);
 };
 
 export default apiClient;
