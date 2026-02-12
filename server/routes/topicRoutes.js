@@ -670,7 +670,11 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
 
     // Generate all assets simultaneously
     const [seoDescription, tags, audioUrl] = await Promise.all([
-      generateSEODescription(topic.topicName, topic.narrationScript),
+      generateSEODescription(
+        topic.topicName,
+        topic.narrationScript,
+        topic.selectedTitle,
+      ),
       generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle),
       generateMP3Audio(topic.narrationScript, topic._id),
     ]);

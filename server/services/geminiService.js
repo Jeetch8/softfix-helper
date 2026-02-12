@@ -490,7 +490,7 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
   }
 }
 
-export async function generateSEODescription(topic, script) {
+export async function generateSEODescription(topic, script, title) {
   try {
     const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
