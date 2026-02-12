@@ -5,12 +5,11 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 console.log('🎯 Gemini AI Service Initialized');
 
 export async function generateNarrationScript(topic, description = '') {
-  console.log({ topic, description });
   try {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic.topicName}".${topic.description}
+    const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}
 
 SCRIPT STRUCTURE:
 
@@ -53,7 +52,7 @@ The script should sound like a knowledgeable friend walking someone through a pr
     const promises = [1, 2].map(async (i) => {
       console.log(`⏳ Generating script variation ${i}...`);
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
           tools: [
@@ -108,7 +107,7 @@ export async function generateNarrationScriptVariations(
 Topic: "${topic}"${descriptionText}`;
 
           const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-3-pro-preview',
             contents: fullPrompt,
             config: {
               tools: [
@@ -388,9 +387,8 @@ export async function generateYouTubeThumbnails(topic, title, script) {
         const designPrompt = `You are a thumbnail designer for "Softfix Central," a YouTube channel known for clear, professional tech tutorials. Create a single high-quality image containing a 3x3 grid of 9 distinct thumbnail variations for:
 
 Topic: "${topic.topicName}"
-Title: "${topic.selectedTitle}"
-Description: "${topic.selectedDescription}"
-Script: "${topic.selectedScript}"
+Title: "${title}"
+Script: "${script}"
 
 SOFTFIX CENTRAL THUMBNAIL PRINCIPLES:
 

@@ -305,6 +305,56 @@ router.put('/topics/:id/script', async (req, res) => {
 });
 
 /**
+ * PUT /api/topics/:id/description
+ * Update the topic description
+ */
+router.put('/topics/:id/description', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description } = req.body;
+
+    if (description === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Description is required',
+      });
+    }
+
+    const topic = await Topic.findByIdAndUpdate(
+      id,
+      {
+        description: description.trim(),
+      },
+      { new: true },
+    );
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    console.log(
+      `✏️ Topic description updated: "${topic.topicName}" (ID: ${topic._id})`,
+    );
+
+    res.json({
+      success: true,
+      message: 'Description updated successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error updating topic description:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating topic description',
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/topics/:id/generate-titles
  * Generate SEO-optimized YouTube titles for a topic
  */

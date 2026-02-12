@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   getTopic,
   updateScript,
+  updateDescription,
   regenerateScript,
   markAsEditing,
   markAsUploaded,
@@ -25,6 +26,9 @@ const TopicPage = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [isMarkingEditing, setIsMarkingEditing] = useState(false);
   const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
 
   useEffect(() => {
     if (topicId) {
@@ -36,10 +40,12 @@ const TopicPage = () => {
     setLoading(true);
     setError(null);
     setIsEditing(false);
+    setIsEditingDescription(false);
     try {
       const response = await getTopic(topicId);
       setTopic(response.data.data);
       setEditedScript(response.data.data.narrationScript || '');
+      setEditedDescription(response.data.data.description || '');
     } catch (err) {
       setError('Failed to fetch topic details');
     } finally {
@@ -132,6 +138,20 @@ const TopicPage = () => {
     }
   };
 
+  const handleSaveDescription = async () => {
+    setIsSavingDescription(true);
+    try {
+      const response = await updateDescription(topicId, editedDescription);
+      setTopic(response.data.data);
+      setIsEditingDescription(false);
+      setError(null);
+    } catch (err) {
+      setError('Failed to save description');
+    } finally {
+      setIsSavingDescription(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -181,8 +201,50 @@ const TopicPage = () => {
               <div className="mb-2">
                 <StatusBadge status={topic.status} />
               </div>
-              {topic.description && (
-                <p className="text-gray-600">{topic.description}</p>
+              {isEditingDescription ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter topic description..."
+                    rows="3"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveDescription}
+                      disabled={isSavingDescription}
+                      className="px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      {isSavingDescription ? '💾 Saving...' : '💾 Save'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingDescription(false);
+                        setEditedDescription(topic.description || '');
+                      }}
+                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      ✕ Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  {topic.description ? (
+                    <p className="text-gray-600 flex-1">{topic.description}</p>
+                  ) : (
+                    <p className="text-gray-400 italic flex-1">
+                      No description
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setIsEditingDescription(true)}
+                    className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
+                  >
+                    ✏️ Edit
+                  </button>
+                </div>
               )}
             </div>
           </div>

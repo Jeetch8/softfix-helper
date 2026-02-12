@@ -75,6 +75,10 @@ export const updateScript = (id, narrationScript) => {
   return apiClient.put(`/api/topics/${id}/script`, { narrationScript });
 };
 
+export const updateDescription = (id, description) => {
+  return apiClient.put(`/api/topics/${id}/description`, { description });
+};
+
 export const generateTitles = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-titles`);
 };
