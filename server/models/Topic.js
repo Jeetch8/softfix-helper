@@ -11,6 +11,10 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    keywords: {
+      type: String,
+      default: '',
+    },
     narrationScript: {
       type: String,
       default: null,

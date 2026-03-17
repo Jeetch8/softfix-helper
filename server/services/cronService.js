@@ -47,6 +47,7 @@ async function processPendingTopics() {
         const scripts = await generateNarrationScript(
           topic.topicName,
           topic.description,
+          topic.keywords
         );
 
         // Update topic with generated scripts

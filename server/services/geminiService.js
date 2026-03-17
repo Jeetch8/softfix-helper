@@ -4,12 +4,13 @@ import { uploadImageToS3 } from './s3Service.js';
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 console.log('🎯 Gemini AI Service Initialized');
 
-export async function generateNarrationScript(topic, description = '') {
+export async function generateNarrationScript(topic, description = '', keywords = '') {
   try {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}
+    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+    const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
 
 SCRIPT STRUCTURE:
 
@@ -79,12 +80,14 @@ The script should sound like a knowledgeable friend walking someone through a pr
  * @param {string} topic - The topic name
  * @param {string} description - Topic description
  * @param {Array<string>} prompts - Array of 4 custom prompts (user will add these in code)
+ * @param {string} keywords - Comma separated keywords
  * @returns {Array<{prompt: string, result: string}>}
  */
 export async function generateNarrationScriptVariations(
   topic,
   description = '',
   prompts,
+  keywords = ''
 ) {
   console.log(
     `🎬 Generating ${prompts.length} narration script variations for topic: ${topic}`,
@@ -102,9 +105,10 @@ export async function generateNarrationScriptVariations(
           const descriptionText = description
             ? `\n\nAdditional context: ${description}`
             : '';
+          const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
           const fullPrompt = `${customPrompt}
 
-Topic: "${topic}"${descriptionText}`;
+Topic: "${topic}"${descriptionText}${keywordsText}`;
 
           const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
@@ -155,9 +159,10 @@ Topic: "${topic}"${descriptionText}`;
  * @param {string} topic - The topic name
  * @param {string} title - The selected title
  * @param {Array<string>} prompts - Array of 4 custom prompts (user will add these in code)
+ * @param {string} keywords - Comma separated keywords
  * @returns {Array<{prompt: string, url: string}>}
  */
-export async function generateThumbnailVariations(topic, title, prompts) {
+export async function generateThumbnailVariations(topic, title, prompts, keywords = '') {
   console.log(
     `🎨 Generating ${prompts.length} thumbnail variations for topic: ${topic}`,
   );
@@ -173,10 +178,11 @@ export async function generateThumbnailVariations(topic, title, prompts) {
         );
 
         const customPrompt = prompts[i];
+        const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
         const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"
-Title: "${title}"`;
+Title: "${title}"${keywordsText}`;
 
         const response = await ai.models.generateContent({
           model: 'gemini-3-pro-image-preview',
@@ -239,6 +245,7 @@ Title: "${title}"`;
  * @param {string} description - Topic description
  * @param {string} narrationScript - The narration script
  * @param {Array<string>} prompts - Array of 4 custom prompts (user will add these in code)
+ * @param {string} keywords - Comma separated keywords
  * @returns {Array<{prompt: string, result: string}>}
  */
 export async function generateTitleVariations(
@@ -246,6 +253,7 @@ export async function generateTitleVariations(
   description = '',
   narrationScript = '',
   prompts,
+  keywords = ''
 ) {
   console.log(
     `🎬 Generating ${prompts.length} title variations for topic: ${topic}`,
@@ -266,9 +274,10 @@ export async function generateTitleVariations(
           const scriptText = narrationScript
             ? `\n\nScript Summary: ${narrationScript.substring(0, 500)}...`
             : '';
+          const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
           const fullPrompt = `${customPrompt}
 
-Topic: "${topic}"${descriptionText}${scriptText}`;
+Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
 
           const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
@@ -311,14 +320,15 @@ Topic: "${topic}"${descriptionText}${scriptText}`;
   }
 }
 
-export async function generateYouTubeTitles(topic, script, description = '') {
+export async function generateYouTubeTitles(topic, script, description = '', keywords = '') {
   try {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
     const prompt = `You are a title creator for "Softfix Central," a YouTube channel known for straightforward, efficient tech tutorials. Generate exactly 20 optimized video titles based on:
 
-Topic: "${topic}"${descriptionText}
+Topic: "${topic}"${descriptionText}${keywordsText}
 
 Script: ${script}
 
@@ -377,18 +387,19 @@ Return ONLY the 20 titles, numbered 1-20, one per line. No additional commentary
   }
 }
 
-export async function generateYouTubeThumbnails(topic, title, script) {
+export async function generateYouTubeThumbnails(topic, title, script, keywords = '') {
   try {
     const thumbnails = [];
     console.log(`🎨 Starting thumbnail generation for: "${title}"`);
 
     for (let i = 0; i < 2; i++) {
       try {
+        const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
         const designPrompt = `You are a thumbnail designer for "Softfix Central," a YouTube channel known for clear, professional tech tutorials. Create a single high-quality image containing a 3x3 grid of 9 distinct thumbnail variations for:
 
 Topic: "${topic.topicName}"
 Title: "${title}"
-Script: "${script}"
+Script: "${script}"${keywordsText}
 
 SOFTFIX CENTRAL THUMBNAIL PRINCIPLES:
 
@@ -490,13 +501,14 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
   }
 }
 
-export async function generateSEODescription(topic, script, title) {
+export async function generateSEODescription(topic, script, title, keywords = '') {
   try {
+    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
     const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
 Topic: "${topic}"
 Title: "${title}"
-Script: ${script}
+Script: ${script}${keywordsText}
 
 DESCRIPTION STRUCTURE (300-500 words total):
 
@@ -584,13 +596,14 @@ Return ONLY the description text with hashtags at the end. No additional comment
   }
 }
 
-export async function generateTags(topic, script, title) {
+export async function generateTags(topic, script, title, keywords = '') {
   try {
+    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
     const prompt = `You are a tag strategist for "Softfix Central," a tech tutorial YouTube channel. Generate 15-25 highly targeted tags for:
 
 Topic: "${topic}"
 Title: "${title}"
-Script: ${script}
+Script: ${script}${keywordsText}
 
 TAG STRATEGY FOR SOFTFIX CENTRAL:
 

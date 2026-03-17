@@ -18,7 +18,7 @@ const router = express.Router();
  */
 router.post('/topics', async (req, res) => {
   try {
-    const { topicName, description, userId } = req.body;
+    const { topicName, description, keywords, userId } = req.body;
 
     if (!topicName || topicName.trim() === '') {
       return res.status(400).json({
@@ -30,6 +30,7 @@ router.post('/topics', async (req, res) => {
     const newTopic = new Topic({
       topicName: topicName.trim(),
       description: description || '',
+      keywords: keywords || '',
       userId: userId || 'default-user',
       status: 'pending',
     });
@@ -387,6 +388,7 @@ router.post('/topics/:id/generate-titles', async (req, res) => {
       topic.topicName,
       topic.narrationScript,
       topic.description,
+      topic.keywords
     );
 
     // Update topic with generated titles
@@ -554,6 +556,7 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
       topic.topicName,
       topic.selectedTitle,
       topic.narrationScript,
+      topic.keywords
     );
 
     // Update topic with generated thumbnails
@@ -674,8 +677,9 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
         topic.topicName,
         topic.narrationScript,
         topic.selectedTitle,
+        topic.keywords
       ),
-      generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle),
+      generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle, topic.keywords),
       generateMP3Audio(topic.narrationScript, topic._id),
     ]);
 
