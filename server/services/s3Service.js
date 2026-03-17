@@ -6,7 +6,7 @@ if (!BUCKET_NAME) {
   console.warn('⚠️ AWS_S3_BUCKET_NAME not set in environment variables');
 }
 
-let endpointUrl = process.env.AWS_ENDPOINT_URL || 'https://sfo3.digitaloceanspaces.com';
+let endpointUrl = process.env.AWS_ENDPOINT_URL || 'https://sf03.digitaloceanspaces.com';
 
 // Fix for DigitalOcean Spaces where the bucket name might be accidentally included in the endpoint URL
 if (BUCKET_NAME && endpointUrl.includes(`${BUCKET_NAME}.`)) {
@@ -18,7 +18,7 @@ const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   endpoint: endpointUrl,
-  region: process.env.AWS_REGION || 'us-east-1', // Fallback region to prevent AWS SDK errors
+  region: process.env.AWS_REGION || 'sf03', // Fallback region to prevent AWS SDK errors
   signatureVersion: 'v4', // Required for DigitalOcean Spaces and other S3-compatible providers
 });
 
