@@ -18,7 +18,8 @@ const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   endpoint: endpointUrl,
-  region: 'us-east-1', // Fallback region to prevent AWS SDK errors
+  region: process.env.AWS_REGION || 'us-east-1', // Fallback region to prevent AWS SDK errors
+  signatureVersion: 'v4', // Required for DigitalOcean Spaces and other S3-compatible providers
 });
 
 /**
