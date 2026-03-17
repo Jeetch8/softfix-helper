@@ -22,3 +22,4 @@ test-output.mp3
 .mongodb/
 mongodb_data/
 mongodb_config/
+.aider*
