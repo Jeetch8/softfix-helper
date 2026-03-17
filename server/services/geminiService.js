@@ -9,7 +9,7 @@ export async function generateNarrationScript(topic, description = '', keywords 
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to naturally incorporate these keywords into the script.` : '';
     const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
 
 SCRIPT STRUCTURE:
@@ -105,7 +105,7 @@ export async function generateNarrationScriptVariations(
           const descriptionText = description
             ? `\n\nAdditional context: ${description}`
             : '';
-          const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+          const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to naturally incorporate these keywords into the script.` : '';
           const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"${descriptionText}${keywordsText}`;
@@ -274,7 +274,7 @@ export async function generateTitleVariations(
           const scriptText = narrationScript
             ? `\n\nScript Summary: ${narrationScript.substring(0, 500)}...`
             : '';
-          const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+          const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate.` : '';
           const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
@@ -325,7 +325,7 @@ export async function generateYouTubeTitles(topic, script, description = '', key
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate.` : '';
     const prompt = `You are a title creator for "Softfix Central," a YouTube channel known for straightforward, efficient tech tutorials. Generate exactly 20 optimized video titles based on:
 
 Topic: "${topic}"${descriptionText}${keywordsText}
@@ -503,7 +503,7 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
 
 export async function generateSEODescription(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include these keywords naturally throughout the description.` : '';
     const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
 Topic: "${topic}"
@@ -598,7 +598,7 @@ Return ONLY the description text with hashtags at the end. No additional comment
 
 export async function generateTags(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include these exact keywords in your final list of tags.` : '';
     const prompt = `You are a tag strategist for "Softfix Central," a tech tutorial YouTube channel. Generate 15-25 highly targeted tags for:
 
 Topic: "${topic}"
