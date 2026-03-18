@@ -4,6 +4,7 @@ import {
   getTopic,
   updateScript,
   updateDescription,
+  updateKeywords,
   regenerateScript,
   markAsEditing,
   markAsUploaded,
@@ -26,9 +27,14 @@ const TopicPage = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [isMarkingEditing, setIsMarkingEditing] = useState(false);
   const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
+  
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState('');
   const [isSavingDescription, setIsSavingDescription] = useState(false);
+
+  const [isEditingKeywords, setIsEditingKeywords] = useState(false);
+  const [editedKeywords, setEditedKeywords] = useState('');
+  const [isSavingKeywords, setIsSavingKeywords] = useState(false);
 
   useEffect(() => {
     if (topicId) {
@@ -41,11 +47,13 @@ const TopicPage = () => {
     setError(null);
     setIsEditing(false);
     setIsEditingDescription(false);
+    setIsEditingKeywords(false);
     try {
       const response = await getTopic(topicId);
       setTopic(response.data.data);
       setEditedScript(response.data.data.narrationScript || '');
       setEditedDescription(response.data.data.description || '');
+      setEditedKeywords(response.data.data.keywords || '');
     } catch (err) {
       setError('Failed to fetch topic details');
     } finally {
@@ -152,6 +160,20 @@ const TopicPage = () => {
     }
   };
 
+  const handleSaveKeywords = async () => {
+    setIsSavingKeywords(true);
+    try {
+      const response = await updateKeywords(topicId, editedKeywords);
+      setTopic(response.data.data);
+      setIsEditingKeywords(false);
+      setError(null);
+    } catch (err) {
+      setError('Failed to save keywords');
+    } finally {
+      setIsSavingKeywords(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -198,58 +220,115 @@ const TopicPage = () => {
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
                 {topic.topicName}
               </h1>
-              <div className="mb-2">
+              <div className="mb-4">
                 <StatusBadge status={topic.status} />
               </div>
-              {isEditingDescription ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={editedDescription}
-                    onChange={(e) => setEditedDescription(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter topic description..."
-                    rows="3"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSaveDescription}
-                      disabled={isSavingDescription}
-                      className="px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
-                    >
-                      {isSavingDescription ? '💾 Saving...' : '💾 Save'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsEditingDescription(false);
-                        setEditedDescription(topic.description || '');
-                      }}
-                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
-                    >
-                      ✕ Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-start gap-2">
-                  {topic.description ? (
-                    <p className="text-gray-600 flex-1">{topic.description}</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+                {/* Description Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-2">Description</h3>
+                  {isEditingDescription ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter topic description..."
+                        rows="3"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveDescription}
+                          disabled={isSavingDescription}
+                          className="px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                        >
+                          {isSavingDescription ? '💾 Saving...' : '💾 Save'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsEditingDescription(false);
+                            setEditedDescription(topic.description || '');
+                          }}
+                          className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                        >
+                          ✕ Cancel
+                        </button>
+                      </div>
+                    </div>
                   ) : (
-                    <p className="text-gray-400 italic flex-1">
-                      No description
-                    </p>
+                    <div className="flex items-start gap-2">
+                      {topic.description ? (
+                        <p className="text-gray-600 flex-1 text-sm">{topic.description}</p>
+                      ) : (
+                        <p className="text-gray-400 italic flex-1 text-sm">
+                          No description
+                        </p>
+                      )}
+                      <button
+                        onClick={() => setIsEditingDescription(true)}
+                        className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
+                      >
+                        ✏️ Edit
+                      </button>
+                    </div>
                   )}
-                  <button
-                    onClick={() => setIsEditingDescription(true)}
-                    className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
-                  >
-                    ✏️ Edit
-                  </button>
                 </div>
-              )}
+
+                {/* Keywords Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-2">Keywords</h3>
+                  {isEditingKeywords ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editedKeywords}
+                        onChange={(e) => setEditedKeywords(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter topic keywords..."
+                        rows="3"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveKeywords}
+                          disabled={isSavingKeywords}
+                          className="px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                        >
+                          {isSavingKeywords ? '💾 Saving...' : '💾 Save'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsEditingKeywords(false);
+                            setEditedKeywords(topic.keywords || '');
+                          }}
+                          className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                        >
+                          ✕ Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      {topic.keywords ? (
+                        <p className="text-gray-600 flex-1 text-sm">{topic.keywords}</p>
+                      ) : (
+                        <p className="text-gray-400 italic flex-1 text-sm">
+                          No keywords
+                        </p>
+                      )}
+                      <button
+                        onClick={() => setIsEditingKeywords(true)}
+                        className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
+                      >
+                        ✏️ Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm mt-4 pt-4 border-t border-gray-100">
             <div className="bg-gray-50 rounded p-3">
               <p className="text-gray-600 text-xs">User ID</p>
               <p className="text-gray-800 font-medium">{topic.userId}</p>
