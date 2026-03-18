@@ -187,6 +187,9 @@ Title: "${title}"${keywordsText}`;
         const response = await ai.models.generateContent({
           model: 'gemini-3-pro-image-preview',
           contents: [{ text: fullPrompt }],
+          config: {
+            temperature: 0.9,
+          },
         });
 
         const part = response?.candidates?.[0]?.content?.parts?.find(
@@ -466,6 +469,9 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
         const response = await ai.models.generateContent({
           model: 'gemini-3-pro-image-preview',
           contents: [{ text: designPrompt }],
+          config: {
+            temperature: 0.9,
+          },
         });
 
         const part = response?.candidates?.[0]?.content?.parts?.find(
