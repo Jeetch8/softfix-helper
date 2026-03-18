@@ -356,6 +356,56 @@ router.put('/topics/:id/description', async (req, res) => {
 });
 
 /**
+ * PUT /api/topics/:id/keywords
+ * Update the topic keywords
+ */
+router.put('/topics/:id/keywords', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { keywords } = req.body;
+
+    if (keywords === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Keywords are required',
+      });
+    }
+
+    const topic = await Topic.findByIdAndUpdate(
+      id,
+      {
+        keywords: keywords.trim(),
+      },
+      { new: true },
+    );
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    console.log(
+      `✏️ Topic keywords updated: "${topic.topicName}" (ID: ${topic._id})`,
+    );
+
+    res.json({
+      success: true,
+      message: 'Keywords updated successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error updating topic keywords:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating topic keywords',
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/topics/:id/generate-titles
  * Generate SEO-optimized YouTube titles for a topic
  */
