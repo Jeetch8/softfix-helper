@@ -60,12 +60,13 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    generatedThumbnails: [
-      {
+    generatedThumbnails: {
+      type: [[{
         index: Number,
         url: String, // S3 URL
-      },
-    ],
+      }]],
+      default: [],
+    },
     // Store 4 variations of thumbnail prompts and their results
     thumbnailPromptResults: [
       {

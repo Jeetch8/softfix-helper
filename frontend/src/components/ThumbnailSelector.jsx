@@ -8,19 +8,23 @@ const ThumbnailSelector = ({
   onThumbnailSelected,
   onGenerateComplete,
 }) => {
-  const [thumbnails, setThumbnails] = useState(generatedThumbnails || []);
+  const [thumbnails, setThumbnails] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
-  const [showThumbnails, setShowThumbnails] = useState(
-    generatedThumbnails && generatedThumbnails.length > 0,
-  );
+  const [showThumbnails, setShowThumbnails] = useState(false);
   const [localSelectedThumbnail, setLocalSelectedThumbnail] = useState(
     selectedThumbnail || null,
   );
 
   useEffect(() => {
     if (generatedThumbnails && generatedThumbnails.length > 0) {
-      setThumbnails(generatedThumbnails);
+      // Handle migration from flat array to nested array if needed
+      const isNested = Array.isArray(generatedThumbnails[0]);
+      const formattedThumbnails = isNested ? generatedThumbnails : [generatedThumbnails];
+      
+      setThumbnails(formattedThumbnails);
+      setCurrentIndex(formattedThumbnails.length - 1);
       setShowThumbnails(true);
     }
   }, [generatedThumbnails]);
@@ -28,11 +32,15 @@ const ThumbnailSelector = ({
   const handleGenerateThumbnails = async () => {
     setIsGenerating(true);
     setError(null);
-    setThumbnails([]);
     try {
       const response = await generateThumbnails(topicId);
       const newThumbnails = response.data.data.generatedThumbnails;
-      setThumbnails(newThumbnails);
+      
+      const isNested = Array.isArray(newThumbnails[0]);
+      const formattedThumbnails = isNested ? newThumbnails : [newThumbnails];
+      
+      setThumbnails(formattedThumbnails);
+      setCurrentIndex(formattedThumbnails.length - 1);
       setShowThumbnails(true);
       if (onGenerateComplete) onGenerateComplete();
     } catch (err) {
@@ -56,6 +64,16 @@ const ThumbnailSelector = ({
       setError('Failed to select thumbnail');
     }
   };
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => Math.min(thumbnails.length - 1, prev + 1));
+  };
+
+  const currentPair = thumbnails[currentIndex] || [];
 
   return (
     <div className="space-y-4">
@@ -109,17 +127,42 @@ const ThumbnailSelector = ({
             <h4 className="font-semibold text-gray-800">
               Select a Thumbnail Set
             </h4>
-            <button
-              onClick={handleGenerateThumbnails}
-              disabled={isGenerating}
-              className="px-3 py-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
-            >
-              {isGenerating ? '⏳ Generating...' : '🔄 Regenerate'}
-            </button>
+            <div className="flex items-center gap-2">
+              {thumbnails.length > 1 && (
+                <div className="flex items-center gap-1 mr-2 bg-gray-100 rounded px-2 py-1">
+                  <button
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className="p-1 hover:bg-gray-200 disabled:opacity-50 rounded"
+                    title="Previous Generation"
+                  >
+                    ◀
+                  </button>
+                  <span className="text-xs font-medium text-gray-600 min-w-[3rem] text-center">
+                    {currentIndex + 1} / {thumbnails.length}
+                  </span>
+                  <button
+                    onClick={handleNext}
+                    disabled={currentIndex === thumbnails.length - 1}
+                    className="p-1 hover:bg-gray-200 disabled:opacity-50 rounded"
+                    title="Next Generation"
+                  >
+                    ▶
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleGenerateThumbnails}
+                disabled={isGenerating}
+                className="px-3 py-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+              >
+                {isGenerating ? '⏳ Generating...' : '🔄 Regenerate'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 max-h-[600px] overflow-y-auto p-2">
-            {thumbnails.map((thumbnail, index) => (
+            {currentPair.map((thumbnail, index) => (
               <div
                 key={index}
                 className="bg-gray-50 border border-gray-200 rounded overflow-hidden hover:border-orange-500 transition-colors cursor-pointer"

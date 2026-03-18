@@ -559,8 +559,13 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
       topic.keywords
     );
 
-    // Update topic with generated thumbnails
-    topic.generatedThumbnails = thumbnails;
+    // Handle migration of old flat array data if necessary
+    if (topic.generatedThumbnails && topic.generatedThumbnails.length > 0 && !Array.isArray(topic.generatedThumbnails[0])) {
+      topic.generatedThumbnails = [topic.generatedThumbnails];
+    }
+
+    // Append new thumbnails pair to the array
+    topic.generatedThumbnails.push(thumbnails);
     topic.level = 'thumbnail';
     await topic.save();
 
@@ -574,10 +579,7 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
       data: {
         _id: topic._id,
         topicName: topic.topicName,
-        generatedThumbnails: thumbnails.map((t) => ({
-          index: t.index,
-          url: t.url,
-        })),
+        generatedThumbnails: topic.generatedThumbnails,
       },
     });
   } catch (error) {
