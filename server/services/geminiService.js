@@ -509,7 +509,7 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
 
 export async function generateSEODescription(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include these keywords naturally throughout the description.` : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include MOST of these keywords naturally throughout the description for SEO optimization.` : '';
     const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
 Topic: "${topic}"
@@ -604,7 +604,7 @@ Return ONLY the description text with hashtags at the end. No additional comment
 
 export async function generateTags(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include these exact keywords in your final list of tags.` : '';
+    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include any of these keywords that were NOT used in the video description in your final list of tags.` : '';
     const prompt = `You are a tag strategist for "Softfix Central," a tech tutorial YouTube channel. Generate 15-25 highly targeted tags for:
 
 Topic: "${topic}"
