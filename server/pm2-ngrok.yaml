@@ -1,0 +1,18 @@
+apps:
+  - name: 'my-app'
+    script: 'server.js' # Replace 'server.js' with your application's start script
+    watch: true
+    ignore_watch:
+      - "node_modules"
+      - "temp/**"
+
+  - name: 'ngrok-tunnel'
+    script: 'ngrok' # Use the path to your ngrok executable
+    args: 'http 3000' # Tunnels HTTP traffic on port 3000 (adjust port as needed)
+    instances: 1
+    autorestart: true
+    max_restarts: 10
+    watch: false
+    error_file: 'err-ngrok.log'
+    out_file: 'out-ngrok.log'
+    log_file: 'combined-ngrok.log'
