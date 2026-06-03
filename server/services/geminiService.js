@@ -706,3 +706,79 @@ Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbe
     throw new Error(`Failed to generate tags: ${error.message}`);
   }
 }
+
+export async function filterNonEnglishKeywords(keywordsArray) {
+  try {
+    console.log(`🔍 Filtering non-English keywords from ${keywordsArray.length} items using small model...`);
+    const prompt = `You are a language detection assistant. Given the following list of keywords, return ONLY a JSON array containing the keywords that are in English. Exclude any keywords that are primarily in another language. Do NOT add markdown formatting around the output, just return the raw JSON array of strings.
+
+Keywords to filter:
+${JSON.stringify(keywordsArray)}
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.1
+      }
+    });
+
+    const text = response.text;
+    const englishKeywords = JSON.parse(text);
+    console.log(`✅ Filtered down to ${englishKeywords.length} English keywords.`);
+    return englishKeywords;
+  } catch (error) {
+    console.error('❌ Error filtering keywords:', error.message);
+    throw new Error(`Failed to filter non-English keywords: ${error.message}`);
+  }
+}
+
+export async function segregateKeywordsIntoGroups(keywordsWithData) {
+  try {
+    console.log(`🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`);
+    
+    const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, and ids. 
+Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
+A keyword can be placed into multiple groups if it is appropriate.
+
+Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain "id", "keyword", "search_volume", and "overall". It can also contain other properties if provided.
+
+Example Output Format:
+[
+  {
+    "title": "Bluetooth Connection Issues",
+    "keywords": [
+      {
+        "id": "123456789",
+        "keyword": "how to fix bluetooth on windows 11",
+        "search_volume": 6000,
+        "overall": 65
+      }
+    ]
+  }
+]
+
+Keywords to segregate:
+${JSON.stringify(keywordsWithData)}
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.2
+      }
+    });
+
+    const text = response.text;
+    const groupings = JSON.parse(text);
+    console.log(`✅ Generated ${groupings.length} keyword groups.`);
+    return groupings;
+  } catch (error) {
+    console.error('❌ Error segregating keywords:', error.message);
+    throw new Error(`Failed to segregate keywords: ${error.message}`);
+  }
+}

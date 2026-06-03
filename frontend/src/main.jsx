@@ -6,10 +6,16 @@ import TopicsList from './components/TopicsList';
 import TopicPage from './components/TopicPage';
 import KeywordsList from './components/KeywordsList';
 import IdeasList from './components/IdeasList';
+import KeywordsSegregator from './components/KeywordsSegregator';
 
 // Main App Component with Navigation
 function App() {
-  const [activeTab, setActiveTab] = React.useState('topics');
+  const currentPath = window.location.pathname;
+  const initialTab = currentPath.includes('/keywords') ? 'keywords' 
+                   : currentPath.includes('/ideas') ? 'ideas'
+                   : currentPath.includes('/segregator') ? 'segregator'
+                   : 'topics';
+  const [activeTab, setActiveTab] = React.useState(initialTab);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -56,6 +62,19 @@ function App() {
             >
               💡 Ideas
             </button>
+            <button
+              onClick={() => {
+                setActiveTab('segregator');
+                window.location.href = '/segregator';
+              }}
+              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${
+                activeTab === 'segregator'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🗂️ Keyword Segregator
+            </button>
           </div>
         </div>
       </div>
@@ -67,6 +86,7 @@ function App() {
         <Route path="/topics/:topicId" element={<TopicPage />} />
         <Route path="/keywords" element={<KeywordsList />} />
         <Route path="/ideas" element={<IdeasList />} />
+        <Route path="/segregator" element={<KeywordsSegregator />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -187,4 +187,10 @@ export const convertIdeaToTopic = (id, topicData = {}) => {
   return apiClient.post(`/api/ideas/${id}/convert-to-topic`, topicData);
 };
 
+// ==================== SEGREGATOR API ====================
+
+export const getSegregatorGroups = () => {
+  return apiClient.get('/api/segregator/groups');
+};
+
 export default apiClient;
