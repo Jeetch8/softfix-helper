@@ -1,8 +1,96 @@
-import { GoogleGenAI } from '@google/genai';
+import { VertexAI } from '@google-cloud/vertexai';
 import { uploadImageToS3 } from './s3Service.js';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-console.log('🎯 Gemini AI Service Initialized');
+const vertexAI = new VertexAI({
+  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
+  location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+});
+console.log('🎯 Vertex AI Service Initialized');
+
+const PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3-pro-preview';
+const FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3-flash-preview';
+const IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'gemini-3-pro-image-preview';
+
+/**
+ * Robust helper to extract text content from generateContent responses
+ */
+function getTextFromResponse(result) {
+  const response = result.response;
+  if (!response) return '';
+  if (typeof response.text === 'function') {
+    return response.text();
+  } else if (typeof response.text === 'string') {
+    return response.text;
+  }
+  return response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+/**
+ * Robust helper to extract inline base64 image data from generateContent responses
+ */
+function getImagePartFromResponse(result) {
+  const response = result.response;
+  const parts = response?.candidates?.[0]?.content?.parts;
+  if (!parts) return null;
+  return parts.find((p) => p.inlineData);
+}
+
+/**
+ * Helper to call Vertex AI for text generation with optional features
+ */
+async function generateText(modelName, prompt, systemInstruction = null, isJson = false, hasSearch = false) {
+  const modelConfig = {
+    model: modelName,
+  };
+
+  if (systemInstruction) {
+    modelConfig.systemInstruction = {
+      parts: [{ text: systemInstruction }]
+    };
+  }
+
+  if (hasSearch) {
+    modelConfig.tools = [{ googleSearchRetrieval: {} }];
+  }
+
+  const generationConfig = {};
+  if (isJson) {
+    generationConfig.responseMimeType = 'application/json';
+  }
+
+  if (Object.keys(generationConfig).length > 0) {
+    modelConfig.generationConfig = generationConfig;
+  }
+
+  const model = vertexAI.getGenerativeModel(modelConfig);
+
+  const request = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+  };
+
+  const result = await model.generateContent(request);
+  return getTextFromResponse(result);
+}
+
+/**
+ * Helper to call Vertex AI for image generation
+ */
+async function generateImage(modelName, prompt, temperature = 0.9) {
+  const model = vertexAI.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      temperature
+    }
+  });
+
+  const request = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+  };
+
+  const result = await model.generateContent(request);
+  const part = getImagePartFromResponse(result);
+  return part;
+}
 
 export async function generateNarrationScript(topic, description = '', keywords = '') {
   try {
@@ -52,19 +140,9 @@ The script should sound like a knowledgeable friend walking someone through a pr
     // Generate 2 variations with the same prompt
     const promises = [1, 2].map(async (i) => {
       console.log(`⏳ Generating script variation ${i}...`);
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: {
-          tools: [
-            {
-              googleSearch: {},
-            },
-          ],
-        },
-      });
+      const responseText = await generateText(PRO_MODEL, prompt, null, false, true);
       console.log(`✅ Generated script variation ${i}`);
-      return response.text;
+      return responseText;
     });
 
     const scripts = await Promise.all(promises);
@@ -110,24 +188,12 @@ export async function generateNarrationScriptVariations(
 
 Topic: "${topic}"${descriptionText}${keywordsText}`;
 
-          const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: fullPrompt,
-            config: {
-              tools: [
-                {
-                  googleSearch: {},
-                },
-              ],
-            },
-          });
-
-          const result = response.text;
+          const responseText = await generateText(PRO_MODEL, fullPrompt, null, false, true);
           console.log(`✅ Generated variation ${index + 1}/${prompts.length}`);
 
           return {
             prompt: customPrompt,
-            result: result,
+            result: responseText,
           };
         } catch (err) {
           console.error(
@@ -168,7 +234,6 @@ export async function generateThumbnailVariations(topic, title, prompts, keyword
   );
 
   try {
-    // Generate all variations in parallel (but we'll add small delays to avoid rate limits)
     const results = [];
 
     for (let i = 0; i < prompts.length; i++) {
@@ -184,18 +249,8 @@ export async function generateThumbnailVariations(topic, title, prompts, keyword
 Topic: "${topic}"
 Title: "${title}"${keywordsText}`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-image-preview',
-          contents: [{ text: fullPrompt }],
-          config: {
-            temperature: 0.9,
-          },
-        });
-
-        const part = response?.candidates?.[0]?.content?.parts?.find(
-          (p) => p.inlineData,
-        );
-        if (part) {
+        const part = await generateImage(IMAGE_MODEL, fullPrompt, 0.9);
+        if (part && part.inlineData) {
           const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
           const s3Url = await uploadImageToS3(
             imageBuffer,
@@ -282,26 +337,14 @@ export async function generateTitleVariations(
 
 Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
 
-          const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: fullPrompt,
-            config: {
-              tools: [
-                {
-                  googleSearch: {},
-                },
-              ],
-            },
-          });
-
-          const result = response.text;
+          const responseText = await generateText(FLASH_MODEL, fullPrompt, null, false, true);
           console.log(
             `✅ Generated title variation ${index + 1}/${prompts.length}`,
           );
 
           return {
             prompt: customPrompt,
-            result: result,
+            result: responseText,
           };
         } catch (err) {
           console.error(
@@ -371,13 +414,9 @@ WHAT MAKES A GOOD SOFTFIX CENTRAL TITLE:
 
 Return ONLY the 20 titles, numbered 1-20, one per line. No additional commentary.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-    });
+    const responseText = await generateText(PRO_MODEL, prompt);
 
-    const text = response.text;
-    const titles = text
+    const titles = responseText
       .split('\n')
       .filter((line) => line.trim())
       .map((line) => line.replace(/^[\d]+[\.)]\s*/, '').trim())
@@ -466,18 +505,8 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
 
         console.log(`⏳ Generating thumbnail set ${i + 1}/2...`);
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-image-preview',
-          contents: [{ text: designPrompt }],
-          config: {
-            temperature: 0.9,
-          },
-        });
-
-        const part = response?.candidates?.[0]?.content?.parts?.find(
-          (p) => p.inlineData,
-        );
-        if (part) {
+        const part = await generateImage(IMAGE_MODEL, designPrompt, 0.9);
+        if (part && part.inlineData) {
           const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
           const s3Url = await uploadImageToS3(
             imageBuffer,
@@ -590,12 +619,8 @@ TONE:
 
 Return ONLY the description text with hashtags at the end. No additional commentary, formatting markers, or explanations.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-    });
-
-    return response.text.trim();
+    const responseText = await generateText(FLASH_MODEL, prompt);
+    return responseText.trim();
   } catch (error) {
     console.error('❌ Error generating SEO description:', error.message);
     throw new Error(`Failed to generate SEO description: ${error.message}`);
@@ -689,12 +714,9 @@ Better to have 15 highly relevant tags than 25 mediocre ones. Focus on tags that
 
 Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbering, no additional text or explanation.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-    });
+    const responseText = await generateText(FLASH_MODEL, prompt);
 
-    const tags = response.text
+    const tags = responseText
       .split('\n')
       .filter((tag) => tag.trim())
       .map((tag) => tag.trim())
@@ -716,17 +738,13 @@ Keywords to filter:
 ${JSON.stringify(keywordsArray)}
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        temperature: 0.1
-      }
-    });
-
-    const text = response.text;
-    const englishKeywords = JSON.parse(text);
+    const responseText = await generateText(FLASH_MODEL, prompt, null, true);
+    
+    let cleanedText = responseText.trim();
+    if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+    }
+    const englishKeywords = JSON.parse(cleanedText);
     console.log(`✅ Filtered down to ${englishKeywords.length} English keywords.`);
     return englishKeywords;
   } catch (error) {
@@ -764,17 +782,13 @@ Keywords to segregate:
 ${JSON.stringify(keywordsWithData)}
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        temperature: 0.2
-      }
-    });
-
-    const text = response.text;
-    const groupings = JSON.parse(text);
+    const responseText = await generateText(PRO_MODEL, prompt, null, true);
+    
+    let cleanedText = responseText.trim();
+    if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+    }
+    const groupings = JSON.parse(cleanedText);
     console.log(`✅ Generated ${groupings.length} keyword groups.`);
     return groupings;
   } catch (error) {

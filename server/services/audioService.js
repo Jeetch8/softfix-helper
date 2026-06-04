@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { VertexAI } from '@google-cloud/vertexai';
 import wav from 'wav';
 import fs from 'fs';
 import path from 'path';
@@ -9,7 +9,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const vertexAI = new VertexAI({
+  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
+  location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+});
 
 /**
  * Save audio buffer to WAV file
@@ -70,21 +73,12 @@ export async function generateMP3Audio(script, topicId) {
   const tempMp3Path = path.join(tempDir, `audio_${Date.now()}.mp3`);
 
   try {
-    console.log('🎵 Generating audio using Gemini TTS...');
+    console.log('🎵 Generating audio using Gemini TTS via Vertex AI...');
 
-    // Generate audio using Gemini TTS
-    const response = await ai.models.generateContent({
+    // Generate audio using Gemini TTS via Vertex AI
+    const model = vertexAI.getGenerativeModel({
       model: 'gemini-2.5-flash-preview-tts',
-      contents: [
-        {
-          parts: [
-            {
-              text: `Read aloud in a warm, friendly, professional tone with no background noise, Professional yet approachable, Clear, precise instructions, Confident and knowledgeable tone: ${script}`,
-            },
-          ],
-        },
-      ],
-      config: {
+      generationConfig: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
@@ -94,6 +88,19 @@ export async function generateMP3Audio(script, topicId) {
       },
     });
 
+    const result = await model.generateContent({
+      contents: [
+        {
+          parts: [
+            {
+              text: `Read aloud in a warm, friendly, professional tone with no background noise, Professional yet approachable, Clear, precise instructions, Confident and knowledgeable tone: ${script}`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const response = result.response;
     const audioData =
       response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 

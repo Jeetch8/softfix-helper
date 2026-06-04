@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { GoogleGenAI } from '@google/genai';
+import { VertexAI } from '@google-cloud/vertexai';
 import wav from 'wav';
 import fs from 'fs';
 import path from 'path';
@@ -108,7 +108,7 @@ function parseArgs() {
  * Main TTS conversion function
  */
 async function main() {
-  console.log('🎵 TTS Converter - Gemini AI to MP3\n');
+  console.log('🎵 TTS Converter - Vertex AI to MP3\n');
 
   const { text, outputPath, voice } = parseArgs();
 
@@ -128,25 +128,16 @@ async function main() {
   }
 
   try {
-    console.log('🎯 Initializing Gemini AI...');
-    const ai = new GoogleGenAI({
-      apiKey:
-        process.env.GEMINI_API_KEY,
+    console.log('🎯 Initializing Vertex AI...');
+    const vertexAI = new VertexAI({
+      project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
+      location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
     });
 
-    console.log('🗣️  Converting text to speech using Gemini AI...');
-    const response = await ai.models.generateContent({
+    console.log('🗣️  Converting text to speech using Vertex AI...');
+    const model = vertexAI.getGenerativeModel({
       model: 'gemini-2.5-flash-preview-tts',
-      contents: [
-        {
-          parts: [
-            {
-              text: `Read aloud in a warm,friendly tone with no background noise and echo: ${text}`,
-            },
-          ],
-        },
-      ],
-      config: {
+      generationConfig: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
@@ -156,12 +147,25 @@ async function main() {
       },
     });
 
+    const result = await model.generateContent({
+      contents: [
+        {
+          parts: [
+            {
+              text: `Read aloud in a warm,friendly tone with no background noise and echo: ${text}`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const response = result.response;
     const data =
       response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
     if (!data) {
       throw new Error(
-        'Could not extract audio data from Gemini response. Note: Ensure your API key has audio generation permissions.',
+        'Could not extract audio data from Gemini response. Note: Ensure your GCP credentials have audio generation permissions.',
       );
     }
 
