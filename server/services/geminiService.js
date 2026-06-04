@@ -3,7 +3,7 @@ import { uploadImageToS3 } from './s3Service.js';
 
 const vertexAI = new VertexAI({
   project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-  location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+  location: "global"
 });
 console.log('🎯 Vertex AI Service Initialized');
 
