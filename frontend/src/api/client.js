@@ -193,4 +193,20 @@ export const getSegregatorGroups = () => {
   return apiClient.get('/api/segregator/groups');
 };
 
+export const uploadSegregatorFiles = (files, userId = 'default-user') => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    if (file) {
+      formData.append('files', file);
+    }
+  });
+  formData.append('userId', userId);
+
+  return apiClient.post('/api/segregator/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
 export default apiClient;
