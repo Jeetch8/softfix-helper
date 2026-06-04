@@ -39,58 +39,95 @@ function getImagePartFromResponse(result) {
  * Helper to call Vertex AI for text generation with optional features
  */
 async function generateText(modelName, prompt, systemInstruction = null, isJson = false, hasSearch = false) {
-  const modelConfig = {
-    model: modelName,
-  };
-
-  if (systemInstruction) {
-    modelConfig.systemInstruction = {
-      parts: [{ text: systemInstruction }]
+  try {
+    const modelConfig = {
+      model: modelName,
     };
+
+    if (systemInstruction) {
+      modelConfig.systemInstruction = {
+        parts: [{ text: systemInstruction }]
+      };
+    }
+
+    if (hasSearch) {
+      modelConfig.tools = [{ googleSearchRetrieval: {} }];
+    }
+
+    const generationConfig = {};
+    if (isJson) {
+      generationConfig.responseMimeType = 'application/json';
+    }
+
+    if (Object.keys(generationConfig).length > 0) {
+      modelConfig.generationConfig = generationConfig;
+    }
+
+    const model = vertexAI.getGenerativeModel(modelConfig);
+
+    const request = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    };
+
+    const result = await model.generateContent(request);
+    return getTextFromResponse(result);
+  } catch (error) {
+    console.error('❌ Error in generateText:', error.message);
+    if (error.response) {
+      try {
+        const rawBody = await error.response.text();
+        console.error('📄 Raw GCP Error Response:', rawBody);
+        const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
+        const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
+        const title = titleMatch ? titleMatch[1].trim() : '';
+        const body = bodyMatch ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ') : '';
+        throw new Error(`GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`);
+      } catch (e) {
+        throw new Error(`GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`);
+      }
+    }
+    throw error;
   }
-
-  if (hasSearch) {
-    modelConfig.tools = [{ googleSearchRetrieval: {} }];
-  }
-
-  const generationConfig = {};
-  if (isJson) {
-    generationConfig.responseMimeType = 'application/json';
-  }
-
-  if (Object.keys(generationConfig).length > 0) {
-    modelConfig.generationConfig = generationConfig;
-  }
-
-  const model = vertexAI.getGenerativeModel(modelConfig);
-
-  const request = {
-    contents: [{ role: 'user', parts: [{ text: prompt }] }]
-  };
-
-  const result = await model.generateContent(request);
-  return getTextFromResponse(result);
 }
 
 /**
  * Helper to call Vertex AI for image generation
  */
 async function generateImage(modelName, prompt, temperature = 0.9) {
-  const model = vertexAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      temperature
+  try {
+    const model = vertexAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        temperature
+      }
+    });
+
+    const request = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    };
+
+    const result = await model.generateContent(request);
+    const part = getImagePartFromResponse(result);
+    return part;
+  } catch (error) {
+    console.error('❌ Error in generateImage:', error.message);
+    if (error.response) {
+      try {
+        const rawBody = await error.response.text();
+        console.error('📄 Raw GCP Error Response:', rawBody);
+        const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
+        const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
+        const title = titleMatch ? titleMatch[1].trim() : '';
+        const body = bodyMatch ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ') : '';
+        throw new Error(`GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`);
+      } catch (e) {
+        throw new Error(`GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`);
+      }
     }
-  });
-
-  const request = {
-    contents: [{ role: 'user', parts: [{ text: prompt }] }]
-  };
-
-  const result = await model.generateContent(request);
-  const part = getImagePartFromResponse(result);
-  return part;
+    throw error;
+  }
 }
+
 
 export async function generateNarrationScript(topic, description = '', keywords = '') {
   try {
