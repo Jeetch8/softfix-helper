@@ -229,35 +229,45 @@ const KeywordsSegregator = () => {
             <p className="text-gray-400 mt-1">Upload and process files to generate groups with AI!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {groupings.map((group) => {
               const flatKeywords = group.keywords ? group.keywords.flat() : [];
               return (
-                <div key={group._id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start mb-4 gap-2">
-                      <h3 className="text-xl font-bold text-gray-800">{group.title}</h3>
-                      <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
-                        Vol: {group.total_average_volume?.toLocaleString() || 0}
-                      </span>
-                    </div>
-                    
-                    <div className="max-h-60 overflow-y-auto mb-4 border-t border-gray-50 pt-3">
+                <div key={group._id} className="flex flex-col">
+                  {/* Group Title - Separate on Top */}
+                  <div className="flex justify-between items-end mb-2 px-1">
+                    <h3 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
+                      <span className="text-indigo-500 text-lg">📁</span> {group.title}
+                    </h3>
+                    <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+                      Vol: {group.total_average_volume?.toLocaleString() || 0}
+                    </span>
+                  </div>
+                  
+                  {/* Card Container below Title */}
+                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between flex-1">
+                    <div className="max-h-72 overflow-y-auto mb-4 custom-scrollbar pr-1">
                       {flatKeywords.length === 0 ? (
                         <p className="text-gray-400 text-sm italic">No keywords in this group</p>
                       ) : (
                         <div className="flex flex-col gap-2">
                           {flatKeywords.map((kw, i) => (
-                            <div key={i} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                              <span className="text-gray-700 font-medium truncate pr-2" title={kw.keyword}>
+                            <div key={i} className="flex justify-between items-center text-sm bg-gray-50 hover:bg-gray-100 p-3 rounded-xl transition-all border border-transparent hover:border-gray-200">
+                              <span className="text-gray-700 font-semibold truncate pr-3" title={kw.keyword}>
                                 {kw.keyword}
                               </span>
                               <div className="flex gap-2 shrink-0 items-center">
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-gray-500 font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">
                                   SV: {kw.search_volume?.toLocaleString() || 0}
                                 </span>
                                 {kw.overall !== undefined && (
-                                  <span className="bg-gray-200 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${
+                                    kw.overall >= 70
+                                      ? 'bg-green-100 text-green-700'
+                                      : kw.overall >= 60
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-yellow-100 text-yellow-700'
+                                  }`}>
                                     {kw.overall}
                                   </span>
                                 )}
@@ -267,11 +277,11 @@ const KeywordsSegregator = () => {
                         </div>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="text-xs text-gray-400 border-t border-gray-100 pt-3 flex justify-between items-center">
-                    <span>{flatKeywords.length} Keywords</span>
-                    <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
+                    
+                    <div className="text-xs text-gray-400 border-t border-gray-100 pt-3 flex justify-between items-center">
+                      <span className="font-medium">{flatKeywords.length} Keywords</span>
+                      <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 </div>
               );

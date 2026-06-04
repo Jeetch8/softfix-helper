@@ -2,7 +2,7 @@ import { VertexAI } from '@google-cloud/vertexai';
 import { uploadImageToS3 } from './s3Service.js';
 
 const vertexAI = new VertexAI({
-  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
+  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
   location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
 });
 console.log('🎯 Vertex AI Service Initialized');
@@ -739,7 +739,7 @@ ${JSON.stringify(keywordsArray)}
 `;
 
     const responseText = await generateText(FLASH_MODEL, prompt, null, true);
-    
+
     let cleanedText = responseText.trim();
     if (cleanedText.startsWith('```')) {
       cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
@@ -756,7 +756,7 @@ ${JSON.stringify(keywordsArray)}
 export async function segregateKeywordsIntoGroups(keywordsWithData) {
   try {
     console.log(`🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`);
-    
+
     const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, and ids. 
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
 A keyword can be placed into multiple groups if it is appropriate.
@@ -783,7 +783,7 @@ ${JSON.stringify(keywordsWithData)}
 `;
 
     const responseText = await generateText(PRO_MODEL, prompt, null, true);
-    
+
     let cleanedText = responseText.trim();
     if (cleanedText.startsWith('```')) {
       cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
