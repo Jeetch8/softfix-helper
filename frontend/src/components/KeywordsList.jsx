@@ -3,7 +3,7 @@ import {
   getKeywords,
   getKeywordStats,
   deleteKeyword,
-  addKeywordToIdeas,
+  // addKeywordToIdeas,
   uploadKeywords,
 } from '../api/client';
 
@@ -138,6 +138,7 @@ const KeywordsList = () => {
     }
   };
 
+  /*
   const handleAddToIdeas = async (id) => {
     try {
       await addKeywordToIdeas(id);
@@ -147,6 +148,7 @@ const KeywordsList = () => {
       setError('Failed to add keyword to ideas');
     }
   };
+  */
 
   // Helper function to round decimals to 2 places
   const roundDecimal = (num) => {
@@ -458,13 +460,13 @@ const KeywordsList = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
-                            <button
+                            {/* <button
                               onClick={() => handleAddToIdeas(keyword._id)}
                               className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-colors"
                               title="Add to Ideas"
                             >
                               💡 Add
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => handleDelete(keyword._id)}
                               className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors"

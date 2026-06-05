@@ -3,7 +3,7 @@ import multer from 'multer';
 import * as XLSX from 'xlsx';
 import QuestionKeyword from '../models/QuestionKeyword.js';
 import Topic from '../models/Topic.js';
-import Idea from '../models/Idea.js';
+// import Idea from '../models/Idea.js';
 import {
     importKeywordsFromDirectory,
     importKeywordsFromFile,
@@ -486,109 +486,109 @@ router.delete('/keywords/:id', async (req, res) => {
     }
 });
 
-/**
- * POST /api/keywords/:id/add-to-ideas
- * Create an Idea from the keyword data and delete the keyword
- */
-router.post('/keywords/:id/add-to-ideas', async (req, res) => {
-    try {
-        const { id } = req.params;
+// /**
+//  * POST /api/keywords/:id/add-to-ideas
+//  * Create an Idea from the keyword data and delete the keyword
+//  */
+// router.post('/keywords/:id/add-to-ideas', async (req, res) => {
+//     try {
+//         const { id } = req.params;
 
-        const keyword = await QuestionKeyword.findById(id);
+//         const keyword = await QuestionKeyword.findById(id);
 
-        if (!keyword) {
-            return res.status(404).json({
-                success: false,
-                message: 'Keyword not found',
-            });
-        }
+//         if (!keyword) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Keyword not found',
+//             });
+//         }
 
-        // Create an Idea from the keyword data
-        const newIdea = await Idea.create({
-            title: keyword.keyword,
-            description: '',
-            competition: keyword.competition,
-            overall: keyword.overall,
-            searchVolume: keyword.searchVolume,
-            thirtyDayAgoSearches: keyword.thirtyDayAgoSearches,
-            numberOfWords: keyword.numberOfWords,
-            userId: keyword.userId || 'default-user',
-        });
+//         // Create an Idea from the keyword data
+//         const newIdea = await Idea.create({
+//             title: keyword.keyword,
+//             description: '',
+//             competition: keyword.competition,
+//             overall: keyword.overall,
+//             searchVolume: keyword.searchVolume,
+//             thirtyDayAgoSearches: keyword.thirtyDayAgoSearches,
+//             numberOfWords: keyword.numberOfWords,
+//             userId: keyword.userId || 'default-user',
+//         });
 
-        // Delete the keyword from the keywords list
-        await QuestionKeyword.findByIdAndDelete(id);
+//         // Delete the keyword from the keywords list
+//         await QuestionKeyword.findByIdAndDelete(id);
 
-        res.json({
-            success: true,
-            message: 'Keyword added to ideas and removed from keywords',
-            data: {
-                idea: newIdea,
-            },
-        });
-    } catch (error) {
-        console.error('❌ Error adding keyword to ideas:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error adding keyword to ideas',
-            error: error.message,
-        });
-    }
-});
+//         res.json({
+//             success: true,
+//             message: 'Keyword added to ideas and removed from keywords',
+//             data: {
+//                 idea: newIdea,
+//             },
+//         });
+//     } catch (error) {
+//         console.error('❌ Error adding keyword to ideas:', error.message);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Error adding keyword to ideas',
+//             error: error.message,
+//         });
+//     }
+// });
 
-/**
- * POST /api/keywords/:id/remove-from-ideas
- * Remove keyword from ideas - recreate the keyword and delete the idea
- */
-router.post('/keywords/:id/remove-from-ideas', async (req, res) => {
-    try {
-        const { ideaId } = req.body;
+// /**
+//  * POST /api/keywords/:id/remove-from-ideas
+//  * Remove keyword from ideas - recreate the keyword and delete the idea
+//  */
+// router.post('/keywords/:id/remove-from-ideas', async (req, res) => {
+//     try {
+//         const { ideaId } = req.body;
 
-        if (!ideaId) {
-            return res.status(400).json({
-                success: false,
-                message: 'ideaId is required in request body',
-            });
-        }
+//         if (!ideaId) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'ideaId is required in request body',
+//             });
+//         }
 
-        const idea = await Idea.findById(ideaId);
+//         const idea = await Idea.findById(ideaId);
 
-        if (!idea) {
-            return res.status(404).json({
-                success: false,
-                message: 'Idea not found',
-            });
-        }
+//         if (!idea) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Idea not found',
+//             });
+//         }
 
-        // Recreate the keyword from the idea data
-        const restoredKeyword = await QuestionKeyword.create({
-            keyword: idea.title,
-            competition: idea.competition,
-            overall: idea.overall || 0,
-            searchVolume: idea.searchVolume,
-            thirtyDayAgoSearches: idea.thirtyDayAgoSearches,
-            numberOfWords: idea.numberOfWords,
-            userId: idea.userId || 'default-user',
-            addedToTitle: false,
-        });
+//         // Recreate the keyword from the idea data
+//         const restoredKeyword = await QuestionKeyword.create({
+//             keyword: idea.title,
+//             competition: idea.competition,
+//             overall: idea.overall || 0,
+//             searchVolume: idea.searchVolume,
+//             thirtyDayAgoSearches: idea.thirtyDayAgoSearches,
+//             numberOfWords: idea.numberOfWords,
+//             userId: idea.userId || 'default-user',
+//             addedToTitle: false,
+//         });
 
-        // Delete the idea
-        await Idea.findByIdAndDelete(ideaId);
+//         // Delete the idea
+//         await Idea.findByIdAndDelete(ideaId);
 
-        res.json({
-            success: true,
-            message: 'Idea removed and keyword restored',
-            data: {
-                keyword: restoredKeyword,
-            },
-        });
-    } catch (error) {
-        console.error('❌ Error removing from ideas:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error removing from ideas',
-            error: error.message,
-        });
-    }
-});
+//         res.json({
+//             success: true,
+//             message: 'Idea removed and keyword restored',
+//             data: {
+//                 keyword: restoredKeyword,
+//             },
+//         });
+//     } catch (error) {
+//         console.error('❌ Error removing from ideas:', error.message);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Error removing from ideas',
+//             error: error.message,
+//         });
+//     }
+// });
 
 export default router;
