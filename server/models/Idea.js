@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+const roundDownToOneDecimal = (val) => {
+    if (val === null || val === undefined) return val;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 0;
+    return Math.floor(num * 10) / 10;
+};
+
 const ideaSchema = new mongoose.Schema(
     {
         title: {
@@ -14,10 +21,12 @@ const ideaSchema = new mongoose.Schema(
         competition: {
             type: Number,
             default: 0,
+            set: roundDownToOneDecimal,
         },
         overall: {
             type: Number,
             default: 0,
+            set: roundDownToOneDecimal,
         },
         searchVolume: {
             type: Number,

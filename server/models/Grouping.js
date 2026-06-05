@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+const roundDownToOneDecimal = (val) => {
+    if (val === null || val === undefined) return val;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 0;
+    return Math.floor(num * 10) / 10;
+};
+
 const groupingSchema = new mongoose.Schema(
     {
         title: {
@@ -23,6 +30,7 @@ const groupingSchema = new mongoose.Schema(
                 overall: {
                     type: Number,
                     default: 0,
+                    set: roundDownToOneDecimal,
                 },
             }]],
             default: [],

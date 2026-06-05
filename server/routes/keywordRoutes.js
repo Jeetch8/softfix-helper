@@ -10,6 +10,13 @@ import {
     listExcelFiles,
 } from '../services/localExcelService.js';
 
+const roundDownToOneDecimal = (val) => {
+    if (val === null || val === undefined) return val;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 0;
+    return Math.floor(num * 10) / 10;
+};
+
 const router = express.Router();
 
 // Configure multer for file upload (memory storage)
@@ -66,8 +73,8 @@ router.post('/keywords/upload', upload.array('files', 20), async (req, res) => {
                 // Map Excel columns to our schema
                 const keywordData = {
                     keyword: row['Keyword'] || row['keyword'],
-                    competition: parseFloat(row['Competition'] || row['competition']) || 0,
-                    overall: parseFloat(row['Overall'] || row['overall']) || 0,
+                    competition: roundDownToOneDecimal(row['Competition'] || row['competition']),
+                    overall: roundDownToOneDecimal(row['Overall'] || row['overall']),
                     searchVolume: parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0,
                     thirtyDayAgoSearches: parseInt(row['30d ago searches'] || row['thirtyDayAgoSearches']) || 0,
                     timestamp: parseInt(row['Timestamp'] || row['timestamp']) || null,
@@ -77,12 +84,6 @@ router.post('/keywords/upload', upload.array('files', 20), async (req, res) => {
 
                 // Skip if keyword is empty
                 if (!keywordData.keyword) {
-                    skippedKeywords++;
-                    continue;
-                }
-
-                // Only store keywords with overall score > 50
-                if (keywordData.overall <= 50) {
                     skippedKeywords++;
                     continue;
                 }
@@ -428,14 +429,6 @@ router.put('/keywords/:id', async (req, res) => {
         const { id } = req.params;
         const updates = req.body;
 
-        // Prevent updating to overall <= 50
-        if (updates.overall !== undefined && updates.overall <= 50) {
-            return res.status(400).json({
-                success: false,
-                message: 'Overall score must be greater than 50',
-            });
-        }
-
         const keyword = await QuestionKeyword.findByIdAndUpdate(id, updates, {
             new: true,
             runValidators: true,
@@ -570,7 +563,7 @@ router.post('/keywords/:id/remove-from-ideas', async (req, res) => {
         const restoredKeyword = await QuestionKeyword.create({
             keyword: idea.title,
             competition: idea.competition,
-            overall: idea.overall || 51,
+            overall: idea.overall || 0,
             searchVolume: idea.searchVolume,
             thirtyDayAgoSearches: idea.thirtyDayAgoSearches,
             numberOfWords: idea.numberOfWords,

@@ -1,36 +1,42 @@
-import { VertexAI } from '@google-cloud/vertexai';
+import { GoogleGenAI } from '@google/genai';
 import { uploadImageToS3 } from './s3Service.js';
 
-const vertexAI = new VertexAI({
+let location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+
+const ai = new GoogleGenAI({
+  vertexai: true,
   project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
   location: "global"
 });
-console.log('🎯 Vertex AI Service Initialized');
+console.log(`🎯 Vertex AI Service Initialized (using @google/genai in ${location})`);
 
-const PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3-pro-preview';
-const FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3-flash-preview';
-const IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'gemini-3-pro-image-preview';
+// const PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3-pro';
+// const FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
+// const IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'gemini-3-pro-image-preview';
+const PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview'; // Recommended GA model
+const FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash'; // Current Workhorse
+const IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001'; // Recommended Image model
+
 
 /**
  * Robust helper to extract text content from generateContent responses
  */
 function getTextFromResponse(result) {
-  const response = result.response;
-  if (!response) return '';
-  if (typeof response.text === 'function') {
-    return response.text();
-  } else if (typeof response.text === 'string') {
-    return response.text;
+  if (!result) return '';
+  if (typeof result.text === 'string') {
+    return result.text;
   }
-  return response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  if (typeof result.text === 'function') {
+    return result.text();
+  }
+  return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 /**
  * Robust helper to extract inline base64 image data from generateContent responses
  */
 function getImagePartFromResponse(result) {
-  const response = result.response;
-  const parts = response?.candidates?.[0]?.content?.parts;
+  const parts = result?.candidates?.[0]?.content?.parts;
   if (!parts) return null;
   return parts.find((p) => p.inlineData);
 }
@@ -40,42 +46,33 @@ function getImagePartFromResponse(result) {
  */
 async function generateText(modelName, prompt, systemInstruction = null, isJson = false, hasSearch = false) {
   try {
-    const modelConfig = {
-      model: modelName,
-    };
+    const config = {};
 
     if (systemInstruction) {
-      modelConfig.systemInstruction = {
-        parts: [{ text: systemInstruction }]
-      };
+      config.systemInstruction = systemInstruction;
     }
 
     if (hasSearch) {
-      modelConfig.tools = [{ googleSearchRetrieval: {} }];
+      config.tools = [{ googleSearch: {} }];
     }
 
-    const generationConfig = {};
     if (isJson) {
-      generationConfig.responseMimeType = 'application/json';
+      config.responseMimeType = 'application/json';
     }
 
-    if (Object.keys(generationConfig).length > 0) {
-      modelConfig.generationConfig = generationConfig;
-    }
-
-    const model = vertexAI.getGenerativeModel(modelConfig);
-
-    const request = {
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    };
-
-    const result = await model.generateContent(request);
+    const result = await ai.models.generateContent({
+      model: modelName,
+      contents: prompt,
+      config: config
+    });
     return getTextFromResponse(result);
   } catch (error) {
     console.error('❌ Error in generateText:', error.message);
     if (error.response) {
       try {
-        const rawBody = await error.response.text();
+        const rawBody = typeof error.response.text === 'function'
+          ? await error.response.text()
+          : (typeof error.response === 'string' ? error.response : JSON.stringify(error.response));
         console.error('📄 Raw GCP Error Response:', rawBody);
         const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
         const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
@@ -95,25 +92,22 @@ async function generateText(modelName, prompt, systemInstruction = null, isJson 
  */
 async function generateImage(modelName, prompt, temperature = 0.9) {
   try {
-    const model = vertexAI.getGenerativeModel({
+    const result = await ai.models.generateContent({
       model: modelName,
-      generationConfig: {
+      contents: prompt,
+      config: {
         temperature
       }
     });
-
-    const request = {
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    };
-
-    const result = await model.generateContent(request);
     const part = getImagePartFromResponse(result);
     return part;
   } catch (error) {
     console.error('❌ Error in generateImage:', error.message);
     if (error.response) {
       try {
-        const rawBody = await error.response.text();
+        const rawBody = typeof error.response.text === 'function'
+          ? await error.response.text()
+          : (typeof error.response === 'string' ? error.response : JSON.stringify(error.response));
         console.error('📄 Raw GCP Error Response:', rawBody);
         const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
         const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
@@ -792,6 +786,7 @@ ${JSON.stringify(keywordsArray)}
 
 export async function segregateKeywordsIntoGroups(keywordsWithData) {
   try {
+    console.log(keywordsWithData)
     console.log(`🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`);
 
     const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, and ids. 
@@ -819,7 +814,7 @@ Keywords to segregate:
 ${JSON.stringify(keywordsWithData)}
 `;
 
-    const responseText = await generateText(PRO_MODEL, prompt, null, true);
+    const responseText = await generateText(FLASH_MODEL, prompt, null, true);
 
     let cleanedText = responseText.trim();
     if (cleanedText.startsWith('```')) {

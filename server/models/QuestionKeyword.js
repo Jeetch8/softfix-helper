@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+const roundDownToOneDecimal = (val) => {
+    if (val === null || val === undefined) return val;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 0;
+    return Math.floor(num * 10) / 10;
+};
+
 const questionKeywordSchema = new mongoose.Schema(
     {
         keyword: {
@@ -10,11 +17,13 @@ const questionKeywordSchema = new mongoose.Schema(
         competition: {
             type: Number,
             default: 0,
+            set: roundDownToOneDecimal,
         },
         overall: {
             type: Number,
             required: true,
-            min: 50, // Only keywords with overall > 50 are stored
+            default: 0,
+            set: roundDownToOneDecimal,
         },
         searchVolume: {
             type: Number,

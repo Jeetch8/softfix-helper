@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { VertexAI } from '@google-cloud/vertexai';
+import { GoogleGenAI } from '@google/genai';
 import wav from 'wav';
 import fs from 'fs';
 import path from 'path';
@@ -129,15 +129,17 @@ async function main() {
 
   try {
     console.log('🎯 Initializing Vertex AI...');
-    const vertexAI = new VertexAI({
+    const ai = new GoogleGenAI({
+      vertexai: true,
       project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
-      location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+      location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'global'
     });
 
     console.log('🗣️  Converting text to speech using Vertex AI...');
-    const model = vertexAI.getGenerativeModel({
+    const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash-preview-tts',
-      generationConfig: {
+      contents: `Read aloud in a warm,friendly tone with no background noise and echo: ${text}`,
+      config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
@@ -147,21 +149,8 @@ async function main() {
       },
     });
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          parts: [
-            {
-              text: `Read aloud in a warm,friendly tone with no background noise and echo: ${text}`,
-            },
-          ],
-        },
-      ],
-    });
-
-    const response = result.response;
     const data =
-      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
     if (!data) {
       throw new Error(

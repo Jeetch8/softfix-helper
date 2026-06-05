@@ -193,6 +193,18 @@ export const getSegregatorGroups = () => {
   return apiClient.get('/api/segregator/groups');
 };
 
+export const createSegregatorGroup = (title, userId = 'default-user') => {
+  return apiClient.post('/api/segregator/groups', { title, userId });
+};
+
+export const deleteSegregatorGroup = (id) => {
+  return apiClient.delete(`/api/segregator/groups/${id}`);
+};
+
+export const flushSegregatorGroups = () => {
+  return apiClient.delete('/api/segregator/groups');
+};
+
 export const uploadSegregatorFiles = (files, userId = 'default-user') => {
   const formData = new FormData();
   files.forEach((file) => {

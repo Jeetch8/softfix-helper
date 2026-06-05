@@ -3,6 +3,13 @@ import path from 'path';
 import * as XLSX from 'xlsx';
 import QuestionKeyword from '../models/QuestionKeyword.js';
 
+const roundDownToOneDecimal = (val) => {
+    if (val === null || val === undefined) return val;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 0;
+    return Math.floor(num * 10) / 10;
+};
+
 /**
  * Local Excel File Service
  * Reads Excel files from local filesystem and imports keywords to database
@@ -55,8 +62,8 @@ export function parseExcelFile(filePath) {
 export function mapRowToKeyword(row, userId = 'default-user') {
     return {
         keyword: row['Keyword'] || row['keyword'],
-        competition: parseFloat(row['Competition'] || row['competition']) || 0,
-        overall: parseFloat(row['Overall'] || row['overall']) || 0,
+        competition: roundDownToOneDecimal(row['Competition'] || row['competition']),
+        overall: roundDownToOneDecimal(row['Overall'] || row['overall']),
         searchVolume: parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0,
         thirtyDayAgoSearches: parseInt(row['30d ago searches'] || row['thirtyDayAgoSearches']) || 0,
         timestamp: parseInt(row['Timestamp'] || row['timestamp']) || null,
@@ -91,12 +98,6 @@ export async function importKeywordsFromFile(filePath, userId = 'default-user') 
 
             // Skip if keyword is empty
             if (!keywordData.keyword) {
-                stats.skippedKeywords++;
-                continue;
-            }
-
-            // Only store keywords with overall score > 50
-            if (keywordData.overall <= 50) {
                 stats.skippedKeywords++;
                 continue;
             }

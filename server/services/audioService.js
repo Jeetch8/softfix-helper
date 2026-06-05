@@ -1,4 +1,4 @@
-import { VertexAI } from '@google-cloud/vertexai';
+import { GoogleGenAI } from '@google/genai';
 import wav from 'wav';
 import fs from 'fs';
 import path from 'path';
@@ -9,9 +9,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const vertexAI = new VertexAI({
-  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
-  location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+const ai = new GoogleGenAI({
+  vertexai: true,
+  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
+  location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'global'
 });
 
 /**
@@ -76,9 +77,10 @@ export async function generateMP3Audio(script, topicId) {
     console.log('🎵 Generating audio using Gemini TTS via Vertex AI...');
 
     // Generate audio using Gemini TTS via Vertex AI
-    const model = vertexAI.getGenerativeModel({
+    const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash-preview-tts',
-      generationConfig: {
+      contents: `Read aloud in a warm, friendly, professional tone with no background noise, Professional yet approachable, Clear, precise instructions, Confident and knowledgeable tone: ${script}`,
+      config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
@@ -88,21 +90,8 @@ export async function generateMP3Audio(script, topicId) {
       },
     });
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          parts: [
-            {
-              text: `Read aloud in a warm, friendly, professional tone with no background noise, Professional yet approachable, Clear, precise instructions, Confident and knowledgeable tone: ${script}`,
-            },
-          ],
-        },
-      ],
-    });
-
-    const response = result.response;
     const audioData =
-      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
     if (!audioData) {
       throw new Error('Could not extract audio data from Gemini response');
