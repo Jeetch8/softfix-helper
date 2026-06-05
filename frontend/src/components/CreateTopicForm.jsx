@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
-import { createTopic } from '../api/client';
+import React, { useState, useEffect } from 'react';
+import { createTopic, getSegregatorGroups } from '../api/client';
 
 const CreateTopicForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     topicName: '',
     description: '',
-    keywords: '',
     userId: 'default-user',
   });
+  const [groupings, setGroupings] = useState([]);
+  const [selectedGroupingId, setSelectedGroupingId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchGroupings = async () => {
+      try {
+        const response = await getSegregatorGroups();
+        setGroupings(response.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch groupings:', err);
+      }
+    };
+    fetchGroupings();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,6 +33,11 @@ const CreateTopicForm = ({ onSuccess }) => {
     }));
   };
 
+  const selectedGrouping = groupings.find(g => g._id === selectedGroupingId);
+  const keywordsList = selectedGrouping && selectedGrouping.keywords && selectedGrouping.keywords.length > 0
+    ? selectedGrouping.keywords.flat()
+    : [];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -27,9 +45,19 @@ const CreateTopicForm = ({ onSuccess }) => {
     setSuccess(false);
 
     try {
-      await createTopic(formData);
+      const formattedKeywords = keywordsList
+        .map(kw => `${kw.keyword} | ${kw.search_volume}`)
+        .join(', ');
+
+      const submitData = {
+        ...formData,
+        keywords: formattedKeywords
+      };
+
+      await createTopic(submitData);
       setSuccess(true);
-      setFormData({ topicName: '', description: '', keywords: '', userId: 'default-user' });
+      setFormData({ topicName: '', description: '', userId: 'default-user' });
+      setSelectedGroupingId('');
 
       // Call parent callback to refresh list
       if (onSuccess) {
@@ -95,16 +123,45 @@ const CreateTopicForm = ({ onSuccess }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Keywords (comma separated)
+            Keyword Grouping
           </label>
-          <textarea
-            name="keywords"
-            value={formData.keywords}
-            onChange={handleChange}
-            placeholder="e.g., AI, future, technology, machine learning"
-            rows="2"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
+          <select
+            value={selectedGroupingId}
+            onChange={(e) => setSelectedGroupingId(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">Select a grouping...</option>
+            {groupings.map((g) => (
+              <option key={g._id} value={g._id}>
+                {g.title} ({g.total_average_volume} avg vol)
+              </option>
+            ))}
+          </select>
+
+          {keywordsList.length > 0 && (
+            <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50 text-left sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 font-medium text-gray-500">Keyword</th>
+                    <th className="px-3 py-2 font-medium text-gray-500">Overall</th>
+                    <th className="px-3 py-2 font-medium text-gray-500">Volume</th>
+                    <th className="px-3 py-2 font-medium text-gray-500">Comp.</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {keywordsList.map((kw, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-gray-900 font-medium">{kw.keyword}</td>
+                      <td className="px-3 py-2 text-gray-600">{kw.overall}</td>
+                      <td className="px-3 py-2 text-gray-600">{kw.search_volume}</td>
+                      <td className="px-3 py-2 text-gray-600">{kw.competition}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div>

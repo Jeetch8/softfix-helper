@@ -128,12 +128,18 @@ async function main() {
   }
 
   try {
-    console.log('🎯 Initializing Vertex AI...');
-    const ai = new GoogleGenAI({
-      vertexai: true,
-      project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
-      location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'global'
-    });
+    let ai;
+    if (process.env.GEMINI_API_KEY) {
+      console.log('🎯 Initializing Google AI Studio (Gemini API)...');
+      ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    } else {
+      console.log('🎯 Initializing Vertex AI...');
+      ai = new GoogleGenAI({
+        vertexai: true,
+        project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
+        location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'global'
+      });
+    }
 
     console.log('🗣️  Converting text to speech using Vertex AI...');
     const result = await ai.models.generateContent({

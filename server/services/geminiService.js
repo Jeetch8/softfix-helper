@@ -1,21 +1,29 @@
 import { GoogleGenAI } from '@google/genai';
 import { uploadImageToS3 } from './s3Service.js';
 
-let location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+let ai;
+let PRO_MODEL;
+let FLASH_MODEL;
+let IMAGE_MODEL;
 
-const ai = new GoogleGenAI({
-  vertexai: true,
-  project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-  location: "global"
-});
-console.log(`🎯 Vertex AI Service Initialized (using @google/genai in ${location})`);
-
-// const PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3-pro';
-// const FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
-// const IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'gemini-3-pro-image-preview';
-const PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview'; // Recommended GA model
-const FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash'; // Current Workhorse
-const IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001'; // Recommended Image model
+if (process.env.GEMINI_API_KEY) {
+  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-2.5-pro';
+  FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-2.5-flash';
+  IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-002';
+  console.log(`🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)`);
+} else {
+  let location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+  ai = new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
+    location: "global"
+  });
+  PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
+  FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
+  IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
+  console.log(`🎯 Vertex AI Service Initialized (using @google/genai in ${location})`);
+}
 
 
 /**
@@ -128,7 +136,7 @@ export async function generateNarrationScript(topic, description = '', keywords 
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to naturally incorporate these keywords into the script.` : '';
+    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
     const prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
 
 SCRIPT STRUCTURE:
@@ -214,7 +222,7 @@ export async function generateNarrationScriptVariations(
           const descriptionText = description
             ? `\n\nAdditional context: ${description}`
             : '';
-          const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to naturally incorporate these keywords into the script.` : '';
+          const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
           const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"${descriptionText}${keywordsText}`;
@@ -274,7 +282,7 @@ export async function generateThumbnailVariations(topic, title, prompts, keyword
         );
 
         const customPrompt = prompts[i];
-        const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+        const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}` : '';
         const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"
@@ -363,7 +371,7 @@ export async function generateTitleVariations(
           const scriptText = narrationScript
             ? `\n\nScript Summary: ${narrationScript.substring(0, 500)}...`
             : '';
-          const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate.` : '';
+          const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate, prioritizing those with higher search volume.` : '';
           const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
@@ -399,10 +407,55 @@ Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
 
 export async function generateYouTubeTitles(topic, script, description = '', keywords = '') {
   try {
+    let titleStr = "";
+    if (keywords) {
+      const kwList = keywords.split(',').map(k => {
+        const parts = k.split('|');
+        return {
+          keyword: parts[0]?.trim(),
+          volume: parseInt(parts[1]?.trim()) || 0
+        };
+      }).filter(k => k.keyword);
+      
+      kwList.sort((a, b) => b.volume - a.volume);
+      
+      const titleParts = [];
+      let currentLen = 0;
+      
+      for (const kw of kwList) {
+        const capitalized = kw.keyword.split(' ')
+          .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
+          .join(' ');
+          
+        const partLen = capitalized.length;
+        if (currentLen === 0) {
+          if (partLen > 100) {
+             titleParts.push(capitalized.substring(0, 100));
+             break;
+          }
+          titleParts.push(capitalized);
+          currentLen += partLen;
+        } else {
+          if (currentLen + 3 + partLen <= 100) {
+            titleParts.push(capitalized);
+            currentLen += 3 + partLen;
+          } else {
+            break;
+          }
+        }
+      }
+      
+      titleStr = titleParts.join(' | ');
+    }
+
+    if (titleStr) {
+      return [titleStr];
+    }
+
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate.` : '';
+    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate, prioritizing those with higher search volume.` : '';
     const prompt = `You are a title creator for "Softfix Central," a YouTube channel known for straightforward, efficient tech tutorials. Generate exactly 20 optimized video titles based on:
 
 Topic: "${topic}"${descriptionText}${keywordsText}
@@ -467,7 +520,7 @@ export async function generateYouTubeThumbnails(topic, title, script, keywords =
 
     for (let i = 0; i < 2; i++) {
       try {
-        const keywordsText = keywords ? `\nKeywords: ${keywords}` : '';
+        const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}` : '';
         const designPrompt = `You are a thumbnail designer for "Softfix Central," a YouTube channel known for clear, professional tech tutorials. Create a single high-quality image containing a 3x3 grid of 9 distinct thumbnail variations for:
 
 Topic: "${topic.topicName}"
@@ -569,7 +622,7 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
 
 export async function generateSEODescription(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include MOST of these keywords naturally throughout the description for SEO optimization.` : '';
+    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to explicitly include MOST of these keywords naturally throughout the description for SEO optimization, prioritizing those with higher search volume.` : '';
     const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
 Topic: "${topic}"
@@ -660,7 +713,7 @@ Return ONLY the description text with hashtags at the end. No additional comment
 
 export async function generateTags(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords: ${keywords}\nMake sure to explicitly include any of these keywords that were NOT used in the video description in your final list of tags.` : '';
+    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to explicitly include any of these keywords that were NOT used in the video description in your final list of tags, prioritizing those with higher search volume.` : '';
     const prompt = `You are a tag strategist for "Softfix Central," a tech tutorial YouTube channel. Generate 15-25 highly targeted tags for:
 
 Topic: "${topic}"

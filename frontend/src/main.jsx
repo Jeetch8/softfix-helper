@@ -5,7 +5,6 @@ import './index.css';
 import TopicsList from './components/TopicsList';
 import TopicPage from './components/TopicPage';
 import KeywordsList from './components/KeywordsList';
-import IdeasList from './components/IdeasList';
 import KeywordsSegregator from './components/KeywordsSegregator';
 import GroupingsGroupDetail from './components/GroupingsGroupDetail';
 
@@ -13,9 +12,8 @@ import GroupingsGroupDetail from './components/GroupingsGroupDetail';
 function App() {
   const currentPath = window.location.pathname;
   const initialTab = currentPath.includes('/segregator') ? 'segregator'
-                   : currentPath.includes('/keywords') ? 'keywords' 
-                   : currentPath.includes('/ideas') ? 'ideas'
-                   : 'topics';
+    : currentPath.includes('/keywords') ? 'keywords'
+      : 'topics';
   const [activeTab, setActiveTab] = React.useState(initialTab);
 
   return (
@@ -29,11 +27,10 @@ function App() {
                 setActiveTab('topics');
                 window.location.href = '/';
               }}
-              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${
-                activeTab === 'topics'
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${activeTab === 'topics'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               🎬 Topics
             </button>
@@ -42,15 +39,14 @@ function App() {
                 setActiveTab('keywords');
                 window.location.href = '/keywords';
               }}
-              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${
-                activeTab === 'keywords'
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${activeTab === 'keywords'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               🔑 Keywords
             </button>
-            <button
+            {/* <button
               onClick={() => {
                 setActiveTab('ideas');
                 window.location.href = '/ideas';
@@ -62,17 +58,16 @@ function App() {
               }`}
             >
               💡 Ideas
-            </button>
+            </button> */}
             <button
               onClick={() => {
                 setActiveTab('segregator');
                 window.location.href = '/segregator';
               }}
-              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${
-                activeTab === 'segregator'
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${activeTab === 'segregator'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               🗂️ Keyword Segregator
             </button>
@@ -86,7 +81,7 @@ function App() {
         <Route path="/topics" element={<TopicsList />} />
         <Route path="/topics/:topicId" element={<TopicPage />} />
         <Route path="/keywords" element={<KeywordsList />} />
-        <Route path="/ideas" element={<IdeasList />} />
+        {/* <Route path="/ideas" element={<IdeasList />} /> */}
         <Route path="/segregator" element={<KeywordsSegregator />} />
         <Route path="/segregator/groups/:groupingsGroupId" element={<GroupingsGroupDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
