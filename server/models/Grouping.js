@@ -32,6 +32,11 @@ const groupingSchema = new mongoose.Schema(
                     default: 0,
                     set: roundDownToOneDecimal,
                 },
+                competition: {
+                    type: Number,
+                    default: 0,
+                    set: roundDownToOneDecimal,
+                },
             }]],
             default: [],
         },

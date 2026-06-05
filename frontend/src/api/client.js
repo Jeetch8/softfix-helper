@@ -205,6 +205,10 @@ export const flushSegregatorGroups = () => {
   return apiClient.delete('/api/segregator/groups');
 };
 
+export const updateSegregatorKeywordGroups = (keyword, targetGroupIds, userId = 'default-user') => {
+  return apiClient.put('/api/segregator/groups/keyword', { keyword, targetGroupIds, userId });
+};
+
 export const uploadSegregatorFiles = (files, userId = 'default-user') => {
   const formData = new FormData();
   files.forEach((file) => {

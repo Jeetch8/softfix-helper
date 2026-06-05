@@ -140,6 +140,49 @@ router.get('/segregator/groups', async (req, res) => {
 });
 
 /**
+ * PUT /api/segregator/groups/keyword
+ * Update a keyword's group assignments
+ */
+router.put('/segregator/groups/keyword', async (req, res) => {
+    try {
+        const { keyword, targetGroupIds, userId = 'default-user' } = req.body;
+        if (!keyword || !keyword.id || !Array.isArray(targetGroupIds)) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+
+        const allGroups = await Grouping.find({ userId });
+        
+        for (const group of allGroups) {
+            const flatKeywords = group.keywords ? group.keywords.flat() : [];
+            const hasKeyword = flatKeywords.some(kw => kw.id === keyword.id || kw._id?.toString() === keyword.id);
+            const shouldHaveKeyword = targetGroupIds.includes(group._id.toString());
+            
+            let changed = false;
+            let newKeywords = [...flatKeywords];
+
+            if (shouldHaveKeyword && !hasKeyword) {
+                newKeywords.push(keyword);
+                changed = true;
+            } else if (!shouldHaveKeyword && hasKeyword) {
+                newKeywords = newKeywords.filter(kw => kw.id !== keyword.id && kw._id?.toString() !== keyword.id);
+                changed = true;
+            }
+
+            if (changed) {
+                group.keywords = [newKeywords];
+                group.total_average_volume = newKeywords.reduce((sum, kw) => sum + (Number(kw.search_volume) || 0), 0);
+                await group.save();
+            }
+        }
+
+        res.json({ success: true, message: 'Keyword groups updated successfully' });
+    } catch (error) {
+        console.error('❌ Error updating keyword groups:', error.message);
+        res.status(500).json({ success: false, message: 'Error updating keyword groups', error: error.message });
+    }
+});
+
+/**
  * POST /api/segregator/upload
  * Upload files, filter, and segregate keywords
  */

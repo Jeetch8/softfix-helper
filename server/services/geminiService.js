@@ -789,11 +789,11 @@ export async function segregateKeywordsIntoGroups(keywordsWithData) {
     console.log(keywordsWithData)
     console.log(`🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`);
 
-    const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, and ids. 
+    const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, competition scores, and ids. 
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
 A keyword can be placed into multiple groups if it is appropriate.
 
-Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain "id", "keyword", "search_volume", and "overall". It can also contain other properties if provided.
+Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain "id", "keyword", "search_volume", "overall", and "competition".
 
 Example Output Format:
 [
@@ -804,7 +804,8 @@ Example Output Format:
         "id": "123456789",
         "keyword": "how to fix bluetooth on windows 11",
         "search_volume": 6000,
-        "overall": 65
+        "overall": 65,
+        "competition": 25.4
       }
     ]
   }

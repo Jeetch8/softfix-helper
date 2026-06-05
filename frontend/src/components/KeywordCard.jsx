@@ -13,6 +13,19 @@ const KeywordCard = ({ keyword, onEdit, onDelete, onAddToTitle, onRemoveFromTitl
     return 'text-red-600';
   };
 
+  const formatSearchVolume = (volume) => {
+    if (!volume || volume === 0) return '0';
+    if (volume >= 1000000) {
+      const val = volume / 1000000;
+      return `${val % 1 === 0 ? val : val.toFixed(1)}M`;
+    }
+    if (volume >= 1000) {
+      const val = volume / 1000;
+      return `${val % 1 === 0 ? val : val.toFixed(1)}K`;
+    }
+    return volume.toString();
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-5 border border-gray-100">
       {/* Header */}
@@ -41,8 +54,8 @@ const KeywordCard = ({ keyword, onEdit, onDelete, onAddToTitle, onRemoveFromTitl
           <p className="text-xs text-gray-500 mt-1">Overall</p>
         </div>
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 text-center">
-          <p className="text-xl font-bold text-blue-600">
-            {keyword.searchVolume?.toLocaleString() || 0}
+          <p className="text-xl font-bold text-blue-600" title={keyword.searchVolume?.toLocaleString() || '0'}>
+            {formatSearchVolume(keyword.searchVolume)}
           </p>
           <p className="text-xs text-gray-500 mt-1">Search Vol</p>
         </div>
