@@ -201,6 +201,10 @@ export const deleteSegregatorGroup = (id) => {
   return apiClient.delete(`/api/segregator/groups/${id}`);
 };
 
+export const updateSegregatorGroup = (id, title) => {
+  return apiClient.put(`/api/segregator/groups/${id}`, { title });
+};
+
 export const flushSegregatorGroups = () => {
   return apiClient.delete('/api/segregator/groups');
 };

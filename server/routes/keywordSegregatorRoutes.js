@@ -113,6 +113,35 @@ router.delete('/segregator/groups/:id', async (req, res) => {
 });
 
 /**
+ * PUT /api/segregator/groups/:id
+ * Updates a specific group's title
+ */
+router.put('/segregator/groups/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title } = req.body;
+        if (!title) {
+            return res.status(400).json({ success: false, message: 'Title is required' });
+        }
+
+        const updatedGroup = await Grouping.findByIdAndUpdate(
+            id,
+            { title },
+            { new: true }
+        );
+
+        if (!updatedGroup) {
+            return res.status(404).json({ success: false, message: 'Group not found' });
+        }
+
+        res.json({ success: true, message: 'Group title updated successfully', data: updatedGroup });
+    } catch (error) {
+        console.error('❌ Error updating group:', error.message);
+        res.status(500).json({ success: false, message: 'Error updating group', error: error.message });
+    }
+});
+
+/**
  * GET /api/segregator/groups
  * Returns all groups and their keywords
  */

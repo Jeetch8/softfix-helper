@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSegregatorGroups, uploadSegregatorFiles, createSegregatorGroup, deleteSegregatorGroup, flushSegregatorGroups, updateSegregatorKeywordGroups } from '../api/client';
+import { getSegregatorGroups, uploadSegregatorFiles, createSegregatorGroup, deleteSegregatorGroup, flushSegregatorGroups, updateSegregatorKeywordGroups, updateSegregatorGroup } from '../api/client';
 
 const KeywordsSegregator = () => {
   const [file1, setFile1] = useState(null);
@@ -12,6 +12,8 @@ const KeywordsSegregator = () => {
   const [sortConfig, setSortConfig] = useState({}); // { [groupId]: { key: 'search_volume', direction: 'desc' } }
   const [activeDropdownKeywordId, setActiveDropdownKeywordId] = useState(null);
   const [dropdownGroupSelections, setDropdownGroupSelections] = useState({});
+  const [editingGroupId, setEditingGroupId] = useState(null);
+  const [editTitleText, setEditTitleText] = useState('');
 
   // Format search volume as abstract notation (e.g. 1.2K, 5M)
   const formatSearchVolume = (volume) => {
@@ -175,6 +177,33 @@ const KeywordsSegregator = () => {
     } catch (err) {
       console.error('Error deleting group:', err);
       setError(err.response?.data?.message || err.message || 'Failed to delete group.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleStartEditGroup = (group) => {
+    setEditingGroupId(group._id);
+    setEditTitleText(group.title);
+  };
+
+  const handleCancelEditGroup = () => {
+    setEditingGroupId(null);
+    setEditTitleText('');
+  };
+
+  const handleSaveGroupTitle = async (id) => {
+    if (!editTitleText.trim()) return;
+    try {
+      setProcessing(true);
+      await updateSegregatorGroup(id, editTitleText.trim());
+      setSuccess('Group title updated successfully!');
+      setEditingGroupId(null);
+      setEditTitleText('');
+      await fetchGroups();
+    } catch (err) {
+      console.error('Error updating group title:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to update group title.');
     } finally {
       setProcessing(false);
     }
@@ -430,18 +459,56 @@ const KeywordsSegregator = () => {
                   
                   {/* Group Title Area - Inside Card */}
                   <div className="bg-gray-50 border-b border-gray-200 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
-                        <span className="text-indigo-500 text-xl">📁</span> {group.title}
-                      </h3>
-                      <button 
-                        onClick={() => handleDeleteGroup(group._id, group.title)}
-                        disabled={processing}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                        title="Delete Group"
-                      >
-                        🗑️
-                      </button>
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                      <span className="text-indigo-500 text-xl">📁</span>
+                      {editingGroupId === group._id ? (
+                        <div className="flex items-center gap-2 flex-grow">
+                          <input
+                            type="text"
+                            value={editTitleText}
+                            onChange={(e) => setEditTitleText(e.target.value)}
+                            className="px-2 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleSaveGroupTitle(group._id)}
+                            disabled={processing}
+                            className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded-md font-bold text-sm transition-colors flex items-center justify-center"
+                            title="Save Title"
+                          >
+                            💾
+                          </button>
+                          <button
+                            onClick={handleCancelEditGroup}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-md font-bold text-sm transition-colors flex items-center justify-center"
+                            title="Cancel"
+                          >
+                            ❌
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-gray-800 tracking-tight">
+                            {group.title}
+                          </h3>
+                          <button
+                            onClick={() => handleStartEditGroup(group)}
+                            disabled={processing}
+                            className="text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-md hover:bg-indigo-50"
+                            title="Edit Group Title"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteGroup(group._id, group.title)}
+                            disabled={processing}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                            title="Delete Group"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex flex-wrap gap-3">
