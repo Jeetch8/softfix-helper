@@ -793,7 +793,7 @@ export async function segregateKeywordsIntoGroups(keywordsWithData) {
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
 A keyword can be placed into multiple groups if it is appropriate.
 
-Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain "id", "keyword", "search_volume", "overall", and "competition".
+Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain ONLY the "id" of the keyword. Do NOT include keyword text, search_volume, overall, or competition in the output keywords list.
 
 Example Output Format:
 [
@@ -801,11 +801,7 @@ Example Output Format:
     "title": "Bluetooth Connection Issues",
     "keywords": [
       {
-        "id": "123456789",
-        "keyword": "how to fix bluetooth on windows 11",
-        "search_volume": 6000,
-        "overall": 65,
-        "competition": 25.4
+        "id": "123456789"
       }
     ]
   }

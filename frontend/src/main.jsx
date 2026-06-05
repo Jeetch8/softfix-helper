@@ -7,13 +7,14 @@ import TopicPage from './components/TopicPage';
 import KeywordsList from './components/KeywordsList';
 import IdeasList from './components/IdeasList';
 import KeywordsSegregator from './components/KeywordsSegregator';
+import GroupingsGroupDetail from './components/GroupingsGroupDetail';
 
 // Main App Component with Navigation
 function App() {
   const currentPath = window.location.pathname;
-  const initialTab = currentPath.includes('/keywords') ? 'keywords' 
+  const initialTab = currentPath.includes('/segregator') ? 'segregator'
+                   : currentPath.includes('/keywords') ? 'keywords' 
                    : currentPath.includes('/ideas') ? 'ideas'
-                   : currentPath.includes('/segregator') ? 'segregator'
                    : 'topics';
   const [activeTab, setActiveTab] = React.useState(initialTab);
 
@@ -87,6 +88,7 @@ function App() {
         <Route path="/keywords" element={<KeywordsList />} />
         <Route path="/ideas" element={<IdeasList />} />
         <Route path="/segregator" element={<KeywordsSegregator />} />
+        <Route path="/segregator/groups/:groupingsGroupId" element={<GroupingsGroupDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

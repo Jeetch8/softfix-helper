@@ -189,12 +189,32 @@ export const convertIdeaToTopic = (id, topicData = {}) => {
 
 // ==================== SEGREGATOR API ====================
 
-export const getSegregatorGroups = () => {
-  return apiClient.get('/api/segregator/groups');
+export const getGroupingsGroups = () => {
+  return apiClient.get('/api/segregator/groupings-groups');
 };
 
-export const createSegregatorGroup = (title, userId = 'default-user') => {
-  return apiClient.post('/api/segregator/groups', { title, userId });
+export const getGroupingsGroup = (id) => {
+  return apiClient.get(`/api/segregator/groupings-groups/${id}`);
+};
+
+export const updateGroupingsGroup = (id, title) => {
+  return apiClient.put(`/api/segregator/groupings-groups/${id}`, { title });
+};
+
+export const deleteGroupingsGroup = (id) => {
+  return apiClient.delete(`/api/segregator/groupings-groups/${id}`);
+};
+
+export const flushGroupingsGroups = () => {
+  return apiClient.delete('/api/segregator/groupings-groups');
+};
+
+export const getSegregatorGroups = (groupingsGroupId) => {
+  return apiClient.get('/api/segregator/groups', { params: { groupingsGroupId } });
+};
+
+export const createSegregatorGroup = (title, groupingsGroupId, userId = 'default-user') => {
+  return apiClient.post('/api/segregator/groups', { title, groupingsGroupId, userId });
 };
 
 export const deleteSegregatorGroup = (id) => {
@@ -209,11 +229,11 @@ export const flushSegregatorGroups = () => {
   return apiClient.delete('/api/segregator/groups');
 };
 
-export const updateSegregatorKeywordGroups = (keyword, targetGroupIds, userId = 'default-user') => {
-  return apiClient.put('/api/segregator/groups/keyword', { keyword, targetGroupIds, userId });
+export const updateSegregatorKeywordGroups = (keyword, targetGroupIds, groupingsGroupId, userId = 'default-user') => {
+  return apiClient.put('/api/segregator/groups/keyword', { keyword, targetGroupIds, groupingsGroupId, userId });
 };
 
-export const uploadSegregatorFiles = (files, userId = 'default-user') => {
+export const uploadSegregatorFiles = (files, groupingsGroupTitle, userId = 'default-user') => {
   const formData = new FormData();
   files.forEach((file) => {
     if (file) {
@@ -221,6 +241,7 @@ export const uploadSegregatorFiles = (files, userId = 'default-user') => {
     }
   });
   formData.append('userId', userId);
+  formData.append('groupingsGroupTitle', groupingsGroupTitle);
 
   return apiClient.post('/api/segregator/upload', formData, {
     headers: {

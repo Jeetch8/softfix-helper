@@ -48,6 +48,10 @@ const groupingSchema = new mongoose.Schema(
             type: String,
             default: 'default-user',
         },
+        groupingsGroupId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'GroupingsGroup',
+        },
     },
     {
         timestamps: true,

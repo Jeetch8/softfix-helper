@@ -3,6 +3,7 @@ import multer from 'multer';
 import * as XLSX from 'xlsx';
 import QuestionKeyword from '../models/QuestionKeyword.js';
 import Grouping from '../models/Grouping.js';
+import GroupingsGroup from '../models/GroupingsGroup.js';
 import { filterNonEnglishKeywords, segregateKeywordsIntoGroups } from '../services/geminiService.js';
 
 const roundDownToOneDecimal = (val) => {
@@ -51,7 +52,7 @@ router.delete('/segregator/groups', async (req, res) => {
  */
 router.post('/segregator/groups', async (req, res) => {
     try {
-        const { title, userId = 'default-user' } = req.body;
+        const { title, groupingsGroupId, userId = 'default-user' } = req.body;
         if (!title) {
             return res.status(400).json({ success: false, message: 'Title is required' });
         }
@@ -60,8 +61,15 @@ router.post('/segregator/groups', async (req, res) => {
             title,
             keywords: [],
             total_average_volume: 0,
-            userId
+            userId,
+            groupingsGroupId
         });
+
+        if (groupingsGroupId) {
+            await GroupingsGroup.findByIdAndUpdate(groupingsGroupId, {
+                $inc: { numberOfGroups: 1 }
+            });
+        }
         
         res.json({ success: true, message: 'Group created successfully', data: newGroup });
     } catch (error) {
@@ -86,8 +94,12 @@ router.delete('/segregator/groups/:id', async (req, res) => {
         const flatKeywords = groupToDelete.keywords ? groupToDelete.keywords.flat() : [];
         
         if (flatKeywords.length > 0) {
-            // Find another group to move keywords to
-            const otherGroups = await Grouping.find({ _id: { $ne: id } });
+            // Find another group to move keywords to within the same groupings group
+            const query = { _id: { $ne: id } };
+            if (groupToDelete.groupingsGroupId) {
+                query.groupingsGroupId = groupToDelete.groupingsGroupId;
+            }
+            const otherGroups = await Grouping.find(query);
             
             if (otherGroups.length === 0) {
                 return res.status(400).json({ 
@@ -102,6 +114,12 @@ router.delete('/segregator/groups/:id', async (req, res) => {
             // Append keywords to the random group (Wrapping in an array since schema expects [[{...}]])
             randomGroup.keywords.push(flatKeywords);
             await randomGroup.save();
+        }
+
+        if (groupToDelete.groupingsGroupId) {
+            await GroupingsGroup.findByIdAndUpdate(groupToDelete.groupingsGroupId, {
+                $inc: { numberOfGroups: -1 }
+            });
         }
 
         await Grouping.findByIdAndDelete(id);
@@ -147,8 +165,11 @@ router.put('/segregator/groups/:id', async (req, res) => {
  */
 router.get('/segregator/groups', async (req, res) => {
     try {
-        const { userId } = req.query;
+        const { userId, groupingsGroupId } = req.query;
         const query = userId ? { userId } : {};
+        if (groupingsGroupId) {
+            query.groupingsGroupId = groupingsGroupId;
+        }
 
         const groups = await Grouping.find(query).sort({ createdAt: -1 });
 
@@ -174,12 +195,16 @@ router.get('/segregator/groups', async (req, res) => {
  */
 router.put('/segregator/groups/keyword', async (req, res) => {
     try {
-        const { keyword, targetGroupIds, userId = 'default-user' } = req.body;
+        const { keyword, targetGroupIds, groupingsGroupId, userId = 'default-user' } = req.body;
         if (!keyword || !keyword.id || !Array.isArray(targetGroupIds)) {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
-        const allGroups = await Grouping.find({ userId });
+        const query = userId ? { userId } : {};
+        if (groupingsGroupId) {
+            query.groupingsGroupId = groupingsGroupId;
+        }
+        const allGroups = await Grouping.find(query);
         
         for (const group of allGroups) {
             const flatKeywords = group.keywords ? group.keywords.flat() : [];
@@ -212,6 +237,112 @@ router.put('/segregator/groups/keyword', async (req, res) => {
 });
 
 /**
+ * GET /api/segregator/groupings-groups
+ * Returns all groupings groups
+ */
+router.get('/segregator/groupings-groups', async (req, res) => {
+    try {
+        const { userId } = req.query;
+        const query = userId ? { userId } : {};
+
+        const groups = await GroupingsGroup.find(query).sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            data: groups,
+        });
+    } catch (error) {
+        console.error('❌ Error retrieving groupings groups:', error.message);
+        res.status(500).json({ success: false, message: 'Error retrieving groupings groups', error: error.message });
+    }
+});
+
+/**
+ * GET /api/segregator/groupings-groups/:id
+ * Returns a specific groupings group
+ */
+router.get('/segregator/groupings-groups/:id', async (req, res) => {
+    try {
+        const group = await GroupingsGroup.findById(req.params.id);
+        if (!group) {
+            return res.status(404).json({ success: false, message: 'Groupings group not found' });
+        }
+        res.json({
+            success: true,
+            data: group,
+        });
+    } catch (error) {
+        console.error('❌ Error retrieving groupings group:', error.message);
+        res.status(500).json({ success: false, message: 'Error retrieving groupings group', error: error.message });
+    }
+});
+
+/**
+ * PUT /api/segregator/groupings-groups/:id
+ * Updates groupings group title
+ */
+router.put('/segregator/groupings-groups/:id', async (req, res) => {
+    try {
+        const { title } = req.body;
+        if (!title) {
+            return res.status(400).json({ success: false, message: 'Title is required' });
+        }
+
+        const group = await GroupingsGroup.findByIdAndUpdate(req.params.id, { title }, { new: true });
+        if (!group) {
+            return res.status(404).json({ success: false, message: 'Groupings group not found' });
+        }
+        res.json({
+            success: true,
+            data: group,
+        });
+    } catch (error) {
+        console.error('❌ Error updating groupings group:', error.message);
+        res.status(500).json({ success: false, message: 'Error updating groupings group', error: error.message });
+    }
+});
+
+/**
+ * DELETE /api/segregator/groupings-groups/:id
+ * Deletes a groupings group and all its sub-groupings
+ */
+router.delete('/segregator/groupings-groups/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Grouping.deleteMany({ groupingsGroupId: id });
+        const deleted = await GroupingsGroup.findByIdAndDelete(id);
+        if (!deleted) {
+            return res.status(404).json({ success: false, message: 'Groupings group not found' });
+        }
+        res.json({
+            success: true,
+            message: 'Groupings group deleted successfully',
+        });
+    } catch (error) {
+        console.error('❌ Error deleting groupings group:', error.message);
+        res.status(500).json({ success: false, message: 'Error deleting groupings group', error: error.message });
+    }
+});
+
+/**
+ * DELETE /api/segregator/groupings-groups
+ * Deletes all groupings groups and all sub-groupings
+ */
+router.delete('/segregator/groupings-groups', async (req, res) => {
+    try {
+        await Grouping.deleteMany({});
+        await GroupingsGroup.deleteMany({});
+        res.json({
+            success: true,
+            message: 'All groupings groups and groupings deleted successfully',
+        });
+    } catch (error) {
+        console.error('❌ Error flushing groupings groups:', error.message);
+        res.status(500).json({ success: false, message: 'Error flushing groupings groups', error: error.message });
+    }
+});
+
+/**
  * POST /api/segregator/upload
  * Upload files, filter, and segregate keywords
  */
@@ -221,7 +352,7 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
             return res.status(400).json({ success: false, message: 'No files uploaded' });
         }
 
-        const { userId = 'default-user' } = req.body;
+        const { userId = 'default-user', groupingsGroupTitle = 'Untitled Groupings Group' } = req.body;
         const uniqueKeywordsMap = new Map();
 
         // 1. Read files and load into array
@@ -300,18 +431,41 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
         // 6. Send keywords to Gemini for segregation
         const groupingsData = await segregateKeywordsIntoGroups(savedKeywordsInfo);
         
-        // groupingsData expected format: 
-        // [ { title: "Group 1", keywords: [ { id: "123", keyword: "kw1", search_volume: 5000, overall: 60, ... } ] }, ... ]
+        // Create the GroupingsGroup parent document first
+        const groupingsGroup = await GroupingsGroup.create({
+            title: groupingsGroupTitle,
+            numberOfGroups: groupingsData.length,
+            userId
+        });
 
-        // 7. Save generated groups to Grouping DB
+        // 7. Save generated groups to Grouping DB, populating keyword info from memory mapping and linking to GroupingsGroup parent
+        const keywordsMap = new Map(savedKeywordsInfo.map(k => [k.id.toString(), k]));
         const savedGroups = [];
         for (const group of groupingsData) {
-            const totalVolume = group.keywords.reduce((sum, kw) => sum + (kw.search_volume || 0), 0);
+            const populatedKeywords = [];
+            if (group.keywords && Array.isArray(group.keywords)) {
+                for (const kw of group.keywords) {
+                    const kwIdStr = kw.id ? kw.id.toString() : '';
+                    const fullInfo = keywordsMap.get(kwIdStr);
+                    if (fullInfo) {
+                        populatedKeywords.push({
+                            id: fullInfo.id.toString(),
+                            keyword: fullInfo.keyword,
+                            search_volume: fullInfo.search_volume,
+                            overall: fullInfo.overall,
+                            competition: fullInfo.competition
+                        });
+                    }
+                }
+            }
+
+            const totalVolume = populatedKeywords.reduce((sum, kw) => sum + (kw.search_volume || 0), 0);
             const newGroup = await Grouping.create({
                 title: group.title,
-                keywords: [group.keywords], // Note: Grouping model expects [[ { ... } ]]
+                keywords: [populatedKeywords], // Note: Grouping model expects [[ { ... } ]]
                 total_average_volume: totalVolume,
-                userId
+                userId,
+                groupingsGroupId: groupingsGroup._id
             });
             savedGroups.push(newGroup);
         }
