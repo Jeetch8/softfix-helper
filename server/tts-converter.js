@@ -129,15 +129,23 @@ async function main() {
 
   try {
     let ai;
-    if (process.env.GEMINI_API_KEY) {
-      console.log('🎯 Initializing Google AI Studio (Gemini API)...');
-      ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    } else {
+    const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+    if (useVertexAI) {
       console.log('🎯 Initializing Vertex AI...');
       ai = new GoogleGenAI({
         vertexai: true,
         project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
-        location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'global'
+        location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
+      });
+    } else if (process.env.GEMINI_API_KEY) {
+      console.log('🎯 Initializing Google AI Studio (Gemini API)...');
+      ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    } else {
+      console.log('🎯 Initializing Vertex AI (Fallback)...');
+      ai = new GoogleGenAI({
+        vertexai: true,
+        project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
+        location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
       });
     }
 

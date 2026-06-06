@@ -6,23 +6,37 @@ let PRO_MODEL;
 let FLASH_MODEL;
 let IMAGE_MODEL;
 
-if (process.env.GEMINI_API_KEY) {
+// Force Vertex AI by default as requested by user constraints to avoid 403 API Key service blocked errors.
+const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+
+if (useVertexAI) {
+  const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+  ai = new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
+    location: location
+  });
+  PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
+  FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
+  IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
+  console.log(`🎯 Vertex AI Service Initialized (using @google/genai in ${location})`);
+} else if (process.env.GEMINI_API_KEY) {
   ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-2.5-pro';
   FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-2.5-flash';
   IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-002';
   console.log(`🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)`);
 } else {
-  let location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+  const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
   ai = new GoogleGenAI({
     vertexai: true,
     project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: "global"
+    location: location
   });
   PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
   FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
   IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
-  console.log(`🎯 Vertex AI Service Initialized (using @google/genai in ${location})`);
+  console.log(`🎯 Vertex AI Service Initialized as Fallback (using @google/genai in ${location})`);
 }
 
 

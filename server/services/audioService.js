@@ -10,16 +10,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let ai;
-if (process.env.GEMINI_API_KEY) {
+const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+
+if (useVertexAI) {
+  ai = new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
+    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
+  });
+  console.log(`🎯 Vertex AI Service Initialized for Audio Service`);
+} else if (process.env.GEMINI_API_KEY) {
   ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   console.log(`🎯 Google AI Studio (Gemini API) Initialized for Audio Service using GEMINI_API_KEY`);
 } else {
   ai = new GoogleGenAI({
     vertexai: true,
     project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || 'global'
+    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
   });
-  console.log(`🎯 Vertex AI Service Initialized for Audio Service`);
+  console.log(`🎯 Vertex AI Service Initialized as Fallback for Audio Service`);
 }
 
 /**
