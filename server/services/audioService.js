@@ -26,7 +26,8 @@ if (useVertexAI) {
   ai = new GoogleGenAI({
     vertexai: true,
     project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
+    location: "global"
+    // location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
   });
   console.log(`🎯 Vertex AI Service Initialized as Fallback for Audio Service`);
 }

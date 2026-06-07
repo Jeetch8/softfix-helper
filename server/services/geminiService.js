@@ -10,7 +10,8 @@ let IMAGE_MODEL;
 const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
 
 if (useVertexAI) {
-  const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+  const location = "global"
+  // const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
   ai = new GoogleGenAI({
     vertexai: true,
     project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
@@ -430,22 +431,22 @@ export async function generateYouTubeTitles(topic, script, description = '', key
           volume: parseInt(parts[1]?.trim()) || 0
         };
       }).filter(k => k.keyword);
-      
+
       kwList.sort((a, b) => b.volume - a.volume);
-      
+
       const titleParts = [];
       let currentLen = 0;
-      
+
       for (const kw of kwList) {
         const capitalized = kw.keyword.split(' ')
           .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
           .join(' ');
-          
+
         const partLen = capitalized.length;
         if (currentLen === 0) {
           if (partLen > 100) {
-             titleParts.push(capitalized.substring(0, 100));
-             break;
+            titleParts.push(capitalized.substring(0, 100));
+            break;
           }
           titleParts.push(capitalized);
           currentLen += partLen;
@@ -458,7 +459,7 @@ export async function generateYouTubeTitles(topic, script, description = '', key
           }
         }
       }
-      
+
       titleStr = titleParts.join(' | ');
     }
 
