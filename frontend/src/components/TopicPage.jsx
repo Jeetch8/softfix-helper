@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import CreatableSelect from 'react-select/creatable';
+import Select from 'react-select';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getTopic,
@@ -33,8 +35,56 @@ const TopicPage = () => {
   const [isSavingDescription, setIsSavingDescription] = useState(false);
 
   const [isEditingKeywords, setIsEditingKeywords] = useState(false);
-  const [editedKeywords, setEditedKeywords] = useState('');
+  const [editedKeywords, setEditedKeywords] = useState(null);
   const [isSavingKeywords, setIsSavingKeywords] = useState(false);
+
+  // Format a raw number into K / M shorthand, e.g. 2000 → "2K"
+  const fmtVol = (n) => {
+    const v = Number(n);
+    if (!v || isNaN(v)) return null;
+    if (v >= 1_000_000) {
+      const x = v / 1_000_000;
+      return `${x % 1 === 0 ? x : x.toFixed(1)}M`;
+    }
+    if (v >= 1_000) {
+      const x = v / 1_000;
+      return `${x % 1 === 0 ? x : x.toFixed(1)}K`;
+    }
+    return String(v);
+  };
+
+  // Build an option object from a single "keyword | volume" entry.
+  // label shows formatted volume; value keeps the raw original string.
+  const makeOption = (raw) => {
+    const [kw, vol] = raw.split('|').map((s) => s.trim());
+    const formatted = fmtVol(vol);
+    return {
+      value: raw,
+      label: formatted ? `${kw}  ·  ${formatted}` : kw,
+      keyword: kw,
+    };
+  };
+
+  // Parse the stored comma-separated string into the currently-selected single option.
+  // We treat the first entry as the selected one.
+  const parseKeywords = (str) => {
+    if (!str || !str.trim()) return null;
+    const first = str.split(',')[0].trim();
+    return first ? makeOption(first) : null;
+  };
+
+  // Build the full options list shown in the dropdown.
+  const buildKeywordOptions = (str) =>
+    str
+      ? str
+          .split(',')
+          .map((k) => k.trim())
+          .filter(Boolean)
+          .map(makeOption)
+      : [];
+
+  // Serialize the selected single option back to a string for the API.
+  const serializeKeywords = (option) => (option ? option.value : '');
 
   useEffect(() => {
     if (topicId) {
@@ -53,7 +103,7 @@ const TopicPage = () => {
       setTopic(response.data.data);
       setEditedScript(response.data.data.narrationScript || '');
       setEditedDescription(response.data.data.description || '');
-      setEditedKeywords(response.data.data.keywords || '');
+      setEditedKeywords(parseKeywords(response.data.data.keywords || ''));
     } catch (err) {
       setError('Failed to fetch topic details');
     } finally {
@@ -160,10 +210,11 @@ const TopicPage = () => {
     }
   };
 
+
   const handleSaveKeywords = async () => {
     setIsSavingKeywords(true);
     try {
-      const response = await updateKeywords(topicId, editedKeywords);
+      const response = await updateKeywords(topicId, serializeKeywords(editedKeywords));
       setTopic(response.data.data);
       setIsEditingKeywords(false);
       setError(null);
@@ -280,12 +331,44 @@ const TopicPage = () => {
                   <h3 className="text-sm font-semibold text-gray-600 mb-2">Keywords</h3>
                   {isEditingKeywords ? (
                     <div className="space-y-2">
-                      <textarea
+                      <CreatableSelect
+                        isSearchable
+                        isClearable
                         value={editedKeywords}
-                        onChange={(e) => setEditedKeywords(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter topic keywords..."
-                        rows="3"
+                        onChange={(selected) => setEditedKeywords(selected || null)}
+                        options={buildKeywordOptions(topic.keywords || '')}
+                        placeholder="Search or type a keyword…"
+                        formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+                        styles={{
+                          control: (base, state) => ({
+                            ...base,
+                            borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+                            boxShadow: state.isFocused
+                              ? '0 0 0 2px rgba(59,130,246,0.3)'
+                              : 'none',
+                            '&:hover': { borderColor: '#3b82f6' },
+                            borderRadius: '0.375rem',
+                            fontSize: '0.875rem',
+                            minHeight: '42px',
+                          }),
+                          singleValue: (base) => ({
+                            ...base,
+                            color: '#1d4ed8',
+                            fontWeight: '500',
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            backgroundColor: state.isSelected
+                              ? '#3b82f6'
+                              : state.isFocused
+                              ? '#dbeafe'
+                              : 'white',
+                            color: state.isSelected ? 'white' : '#1e293b',
+                            fontSize: '0.875rem',
+                            cursor: 'pointer',
+                          }),
+                          menu: (base) => ({ ...base, zIndex: 50 }),
+                        }}
                       />
                       <div className="flex gap-2">
                         <button
@@ -298,7 +381,7 @@ const TopicPage = () => {
                         <button
                           onClick={() => {
                             setIsEditingKeywords(false);
-                            setEditedKeywords(topic.keywords || '');
+                            setEditedKeywords(parseKeywords(topic.keywords || ''));
                           }}
                           className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
                         >
@@ -307,16 +390,32 @@ const TopicPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
-                      {topic.keywords ? (
-                        <p className="text-gray-600 flex-1 text-sm">{topic.keywords}</p>
+                    <div className="flex items-center gap-2">
+                      {topic.keywords && topic.keywords.trim() ? (
+                        <span className="inline-flex items-center gap-1.5 flex-1">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                            {topic.keywords.split(',')[0].split('|')[0].trim()}
+                          </span>
+                          {(() => {
+                            const vol = topic.keywords.split(',')[0].split('|')[1]?.trim();
+                            const fmt = vol ? fmtVol(vol) : null;
+                            return fmt ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                                {fmt} searches
+                              </span>
+                            ) : null;
+                          })()}
+                        </span>
                       ) : (
                         <p className="text-gray-400 italic flex-1 text-sm">
-                          No keywords
+                          No keyword selected
                         </p>
                       )}
                       <button
-                        onClick={() => setIsEditingKeywords(true)}
+                        onClick={() => {
+                          setEditedKeywords(parseKeywords(topic.keywords || ''));
+                          setIsEditingKeywords(true);
+                        }}
                         className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
                       >
                         ✏️ Edit
