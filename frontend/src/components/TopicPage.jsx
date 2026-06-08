@@ -11,7 +11,7 @@ import {
 } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
-import ThumbnailSelector from './ThumbnailSelector';
+// import ThumbnailSelector from './ThumbnailSelector';
 import ExtraAssetsSelector from './ExtraAssetsSelector';
 
 const TopicPage = () => {
@@ -512,8 +512,8 @@ const TopicPage = () => {
           </div>
         )}
 
-        {/* Standard YouTube Thumbnails Section */}
-        {topic.selectedTitle && (
+        {/* Standard YouTube Thumbnails Section — commented out */}
+        {/* {topic.selectedTitle && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               🎨 YouTube Thumbnails (Standard)
@@ -526,10 +526,10 @@ const TopicPage = () => {
               onGenerateComplete={fetchTopic}
             />
           </div>
-        )}
+        )} */}
 
-        {/* Extra Assets Section */}
-        {topic.selectedThumbnail && (
+        {/* Extra Assets Section — gated on selectedTitle (thumbnail step skipped) */}
+        {topic.selectedTitle && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               ⭐ Extra Assets
