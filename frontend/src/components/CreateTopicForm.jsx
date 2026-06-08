@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import { createTopic, getSegregatorGroups } from '../api/client';
 
 const CreateTopicForm = ({ onSuccess }) => {
@@ -12,6 +13,32 @@ const CreateTopicForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  // Format avg search volume numbers as K / M shorthand
+  const fmtVol = (n) => {
+    const v = Number(n);
+    if (!v || isNaN(v)) return null;
+    if (v >= 1_000_000) {
+      const x = v / 1_000_000;
+      return `${x % 1 === 0 ? x : x.toFixed(1)}M`;
+    }
+    if (v >= 1_000) {
+      const x = v / 1_000;
+      return `${x % 1 === 0 ? x : x.toFixed(1)}K`;
+    }
+    return String(v);
+  };
+
+  // Build react-select options from the groupings list
+  const groupingOptions = groupings.map((g) => {
+    const vol = fmtVol(g.total_average_volume);
+    return {
+      value: g._id,
+      label: vol ? `${g.title}  ·  ${vol} avg vol` : g.title,
+    };
+  });
+
+  const selectedOption = groupingOptions.find((o) => o.value === selectedGroupingId) || null;
 
   useEffect(() => {
     const fetchGroupings = async () => {
@@ -125,18 +152,47 @@ const CreateTopicForm = ({ onSuccess }) => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Keyword Grouping
           </label>
-          <select
-            value={selectedGroupingId}
-            onChange={(e) => setSelectedGroupingId(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="">Select a grouping...</option>
-            {groupings.map((g) => (
-              <option key={g._id} value={g._id}>
-                {g.title} ({g.total_average_volume} avg vol)
-              </option>
-            ))}
-          </select>
+          <Select
+            isSearchable
+            isClearable
+            value={selectedOption}
+            onChange={(opt) => setSelectedGroupingId(opt ? opt.value : '')}
+            options={groupingOptions}
+            placeholder="Search and select a grouping..."
+            noOptionsMessage={() => 'No groupings found'}
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+                boxShadow: state.isFocused
+                  ? '0 0 0 2px rgba(59,130,246,0.3)'
+                  : 'none',
+                '&:hover': { borderColor: '#3b82f6' },
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                minHeight: '42px',
+                backgroundColor: 'white',
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: '#1d4ed8',
+                fontWeight: '500',
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isSelected
+                  ? '#3b82f6'
+                  : state.isFocused
+                  ? '#dbeafe'
+                  : 'white',
+                color: state.isSelected ? 'white' : '#1e293b',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+              }),
+              menu: (base) => ({ ...base, zIndex: 50 }),
+              placeholder: (base) => ({ ...base, color: '#9ca3af' }),
+            }}
+          />
 
           {keywordsList.length > 0 && (
             <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
