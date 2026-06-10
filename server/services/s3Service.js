@@ -1,4 +1,5 @@
-import AWS from 'aws-sdk';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 
@@ -6,7 +7,8 @@ if (!BUCKET_NAME) {
   console.warn('⚠️ AWS_S3_BUCKET_NAME not set in environment variables');
 }
 
-let endpointUrl = process.env.AWS_ENDPOINT_URL || 'https://sf03.digitaloceanspaces.com';
+let endpointUrl =
+  process.env.AWS_ENDPOINT_URL || 'https://sf03.digitaloceanspaces.com';
 
 // Fix for DigitalOcean Spaces where the bucket name might be accidentally included in the endpoint URL
 if (BUCKET_NAME && endpointUrl.includes(`${BUCKET_NAME}.`)) {
@@ -14,12 +16,13 @@ if (BUCKET_NAME && endpointUrl.includes(`${BUCKET_NAME}.`)) {
 }
 
 // Configure AWS
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3Client = new S3Client({
   endpoint: endpointUrl,
   region: process.env.AWS_REGION || 'sf03', // Fallback region to prevent AWS SDK errors
-  signatureVersion: 'v4', // Required for DigitalOcean Spaces and other S3-compatible providers
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 /**
@@ -50,10 +53,16 @@ export async function uploadImageToS3(
       ACL: 'public-read',
     };
 
-    const result = await s3.upload(params).promise();
+    const upload = new Upload({
+      client: s3Client,
+      params,
+    });
+
+    const result = await upload.done();
     console.log(`✅ Uploaded to S3: ${result.Location}`);
     return result.Location;
   } catch (error) {
+    console.log(error);
     console.error('❌ Error uploading to S3:', error.message);
     throw new Error(`Failed to upload file to S3: ${error.message}`);
   }
@@ -76,11 +85,11 @@ export async function deleteImageFromS3(s3Url) {
       Key: key,
     };
 
-    await s3.deleteObject(params).promise();
+    await s3Client.send(new DeleteObjectCommand(params));
     console.log(`✅ Deleted from S3: ${s3Url}`);
   } catch (error) {
     console.error('⚠️ Error deleting from S3:', error.message);
   }
 }
 
-export default s3;
+export default s3Client;

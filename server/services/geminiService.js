@@ -10,36 +10,51 @@ let IMAGE_MODEL;
 const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
 
 if (useVertexAI) {
-  const location = "global"
+  const location = 'global';
   // const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
   ai = new GoogleGenAI({
     vertexai: true,
-    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: location
+    project:
+      process.env.GCP_PROJECT ||
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      'softfix-498215',
+    location: location,
   });
   PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
   FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
   IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
-  console.log(`🎯 Vertex AI Service Initialized (using @google/genai in ${location})`);
+  console.log(
+    `🎯 Vertex AI Service Initialized (using @google/genai in ${location})`,
+  );
 } else if (process.env.GEMINI_API_KEY) {
   ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-2.5-pro';
   FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-2.5-flash';
   IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-002';
-  console.log(`🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)`);
+  console.log(
+    `🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)`,
+  );
 } else {
-  const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
+  const location =
+    process.env.GCP_LOCATION ||
+    process.env.GOOGLE_CLOUD_LOCATION ||
+    process.env.VERTEXAI_LOCATION ||
+    'global';
   ai = new GoogleGenAI({
     vertexai: true,
-    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: location
+    project:
+      process.env.GCP_PROJECT ||
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      'softfix-498215',
+    location: location,
   });
   PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
   FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
   IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
-  console.log(`🎯 Vertex AI Service Initialized as Fallback (using @google/genai in ${location})`);
+  console.log(
+    `🎯 Vertex AI Service Initialized as Fallback (using @google/genai in ${location})`,
+  );
 }
-
 
 /**
  * Robust helper to extract text content from generateContent responses
@@ -67,7 +82,13 @@ function getImagePartFromResponse(result) {
 /**
  * Helper to call Vertex AI for text generation with optional features
  */
-async function generateText(modelName, prompt, systemInstruction = null, isJson = false, hasSearch = false) {
+async function generateText(
+  modelName,
+  prompt,
+  systemInstruction = null,
+  isJson = false,
+  hasSearch = false,
+) {
   try {
     const config = {};
 
@@ -86,24 +107,33 @@ async function generateText(modelName, prompt, systemInstruction = null, isJson 
     const result = await ai.models.generateContent({
       model: modelName,
       contents: prompt,
-      config: config
+      config: config,
     });
     return getTextFromResponse(result);
   } catch (error) {
     console.error('❌ Error in generateText:', error.message);
     if (error.response) {
       try {
-        const rawBody = typeof error.response.text === 'function'
-          ? await error.response.text()
-          : (typeof error.response === 'string' ? error.response : JSON.stringify(error.response));
+        const rawBody =
+          typeof error.response.text === 'function'
+            ? await error.response.text()
+            : typeof error.response === 'string'
+              ? error.response
+              : JSON.stringify(error.response);
         console.error('📄 Raw GCP Error Response:', rawBody);
         const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
         const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
         const title = titleMatch ? titleMatch[1].trim() : '';
-        const body = bodyMatch ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ') : '';
-        throw new Error(`GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`);
+        const body = bodyMatch
+          ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ')
+          : '';
+        throw new Error(
+          `GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`,
+        );
       } catch (e) {
-        throw new Error(`GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`);
+        throw new Error(
+          `GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`,
+        );
       }
     }
     throw error;
@@ -119,8 +149,8 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
       model: modelName,
       contents: prompt,
       config: {
-        temperature
-      }
+        temperature,
+      },
     });
     const part = getImagePartFromResponse(result);
     return part;
@@ -128,30 +158,45 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
     console.error('❌ Error in generateImage:', error.message);
     if (error.response) {
       try {
-        const rawBody = typeof error.response.text === 'function'
-          ? await error.response.text()
-          : (typeof error.response === 'string' ? error.response : JSON.stringify(error.response));
+        const rawBody =
+          typeof error.response.text === 'function'
+            ? await error.response.text()
+            : typeof error.response === 'string'
+              ? error.response
+              : JSON.stringify(error.response);
         console.error('📄 Raw GCP Error Response:', rawBody);
         const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
         const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
         const title = titleMatch ? titleMatch[1].trim() : '';
-        const body = bodyMatch ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ') : '';
-        throw new Error(`GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`);
+        const body = bodyMatch
+          ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ')
+          : '';
+        throw new Error(
+          `GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`,
+        );
       } catch (e) {
-        throw new Error(`GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`);
+        throw new Error(
+          `GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`,
+        );
       }
     }
     throw error;
   }
 }
 
-
-export async function generateNarrationScript(topic, videoTitle, description = '', keywords = '') {
+export async function generateNarrationScript(
+  topic,
+  videoTitle,
+  description = '',
+  keywords = '',
+) {
   try {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
+    const keywordsText = keywords
+      ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.`
+      : '';
     const prompt = `System Role & Context:
 Act as an expert YouTube tech creator and scriptwriter. You run a highly successful tutorial channel that solves everyday software, mobile app, and tech-related problems (Windows, iOS, Android, specific software, etc.). Your style is fast-paced, casual, direct, and highly informative.
 
@@ -175,7 +220,7 @@ Early CTA: Right after the hook, include a quick, casual call-to-action to subsc
 Keyword Integration: Naturally weave the provided keywords into the script. Crucially, prioritize keywords with higher search volumes by placing them in the intro, early in the steps, or repeating them naturally. Do not make them sound forced. Use the Video Description and Title to inform the context of how you speak about the topic.
 The Walkthrough (Body): Narrate the Step-by-Step instructions exactly as if you are holding the phone or looking at the computer screen right now. Use conversational transition phrases like "Now that we're here...", "Essentially you want to...", "Let's tap on...", "Midway down you'll see...", and "Let's hop out of here...".
 The Outro: End quickly and smoothly without dragging it out. (e.g., "I hope this helps. If it did, hit the like button down below and leave a comment if you still have any questions. Catch you on the next one!").
-Formatting: Write it as a continuous, spoken-word transcript. You do not need to add timestamps or speaker labels. Just provide the exact words the creator should read into the microphone.`
+Formatting: Write it as a continuous, spoken-word transcript. You do not need to add timestamps or speaker labels. Just provide the exact words the creator should read into the microphone.`;
     //     `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
 
     // SCRIPT STRUCTURE:
@@ -218,7 +263,13 @@ Formatting: Write it as a continuous, spoken-word transcript. You do not need to
     // Generate 2 variations with the same prompt
     const promises = [1, 2].map(async (i) => {
       console.log(`⏳ Generating script variation ${i}...`);
-      const responseText = await generateText(PRO_MODEL, prompt, null, false, true);
+      const responseText = await generateText(
+        PRO_MODEL,
+        prompt,
+        null,
+        false,
+        true,
+      );
       console.log(`✅ Generated script variation ${i}`);
       return responseText;
     });
@@ -243,7 +294,7 @@ export async function generateNarrationScriptVariations(
   topic,
   description = '',
   prompts,
-  keywords = ''
+  keywords = '',
 ) {
   console.log(
     `🎬 Generating ${prompts.length} narration script variations for topic: ${topic}`,
@@ -261,12 +312,20 @@ export async function generateNarrationScriptVariations(
           const descriptionText = description
             ? `\n\nAdditional context: ${description}`
             : '';
-          const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
+          const keywordsText = keywords
+            ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.`
+            : '';
           const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"${descriptionText}${keywordsText}`;
 
-          const responseText = await generateText(PRO_MODEL, fullPrompt, null, false, true);
+          const responseText = await generateText(
+            PRO_MODEL,
+            fullPrompt,
+            null,
+            false,
+            true,
+          );
           console.log(`✅ Generated variation ${index + 1}/${prompts.length}`);
 
           return {
@@ -306,7 +365,12 @@ Topic: "${topic}"${descriptionText}${keywordsText}`;
  * @param {string} keywords - Comma separated keywords
  * @returns {Array<{prompt: string, url: string}>}
  */
-export async function generateThumbnailVariations(topic, title, prompts, keywords = '') {
+export async function generateThumbnailVariations(
+  topic,
+  title,
+  prompts,
+  keywords = '',
+) {
   console.log(
     `🎨 Generating ${prompts.length} thumbnail variations for topic: ${topic}`,
   );
@@ -321,7 +385,9 @@ export async function generateThumbnailVariations(topic, title, prompts, keyword
         );
 
         const customPrompt = prompts[i];
-        const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}` : '';
+        const keywordsText = keywords
+          ? `\nKeywords (format: keyword | search volume): ${keywords}`
+          : '';
         const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"
@@ -389,7 +455,7 @@ export async function generateTitleVariations(
   description = '',
   narrationScript = '',
   prompts,
-  keywords = ''
+  keywords = '',
 ) {
   console.log(
     `🎬 Generating ${prompts.length} title variations for topic: ${topic}`,
@@ -410,12 +476,20 @@ export async function generateTitleVariations(
           const scriptText = narrationScript
             ? `\n\nScript Summary: ${narrationScript.substring(0, 500)}...`
             : '';
-          const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate, prioritizing those with higher search volume.` : '';
+          const keywordsText = keywords
+            ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate, prioritizing those with higher search volume.`
+            : '';
           const fullPrompt = `${customPrompt}
 
 Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
 
-          const responseText = await generateText(FLASH_MODEL, fullPrompt, null, false, true);
+          const responseText = await generateText(
+            FLASH_MODEL,
+            fullPrompt,
+            null,
+            false,
+            true,
+          );
           console.log(
             `✅ Generated title variation ${index + 1}/${prompts.length}`,
           );
@@ -444,17 +518,25 @@ Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
   }
 }
 
-export async function generateYouTubeTitles(topic, script, description = '', keywords = '') {
+export async function generateYouTubeTitles(
+  topic,
+  script,
+  description = '',
+  keywords = '',
+) {
   try {
-    let titleStr = "";
+    let titleStr = '';
     if (keywords) {
-      const kwList = keywords.split(',').map(k => {
-        const parts = k.split('|');
-        return {
-          keyword: parts[0]?.trim(),
-          volume: parseInt(parts[1]?.trim()) || 0
-        };
-      }).filter(k => k.keyword);
+      const kwList = keywords
+        .split(',')
+        .map((k) => {
+          const parts = k.split('|');
+          return {
+            keyword: parts[0]?.trim(),
+            volume: parseInt(parts[1]?.trim()) || 0,
+          };
+        })
+        .filter((k) => k.keyword);
 
       kwList.sort((a, b) => b.volume - a.volume);
 
@@ -462,8 +544,11 @@ export async function generateYouTubeTitles(topic, script, description = '', key
       let currentLen = 0;
 
       for (const kw of kwList) {
-        const capitalized = kw.keyword.split(' ')
-          .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
+        const capitalized = kw.keyword
+          .split(' ')
+          .map((w) =>
+            w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '',
+          )
           .join(' ');
 
         const partLen = capitalized.length;
@@ -494,7 +579,9 @@ export async function generateYouTubeTitles(topic, script, description = '', key
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
-    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate, prioritizing those with higher search volume.` : '';
+    const keywordsText = keywords
+      ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to incorporate these keywords into the titles where appropriate, prioritizing those with higher search volume.`
+      : '';
     const prompt = `You are a title creator for "Softfix Central," a YouTube channel known for straightforward, efficient tech tutorials. Generate exactly 20 optimized video titles based on:
 
 Topic: "${topic}"${descriptionText}${keywordsText}
@@ -552,14 +639,21 @@ Return ONLY the 20 titles, numbered 1-20, one per line. No additional commentary
   }
 }
 
-export async function generateYouTubeThumbnails(topic, title, script, keywords = '') {
+export async function generateYouTubeThumbnails(
+  topic,
+  title,
+  script,
+  keywords = '',
+) {
   try {
     const thumbnails = [];
     console.log(`🎨 Starting thumbnail generation for: "${title}"`);
 
     for (let i = 0; i < 2; i++) {
       try {
-        const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}` : '';
+        const keywordsText = keywords
+          ? `\nKeywords (format: keyword | search volume): ${keywords}`
+          : '';
         const designPrompt = `You are a thumbnail designer for "Softfix Central," a YouTube channel known for clear, professional tech tutorials. Create a single high-quality image containing a 3x3 grid of 9 distinct thumbnail variations for:
 
 Topic: "${topic.topicName}"
@@ -659,9 +753,16 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
   }
 }
 
-export async function generateSEODescription(topic, script, title, keywords = '') {
+export async function generateSEODescription(
+  topic,
+  script,
+  title,
+  keywords = '',
+) {
   try {
-    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to explicitly include MOST of these keywords naturally throughout the description for SEO optimization, prioritizing those with higher search volume.` : '';
+    const keywordsText = keywords
+      ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to explicitly include MOST of these keywords naturally throughout the description for SEO optimization, prioritizing those with higher search volume.`
+      : '';
     const prompt = `You are a YouTube SEO specialist for "Softfix Central," a tech tutorial channel. Generate a fully optimized video description for:
 
 Topic: "${topic}"
@@ -752,7 +853,9 @@ Return ONLY the description text with hashtags at the end. No additional comment
 
 export async function generateTags(topic, script, title, keywords = '') {
   try {
-    const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to explicitly include any of these keywords that were NOT used in the video description in your final list of tags, prioritizing those with higher search volume.` : '';
+    const keywordsText = keywords
+      ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to explicitly include any of these keywords that were NOT used in the video description in your final list of tags, prioritizing those with higher search volume.`
+      : '';
     const prompt = `You are a tag strategist for "Softfix Central," a tech tutorial YouTube channel. Generate 15-25 highly targeted tags for:
 
 Topic: "${topic}"
@@ -854,7 +957,9 @@ Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbe
 
 export async function filterNonEnglishKeywords(keywordsArray) {
   try {
-    console.log(`🔍 Filtering non-English keywords from ${keywordsArray.length} items using small model...`);
+    console.log(
+      `🔍 Filtering non-English keywords from ${keywordsArray.length} items using small model...`,
+    );
     const prompt = `You are a language detection assistant. Given the following list of keywords, return ONLY a JSON array containing the keywords that are in English. Exclude any keywords that are primarily in another language. Do NOT add markdown formatting around the output, just return the raw JSON array of strings.
 
 Keywords to filter:
@@ -865,10 +970,15 @@ ${JSON.stringify(keywordsArray)}
 
     let cleanedText = responseText.trim();
     if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+      cleanedText = cleanedText
+        .replace(/^```json\s*/i, '')
+        .replace(/```$/, '')
+        .trim();
     }
     const englishKeywords = JSON.parse(cleanedText);
-    console.log(`✅ Filtered down to ${englishKeywords.length} English keywords.`);
+    console.log(
+      `✅ Filtered down to ${englishKeywords.length} English keywords.`,
+    );
     return englishKeywords;
   } catch (error) {
     console.error('❌ Error filtering keywords:', error.message);
@@ -878,8 +988,10 @@ ${JSON.stringify(keywordsArray)}
 
 export async function segregateKeywordsIntoGroups(keywordsWithData) {
   try {
-    console.log(keywordsWithData)
-    console.log(`🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`);
+    console.log(keywordsWithData);
+    console.log(
+      `🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`,
+    );
 
     const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, competition scores, and ids. 
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
@@ -907,7 +1019,10 @@ ${JSON.stringify(keywordsWithData)}
 
     let cleanedText = responseText.trim();
     if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+      cleanedText = cleanedText
+        .replace(/^```json\s*/i, '')
+        .replace(/```$/, '')
+        .trim();
     }
     const groupings = JSON.parse(cleanedText);
     console.log(`✅ Generated ${groupings.length} keyword groups.`);
