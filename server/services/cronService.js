@@ -43,12 +43,27 @@ async function processPendingTopics() {
           `⏳ Processing topic: "${topic.topicName}" (ID: ${topic._id})`,
         );
 
+        let videoTitle = topic.topicName;
+        if (topic.keywords) {
+          const kwList = topic.keywords.split(',').map(k => {
+            const parts = k.split('|');
+            return {
+              keyword: parts[0]?.trim(),
+              volume: parseInt(parts[1]?.trim()) || 0
+            };
+          }).filter(k => k.keyword);
+          if (kwList.length > 0) {
+            kwList.sort((a, b) => b.volume - a.volume);
+            videoTitle = kwList[0].keyword;
+          }
+        }
+
         // Generate narration script using Gemini AI
         const scripts = await generateNarrationScript(
           topic.topicName,
+          videoTitle,
           topic.description,
-          topic.keywords,
-          topic.stepByStepInstructions
+          topic.keywords
         );
 
         // Update topic with generated scripts

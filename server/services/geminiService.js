@@ -146,16 +146,14 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
 }
 
 
-export async function generateNarrationScript(topic, description = '', keywords = '', stepByStepInstructions = '') {
+export async function generateNarrationScript(topic, videoTitle, description = '', keywords = '') {
   try {
-    const instructionText = description
-      ? `\n\nCRITICAL INSTRUCTIONS (PRIORITIZE ABOVE ALL):\n${description}`
+    const descriptionText = description
+      ? `\n\nAdditional context: ${description}`
       : '';
     const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
-    const stepsText = stepByStepInstructions ? `\nStep-by-Step Instructions:\n${stepByStepInstructions}` : '';
-    
     const prompt = `System Role & Context:
-Act as an expert YouTube tech creator and scriptwriter. You run a highly successful tutorial channel that solves everyday software, mobile app, and tech-related problems (Windows, iOS, Android, specific software, etc.). Your style is fast-paced, casual, direct, and highly informative.${instructionText}
+Act as an expert YouTube tech creator and scriptwriter. You run a highly successful tutorial channel that solves everyday software, mobile app, and tech-related problems (Windows, iOS, Android, specific software, etc.). Your style is fast-paced, casual, direct, and highly informative.
 
 Task:
 Write a video transcript based on the specific inputs provided below.
@@ -163,8 +161,12 @@ Write a video transcript based on the specific inputs provided below.
 Inputs:
 
 Topic Name: ${topic}
+Video Title: ${videoTitle}
+Video Description: ${description}
 Keywords (Keyword | Search Volume):
-${keywords}${stepsText}
+${keywords}
+Step-by-Step Instructions:
+${description}
 
 Script Guidelines & Style Rules:
 
@@ -241,8 +243,7 @@ export async function generateNarrationScriptVariations(
   topic,
   description = '',
   prompts,
-  keywords = '',
-  stepByStepInstructions = ''
+  keywords = ''
 ) {
   console.log(
     `🎬 Generating ${prompts.length} narration script variations for topic: ${topic}`,
@@ -257,14 +258,13 @@ export async function generateNarrationScriptVariations(
             `⏳ Generating variation ${index + 1}/${prompts.length}...`,
           );
 
-          const instructionText = description
-            ? `\n\nCRITICAL INSTRUCTIONS (PRIORITIZE ABOVE ALL):\n${description}`
+          const descriptionText = description
+            ? `\n\nAdditional context: ${description}`
             : '';
-          const stepsText = stepByStepInstructions ? `\nStep-by-Step Instructions:\n${stepByStepInstructions}` : '';
           const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
           const fullPrompt = `${customPrompt}
 
-Topic: "${topic}"${instructionText}${keywordsText}${stepsText}`;
+Topic: "${topic}"${descriptionText}${keywordsText}`;
 
           const responseText = await generateText(PRO_MODEL, fullPrompt, null, false, true);
           console.log(`✅ Generated variation ${index + 1}/${prompts.length}`);

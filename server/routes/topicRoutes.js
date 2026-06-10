@@ -33,7 +33,7 @@ router.post('/topics', async (req, res) => {
       stepByStepInstructions: stepByStepInstructions || '',
       keywords: keywords || '',
       userId: userId || 'default-user',
-      status: 'pending',
+      status: 'completed',
     });
 
     await newTopic.save();
@@ -423,12 +423,7 @@ router.post('/topics/:id/generate-titles', async (req, res) => {
       });
     }
 
-    if (!topic.narrationScript) {
-      return res.status(400).json({
-        success: false,
-        message: 'Topic must have a narration script before generating titles',
-      });
-    }
+
 
     console.log(
       `🎬 Generating YouTube titles for: "${topic.topicName}" (ID: ${topic._id})`,
@@ -584,12 +579,7 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
       });
     }
 
-    if (!topic.narrationScript) {
-      return res.status(400).json({
-        success: false,
-        message: 'Topic must have a narration script',
-      });
-    }
+
 
     if (!topic.selectedTitle) {
       return res.status(400).json({

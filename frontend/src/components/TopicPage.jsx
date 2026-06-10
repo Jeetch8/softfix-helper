@@ -11,7 +11,7 @@ import {
 } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
-// import ThumbnailSelector from './ThumbnailSelector';
+import ThumbnailSelector from './ThumbnailSelector';
 import ExtraAssetsSelector from './ExtraAssetsSelector';
 
 const parseKeywords = (keywordsStr) => {
@@ -511,8 +511,40 @@ const TopicPage = () => {
           </div>
         )}
 
+        {/* YouTube Titles Section (always visible or if topic exists) */}
+        {topic && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              🎬 YouTube Titles
+            </h2>
+            <TitleSelector
+              topicId={topicId}
+              selectedTitle={topic.selectedTitle}
+              generatedTitles={topic.generatedTitles || []}
+              onTitleSelected={fetchTopic}
+              onGenerateComplete={fetchTopic}
+            />
+          </div>
+        )}
+
+        {/* Standard YouTube Thumbnails Section */}
+        {topic.selectedTitle && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              🎨 YouTube Thumbnails (Standard)
+            </h2>
+            <ThumbnailSelector
+              topicId={topicId}
+              selectedThumbnail={topic.selectedThumbnail}
+              generatedThumbnails={topic.generatedThumbnails || []}
+              onThumbnailSelected={fetchTopic}
+              onGenerateComplete={fetchTopic}
+            />
+          </div>
+        )}
+
         {/* Narration Script Section */}
-        {topic.narrationScript && (
+        {topic.selectedThumbnail && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold text-gray-800">
@@ -520,28 +552,32 @@ const TopicPage = () => {
               </h2>
               {!isEditing && (
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleCopyToClipboard}
-                    className={`px-3 py-1 ${
-                      copySuccess
-                        ? 'bg-green-500'
-                        : 'bg-gray-500 hover:bg-gray-600'
-                    } text-white text-sm font-medium rounded transition-colors`}
-                  >
-                    {copySuccess ? '✓ Copied!' : '📋 Copy'}
-                  </button>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors"
-                  >
-                    ✏️ Edit
-                  </button>
+                  {topic.narrationScript && (
+                    <button
+                      onClick={handleCopyToClipboard}
+                      className={`px-3 py-1 ${
+                        copySuccess
+                          ? 'bg-green-500'
+                          : 'bg-gray-500 hover:bg-gray-600'
+                      } text-white text-sm font-medium rounded transition-colors`}
+                    >
+                      {copySuccess ? '✓ Copied!' : '📋 Copy'}
+                    </button>
+                  )}
+                  {topic.narrationScript && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      ✏️ Edit
+                    </button>
+                  )}
                   <button
                     onClick={handleRegenerate}
-                    disabled={isRegenerating}
+                    disabled={isRegenerating || topic.status === 'processing'}
                     className="px-3 py-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
                   >
-                    {isRegenerating ? '⏳ Regenerating...' : '🔄 Regenerate'}
+                    {isRegenerating || topic.status === 'processing' ? '⏳ Generating...' : topic.narrationScript ? '🔄 Regenerate' : '🚀 Generate Script'}
                   </button>
                 </div>
               )}
@@ -630,7 +666,7 @@ const TopicPage = () => {
                   <button
                     onClick={() => {
                       setIsEditing(false);
-                      setEditedScript(topic.narrationScript);
+                      setEditedScript(topic.narrationScript || '');
                     }}
                     className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded transition-colors"
                   >
@@ -639,52 +675,22 @@ const TopicPage = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3 border-b pb-2">
-                  Active Script (Source of Truth)
-                </h3>
-                <div className="text-gray-800 whitespace-pre-wrap text-base leading-relaxed font-serif">
-                  {topic.narrationScript}
+              topic.narrationScript && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 border-b pb-2">
+                    Active Script (Source of Truth)
+                  </h3>
+                  <div className="text-gray-800 whitespace-pre-wrap text-base leading-relaxed font-serif">
+                    {topic.narrationScript}
+                  </div>
                 </div>
-              </div>
+              )
             )}
           </div>
         )}
 
-        {/* YouTube Titles Section (standard) */}
+        {/* Extra Assets Section */}
         {topic.narrationScript && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎬 YouTube Titles
-            </h2>
-            <TitleSelector
-              topicId={topicId}
-              selectedTitle={topic.selectedTitle}
-              generatedTitles={topic.generatedTitles || []}
-              onTitleSelected={fetchTopic}
-              onGenerateComplete={fetchTopic}
-            />
-          </div>
-        )}
-
-        {/* Standard YouTube Thumbnails Section — commented out */}
-        {/* {topic.selectedTitle && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎨 YouTube Thumbnails (Standard)
-            </h2>
-            <ThumbnailSelector
-              topicId={topicId}
-              selectedThumbnail={topic.selectedThumbnail}
-              generatedThumbnails={topic.generatedThumbnails || []}
-              onThumbnailSelected={fetchTopic}
-              onGenerateComplete={fetchTopic}
-            />
-          </div>
-        )} */}
-
-        {/* Extra Assets Section — gated on selectedTitle (thumbnail step skipped) */}
-        {topic.selectedTitle && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               ⭐ Extra Assets
