@@ -146,14 +146,16 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
 }
 
 
-export async function generateNarrationScript(topic, description = '', keywords = '') {
+export async function generateNarrationScript(topic, description = '', keywords = '', stepByStepInstructions = '') {
   try {
-    const descriptionText = description
-      ? `\n\nAdditional context: ${description}`
+    const instructionText = description
+      ? `\n\nCRITICAL INSTRUCTIONS (PRIORITIZE ABOVE ALL):\n${description}`
       : '';
     const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
+    const stepsText = stepByStepInstructions ? `\nStep-by-Step Instructions:\n${stepByStepInstructions}` : '';
+    
     const prompt = `System Role & Context:
-Act as an expert YouTube tech creator and scriptwriter. You run a highly successful tutorial channel that solves everyday software, mobile app, and tech-related problems (Windows, iOS, Android, specific software, etc.). Your style is fast-paced, casual, direct, and highly informative.
+Act as an expert YouTube tech creator and scriptwriter. You run a highly successful tutorial channel that solves everyday software, mobile app, and tech-related problems (Windows, iOS, Android, specific software, etc.). Your style is fast-paced, casual, direct, and highly informative.${instructionText}
 
 Task:
 Write a video transcript based on the specific inputs provided below.
@@ -161,12 +163,9 @@ Write a video transcript based on the specific inputs provided below.
 Inputs:
 
 Topic Name: ${topic}
-Video Title: ${videoTitle}
-Video Description: ${description}
 Keywords (Keyword | Search Volume):
-${keywords}
-Step-by-Step Instructions:
-${description}
+${keywords}${stepsText}
+
 Script Guidelines & Style Rules:
 
 The Hook & Intro: Start immediately by stating what you are going to do (e.g., "Hey guys, [Your Name] here, and in this video I'm going to show you how to..." or "Let's [action]..."). Keep it under 15 seconds.
@@ -242,7 +241,8 @@ export async function generateNarrationScriptVariations(
   topic,
   description = '',
   prompts,
-  keywords = ''
+  keywords = '',
+  stepByStepInstructions = ''
 ) {
   console.log(
     `🎬 Generating ${prompts.length} narration script variations for topic: ${topic}`,
@@ -257,13 +257,14 @@ export async function generateNarrationScriptVariations(
             `⏳ Generating variation ${index + 1}/${prompts.length}...`,
           );
 
-          const descriptionText = description
-            ? `\n\nAdditional context: ${description}`
+          const instructionText = description
+            ? `\n\nCRITICAL INSTRUCTIONS (PRIORITIZE ABOVE ALL):\n${description}`
             : '';
+          const stepsText = stepByStepInstructions ? `\nStep-by-Step Instructions:\n${stepByStepInstructions}` : '';
           const keywordsText = keywords ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.` : '';
           const fullPrompt = `${customPrompt}
 
-Topic: "${topic}"${descriptionText}${keywordsText}`;
+Topic: "${topic}"${instructionText}${keywordsText}${stepsText}`;
 
           const responseText = await generateText(PRO_MODEL, fullPrompt, null, false, true);
           console.log(`✅ Generated variation ${index + 1}/${prompts.length}`);

@@ -6,6 +6,7 @@ const CreateTopicForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     topicName: '',
     description: '',
+    stepByStepInstructions: '',
     userId: 'default-user',
   });
   const [groupings, setGroupings] = useState([]);
@@ -83,7 +84,7 @@ const CreateTopicForm = ({ onSuccess }) => {
 
       await createTopic(submitData);
       setSuccess(true);
-      setFormData({ topicName: '', description: '', userId: 'default-user' });
+      setFormData({ topicName: '', description: '', stepByStepInstructions: '', userId: 'default-user' });
       setSelectedGroupingId('');
 
       // Call parent callback to refresh list
@@ -136,13 +137,27 @@ const CreateTopicForm = ({ onSuccess }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
+            Step-by-Step Instruction Flow
+          </label>
+          <textarea
+            name="stepByStepInstructions"
+            value={formData.stepByStepInstructions}
+            onChange={handleChange}
+            placeholder="Provide the step-by-step instruction flow of the solution..."
+            rows="5"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Instruction Box (Prioritize above all)
           </label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Optional description for your topic..."
+            placeholder="Where to elaborate or what and where to say..."
             rows="3"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />

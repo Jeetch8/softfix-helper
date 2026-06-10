@@ -18,7 +18,7 @@ const router = express.Router();
  */
 router.post('/topics', async (req, res) => {
   try {
-    const { topicName, description, keywords, userId } = req.body;
+    const { topicName, description, stepByStepInstructions, keywords, userId } = req.body;
 
     if (!topicName || topicName.trim() === '') {
       return res.status(400).json({
@@ -30,6 +30,7 @@ router.post('/topics', async (req, res) => {
     const newTopic = new Topic({
       topicName: topicName.trim(),
       description: description || '',
+      stepByStepInstructions: stepByStepInstructions || '',
       keywords: keywords || '',
       userId: userId || 'default-user',
       status: 'pending',

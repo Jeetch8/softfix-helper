@@ -11,6 +11,10 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    stepByStepInstructions: {
+      type: String,
+      default: '',
+    },
     keywords: {
       type: String,
       default: '',
