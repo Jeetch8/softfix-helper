@@ -14,6 +14,37 @@ import TitleSelector from './TitleSelector';
 // import ThumbnailSelector from './ThumbnailSelector';
 import ExtraAssetsSelector from './ExtraAssetsSelector';
 
+const parseKeywords = (keywordsStr) => {
+  if (!keywordsStr) return [];
+  return keywordsStr
+    .split(',')
+    .map((item) => {
+      const parts = item.split('|');
+      const keyword = parts[0]?.trim() || '';
+      const rawVolumeStr = parts[1]?.trim() || '';
+      const volume = parseInt(rawVolumeStr, 10);
+      return {
+        keyword,
+        volume: isNaN(volume) ? 0 : volume,
+        rawVolume: rawVolumeStr,
+      };
+    })
+    .filter((k) => k.keyword);
+};
+
+const formatSearchVolume = (num) => {
+  if (num === undefined || num === null || isNaN(num)) return '-';
+  if (num >= 1000000) {
+    const formatted = (num / 1000000).toFixed(1);
+    return formatted.endsWith('.0') ? `${Math.round(num / 1000000)}M` : `${formatted}M`;
+  }
+  if (num >= 1000) {
+    const formatted = (num / 1000).toFixed(1);
+    return formatted.endsWith('.0') ? `${Math.round(num / 1000)}K` : `${formatted}K`;
+  }
+  return num.toString();
+};
+
 const TopicPage = () => {
   const { topicId } = useParams();
   const navigate = useNavigate();
@@ -35,6 +66,10 @@ const TopicPage = () => {
   const [isEditingKeywords, setIsEditingKeywords] = useState(false);
   const [editedKeywords, setEditedKeywords] = useState('');
   const [isSavingKeywords, setIsSavingKeywords] = useState(false);
+
+  const [keywordSortKey, setKeywordSortKey] = useState('volume');
+  const [keywordSortDir, setKeywordSortDir] = useState('desc');
+  const [keywordSearch, setKeywordSearch] = useState('');
 
   useEffect(() => {
     if (topicId) {
@@ -204,6 +239,31 @@ const TopicPage = () => {
     );
   }
 
+  // Parse, filter, and sort keywords
+  const parsedKeywords = parseKeywords(topic.keywords || '');
+  
+  // Filter
+  const filteredKeywords = parsedKeywords.filter((k) =>
+    k.keyword.toLowerCase().includes(keywordSearch.toLowerCase())
+  );
+
+  // Sort
+  const sortedKeywords = [...filteredKeywords].sort((a, b) => {
+    if (!keywordSortKey) return 0;
+    
+    let aVal = a[keywordSortKey];
+    let bVal = b[keywordSortKey];
+    
+    if (typeof aVal === 'string') {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (aVal < bVal) return keywordSortDir === 'asc' ? -1 : 1;
+    if (aVal > bVal) return keywordSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
@@ -307,20 +367,115 @@ const TopicPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
-                      {topic.keywords ? (
-                        <p className="text-gray-600 flex-1 text-sm">{topic.keywords}</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={keywordSearch}
+                            onChange={(e) => setKeywordSearch(e.target.value)}
+                            placeholder="🔍 Filter keywords..."
+                            className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                          />
+                          {keywordSearch && (
+                            <button
+                              onClick={() => setKeywordSearch('')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setIsEditingKeywords(true)}
+                          className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
+                        >
+                          ✏️ Edit
+                        </button>
+                      </div>
+
+                      {sortedKeywords.length > 0 ? (
+                        <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 shadow-sm max-h-64 overflow-y-auto">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead className="bg-gray-100 sticky top-0 border-b border-gray-200 z-10">
+                              <tr>
+                                <th
+                                  onClick={() => {
+                                    if (keywordSortKey === 'keyword') {
+                                      setKeywordSortDir(keywordSortDir === 'asc' ? 'desc' : 'asc');
+                                    } else {
+                                      setKeywordSortKey('keyword');
+                                      setKeywordSortDir('asc');
+                                    }
+                                  }}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-200 select-none font-semibold text-gray-700 transition-colors"
+                                >
+                                  <div className="flex items-center gap-1">
+                                    Keyword
+                                    {keywordSortKey === 'keyword' && (
+                                      <span>{keywordSortDir === 'asc' ? '▲' : '▼'}</span>
+                                    )}
+                                  </div>
+                                </th>
+                                <th
+                                  onClick={() => {
+                                    if (keywordSortKey === 'volume') {
+                                      setKeywordSortDir(keywordSortDir === 'asc' ? 'desc' : 'asc');
+                                    } else {
+                                      setKeywordSortKey('volume');
+                                      setKeywordSortDir('desc');
+                                    }
+                                  }}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-200 select-none font-semibold text-gray-700 text-right transition-colors"
+                                  style={{ width: '100px' }}
+                                >
+                                  <div className="flex items-center justify-end gap-1">
+                                    Volume
+                                    {keywordSortKey === 'volume' && (
+                                      <span>{keywordSortDir === 'asc' ? '▲' : '▼'}</span>
+                                    )}
+                                  </div>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 bg-white">
+                              {sortedKeywords.map((item, idx) => (
+                                <tr key={idx} className="hover:bg-blue-50/40 transition-colors">
+                                  <td className="px-3 py-2 text-gray-800 break-words font-medium">
+                                    {item.keyword}
+                                  </td>
+                                  <td
+                                    className="px-3 py-2 text-gray-600 text-right font-mono"
+                                    title={`Exact Volume: ${item.volume.toLocaleString()}`}
+                                  >
+                                    {formatSearchVolume(item.volume)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       ) : (
-                        <p className="text-gray-400 italic flex-1 text-sm">
-                          No keywords
+                        <p className="text-gray-500 italic text-xs py-2">
+                          {keywordSearch ? 'No keywords match the filter' : 'No valid keywords parsed'}
                         </p>
                       )}
-                      <button
-                        onClick={() => setIsEditingKeywords(true)}
-                        className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
-                      >
-                        ✏️ Edit
-                      </button>
+
+                      {parsedKeywords.length > 0 && (
+                        <div className="flex justify-between items-center text-[10px] text-gray-500 px-1">
+                          <span>
+                            Showing {sortedKeywords.length} of {parsedKeywords.length} keywords
+                          </span>
+                          <span>
+                            Total Volume:{' '}
+                            <span className="font-semibold text-gray-700">
+                              {formatSearchVolume(
+                                parsedKeywords.reduce((acc, k) => acc + k.volume, 0)
+                              )}
+                            </span>
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
