@@ -5,6 +5,7 @@ import {
   updateScript,
   updateDescription,
   updateKeywords,
+  updateInstructions,
   regenerateScript,
   markAsEditing,
   markAsUploaded,
@@ -67,6 +68,10 @@ const TopicPage = () => {
   const [editedKeywords, setEditedKeywords] = useState('');
   const [isSavingKeywords, setIsSavingKeywords] = useState(false);
 
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [editedInstructions, setEditedInstructions] = useState('');
+  const [isSavingInstructions, setIsSavingInstructions] = useState(false);
+
   const [keywordSortKey, setKeywordSortKey] = useState('volume');
   const [keywordSortDir, setKeywordSortDir] = useState('desc');
   const [keywordSearch, setKeywordSearch] = useState('');
@@ -83,12 +88,14 @@ const TopicPage = () => {
     setIsEditing(false);
     setIsEditingDescription(false);
     setIsEditingKeywords(false);
+    setIsEditingInstructions(false);
     try {
       const response = await getTopic(topicId);
       setTopic(response.data.data);
       setEditedScript(response.data.data.narrationScript || '');
       setEditedDescription(response.data.data.description || '');
       setEditedKeywords(response.data.data.keywords || '');
+      setEditedInstructions(response.data.data.stepByStepInstructions || '');
     } catch (err) {
       setError('Failed to fetch topic details');
     } finally {
@@ -206,6 +213,20 @@ const TopicPage = () => {
       setError('Failed to save keywords');
     } finally {
       setIsSavingKeywords(false);
+    }
+  };
+
+  const handleSaveInstructions = async () => {
+    setIsSavingInstructions(true);
+    try {
+      const response = await updateInstructions(topicId, editedInstructions);
+      setTopic(response.data.data);
+      setIsEditingInstructions(false);
+      setError(null);
+    } catch (err) {
+      setError('Failed to save instructions');
+    } finally {
+      setIsSavingInstructions(false);
     }
   };
 
@@ -479,6 +500,58 @@ const TopicPage = () => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Step-by-Step Instructions Section */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">Step-by-Step Instructions</h3>
+                {isEditingInstructions ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editedInstructions}
+                      onChange={(e) => setEditedInstructions(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter step-by-step instructions..."
+                      rows="6"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveInstructions}
+                        disabled={isSavingInstructions}
+                        className="px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                      >
+                        {isSavingInstructions ? '💾 Saving...' : '💾 Save'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingInstructions(false);
+                          setEditedInstructions(topic.stepByStepInstructions || '');
+                        }}
+                        className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                      >
+                        ✕ Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    {topic.stepByStepInstructions ? (
+                      <div className="text-gray-600 flex-1 text-sm whitespace-pre-wrap">
+                        {topic.stepByStepInstructions}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic flex-1 text-sm">
+                        No instructions provided
+                      </p>
+                    )}
+                    <button
+                      onClick={() => setIsEditingInstructions(true)}
+                      className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

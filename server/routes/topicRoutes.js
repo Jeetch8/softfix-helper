@@ -407,6 +407,56 @@ router.put('/topics/:id/keywords', async (req, res) => {
 });
 
 /**
+ * PUT /api/topics/:id/instructions
+ * Update the topic step-by-step instructions
+ */
+router.put('/topics/:id/instructions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { stepByStepInstructions } = req.body;
+
+    if (stepByStepInstructions === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Step-by-step instructions are required',
+      });
+    }
+
+    const topic = await Topic.findByIdAndUpdate(
+      id,
+      {
+        stepByStepInstructions: stepByStepInstructions.trim(),
+      },
+      { new: true },
+    );
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    console.log(
+      `✏️ Topic instructions updated: "${topic.topicName}" (ID: ${topic._id})`,
+    );
+
+    res.json({
+      success: true,
+      message: 'Instructions updated successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error updating topic instructions:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating topic instructions',
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/topics/:id/generate-titles
  * Generate SEO-optimized YouTube titles for a topic
  */
