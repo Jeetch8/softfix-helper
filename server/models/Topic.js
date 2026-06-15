@@ -117,6 +117,10 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: 'default-user',
     },
+    regenerationComments: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

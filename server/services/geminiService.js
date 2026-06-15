@@ -189,6 +189,7 @@ export async function generateNarrationScript(
   videoTitle,
   description = '',
   keywords = '',
+  regenerationComments = null,
 ) {
   try {
     const descriptionText = description
@@ -197,7 +198,7 @@ export async function generateNarrationScript(
     const keywordsText = keywords
       ? `\nKeywords (format: keyword | search volume): ${keywords}\nMake sure to naturally incorporate these keywords into the script, prioritizing those with higher search volume.`
       : '';
-    const prompt = `System Role & Context:
+    let prompt = `System Role & Context:
 Act as an expert YouTube tech creator and scriptwriter. You run a highly successful tutorial channel that solves everyday software, mobile app, and tech-related problems (Windows, iOS, Android, specific software, etc.). Your style is fast-paced, casual, direct, and highly informative.
 
 Task:
@@ -221,61 +222,22 @@ Keyword Integration: Naturally weave the provided keywords into the script. Cruc
 The Walkthrough (Body): Narrate the Step-by-Step instructions exactly as if you are holding the phone or looking at the computer screen right now. Use conversational transition phrases like "Now that we're here...", "Essentially you want to...", "Let's tap on...", "Midway down you'll see...", and "Let's hop out of here...".
 The Outro: End quickly and smoothly without dragging it out. (e.g., "I hope this helps. If it did, hit the like button down below and leave a comment if you still have any questions. Catch you on the next one!").
 Formatting: Write it as a continuous, spoken-word transcript. You do not need to add timestamps or speaker labels. Just provide the exact words the creator should read into the microphone.`;
-    //     `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
 
-    // SCRIPT STRUCTURE:
+    if (regenerationComments) {
+      prompt += `\n\nREGENERATION FEEDBACK / COMMENTS:\nPlease rewrite the script taking into account the following feedback from the user to improve or adjust the script:\n"${regenerationComments}"`;
+    }
 
-    // OPENING (vary the phrasing each time):
-    // - Begin with "In this video, [topic/what viewers will learn]"
-    // - Smoothly transition to asking viewers to subscribe and like
-    // - Include "let's get straight into this video" or a natural variation
-    // - Flow should feel conversational, not formulaic
+    console.log(`⏳ Generating narration script using PRO model...`);
+    const responseText = await generateText(
+      PRO_MODEL,
+      prompt,
+      null,
+      false,
+      true,
+    );
+    console.log(`✅ Generated narration script`);
 
-    // INTRODUCTION (100-200 characters):
-    // Provide a brief, engaging setup that does ONE or MORE of these:
-    // - Identify the problem viewers are facing
-    // - Explain why this matters or when they'd need this
-    // - Preview what will be covered
-    // - Keep it concise and relevant
-
-    // MAIN CONTENT:
-    // - Present steps as flowing, continuous paragraphs—NOT numbered or bulleted lists
-    // - Be precise and detailed, anticipating user questions
-    // - Use transitional phrases like "Next," "Now," "After that," or "Once you've done this"
-    // - Maintain a professional but approachable tone
-    // - Assume viewers are following along in real-time
-
-    // CLOSING (vary the phrasing each time):
-    // - Brief thank you for watching
-    // - Invite viewers to comment with questions or video requests
-    // - Keep it under 30 words and natural
-
-    // CRITICAL RULES:
-    // - No headings, subheadings, or section labels in the output
-    // - No numbered steps or bullet points
-    // - Vary the subscribe/like call-to-action wording each time
-    // - Vary the closing wording each time
-    // - Smooth transitions between all sections
-    // - Output ONLY the script—no meta-commentary, no explanations, no formatting markers
-
-    // The script should sound like a knowledgeable friend walking someone through a process—direct, clear, and efficient.`;
-
-    // Generate 2 variations with the same prompt
-    const promises = [1, 2].map(async (i) => {
-      console.log(`⏳ Generating script variation ${i}...`);
-      const responseText = await generateText(
-        FLASH_MODEL,
-        prompt,
-        null,
-        false,
-        true,
-      );
-      console.log(`✅ Generated script variation ${i}`);
-      return responseText;
-    });
-
-    const scripts = await Promise.all(promises);
-    return scripts;
+    return [responseText];
   } catch (error) {
     console.error('❌ Error generating narration script:', error.message);
     throw new Error(`Failed to generate narration script: ${error.message}`);

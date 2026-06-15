@@ -60,6 +60,9 @@ const TopicPage = () => {
   const [isMarkingEditing, setIsMarkingEditing] = useState(false);
   const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
   
+  const [showRegenInput, setShowRegenInput] = useState(false);
+  const [regenComments, setRegenComments] = useState('');
+  
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState('');
   const [isSavingDescription, setIsSavingDescription] = useState(false);
@@ -123,14 +126,22 @@ const TopicPage = () => {
   };
 
   const handleRegenerate = async () => {
+    // If not showing input yet, show it
+    if (!showRegenInput && topic.narrationScript) {
+      setShowRegenInput(true);
+      return;
+    }
+
     if (!window.confirm('Regenerate the narration script for this topic?')) {
       return;
     }
 
     setIsRegenerating(true);
     try {
-      const response = await regenerateScript(topicId);
+      const response = await regenerateScript(topicId, regenComments);
       setTopic(response.data.data);
+      setShowRegenInput(false);
+      setRegenComments('');
       setError(null);
     } catch (err) {
       setError('Failed to regenerate script');
@@ -646,13 +657,51 @@ const TopicPage = () => {
                   <button
                     onClick={handleRegenerate}
                     disabled={isRegenerating || topic.status === 'processing'}
-                    className="px-3 py-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                    className={`px-3 py-1 ${showRegenInput ? 'bg-green-500 hover:bg-green-600' : 'bg-purple-500 hover:bg-purple-600'} disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors`}
                   >
-                    {isRegenerating || topic.status === 'processing' ? '⏳ Generating...' : topic.narrationScript ? '🔄 Regenerate' : '🚀 Generate Script'}
+                    {isRegenerating || topic.status === 'processing' ? '⏳ Generating...' : showRegenInput ? '🚀 Confirm Regeneration' : topic.narrationScript ? '🔄 Regenerate' : '🚀 Generate Script'}
                   </button>
+                  {showRegenInput && (
+                    <button
+                      onClick={() => {
+                        setShowRegenInput(false);
+                        setRegenComments('');
+                      }}
+                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      ✕ Cancel
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+
+            {showRegenInput && (
+              <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-sm font-semibold text-purple-800 mb-2">
+                  Regeneration Comments (Optional)
+                </label>
+                <p className="text-xs text-purple-600 mb-3">
+                  Provide feedback to the AI to adjust the tone, fix specific parts, or change the length of the script.
+                </p>
+                <textarea
+                  value={regenComments}
+                  onChange={(e) => setRegenComments(e.target.value)}
+                  className="w-full p-3 border border-purple-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                  placeholder="e.g., Make it more enthusiastic, shorten the intro, focus more on the second step..."
+                  rows="3"
+                />
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating}
+                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg shadow-md transition-all flex items-center gap-2"
+                  >
+                    {isRegenerating ? '⏳ Processing...' : '🚀 Regenerate Now'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Script Variations */}
             {topic.narrationScriptVariations &&

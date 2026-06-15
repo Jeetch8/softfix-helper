@@ -67,8 +67,8 @@ export const triggerProcessing = () => {
   return apiClient.post('/api/process-now');
 };
 
-export const regenerateScript = (id) => {
-  return apiClient.post(`/api/topics/${id}/regenerate`);
+export const regenerateScript = (id, comments = null) => {
+  return apiClient.post(`/api/topics/${id}/regenerate`, { comments });
 };
 
 export const updateScript = (id, narrationScript) => {

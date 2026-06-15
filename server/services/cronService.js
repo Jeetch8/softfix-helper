@@ -63,19 +63,21 @@ async function processPendingTopics() {
           topic.topicName,
           videoTitle,
           topic.description,
-          topic.keywords
+          topic.keywords,
+          topic.regenerationComments
         );
 
         // Update topic with generated scripts
         // scripts is an array of strings
         topic.narrationScript = scripts[0]; // Default to first variation
         topic.narrationScriptVariations = scripts.map((script, index) => ({
-          prompt: `Auto-generated Variation ${index + 1}`,
+          prompt: topic.regenerationComments ? `Regenerated with comments: ${topic.regenerationComments.substring(0, 50)}...` : `Auto-generated Variation ${index + 1}`,
           result: script,
         }));
 
         topic.status = 'completed';
         topic.processedAt = new Date();
+        topic.regenerationComments = null; // Clear comments after processing
         await topic.save();
 
         console.log(`✅ Successfully processed topic: "${topic.topicName}"`);

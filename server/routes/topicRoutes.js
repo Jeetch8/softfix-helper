@@ -230,6 +230,7 @@ router.delete('/topics/:id', async (req, res) => {
 router.post('/topics/:id/regenerate', async (req, res) => {
   try {
     const { id } = req.params;
+    const { comments } = req.body;
 
     const topic = await Topic.findById(id);
 
@@ -244,6 +245,7 @@ router.post('/topics/:id/regenerate', async (req, res) => {
     topic.status = 'pending';
     topic.narrationScript = null;
     topic.errorMessage = null;
+    topic.regenerationComments = comments || null;
     await topic.save();
 
     console.log(
