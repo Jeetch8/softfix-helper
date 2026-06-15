@@ -227,9 +227,9 @@ Formatting: Write it as a continuous, spoken-word transcript. You do not need to
       prompt += `\n\nREGENERATION FEEDBACK / COMMENTS:\nPlease rewrite the script taking into account the following feedback from the user to improve or adjust the script:\n"${regenerationComments}"`;
     }
 
-    console.log(`⏳ Generating narration script using PRO model...`);
+    console.log(`⏳ Generating narration script using FLASH model...`);
     const responseText = await generateText(
-      PRO_MODEL,
+      FLASH_MODEL,
       prompt,
       null,
       false,
