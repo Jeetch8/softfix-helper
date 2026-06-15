@@ -7,7 +7,7 @@ import {
   deleteSegregatorGroup,
   updateSegregatorGroup,
   updateSegregatorKeywordGroups,
-  updateGroupingsGroup
+  updateGroupingsGroup,
 } from '../api/client';
 
 const GroupingsGroupDetail = () => {
@@ -20,7 +20,7 @@ const GroupingsGroupDetail = () => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Sorting: { [groupId]: { key: 'search_volume', direction: 'desc' } }
   const [sortConfig, setSortConfig] = useState({});
   const [activeDropdownKeywordId, setActiveDropdownKeywordId] = useState(null);
@@ -47,21 +47,21 @@ const GroupingsGroupDetail = () => {
   };
 
   const handleSort = (groupId, key) => {
-    setSortConfig(prev => {
+    setSortConfig((prev) => {
       const current = prev[groupId];
       if (current && current.key === key) {
         return {
           ...prev,
           [groupId]: {
             key,
-            direction: current.direction === 'desc' ? 'asc' : 'desc'
-          }
+            direction: current.direction === 'desc' ? 'asc' : 'desc',
+          },
         };
       } else {
-        const defaultDir = (key === 'competition') ? 'asc' : 'desc';
+        const defaultDir = key === 'competition' ? 'asc' : 'desc';
         return {
           ...prev,
-          [groupId]: { key, direction: defaultDir }
+          [groupId]: { key, direction: defaultDir },
         };
       }
     });
@@ -107,7 +107,7 @@ const GroupingsGroupDetail = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch parent detail
       const parentResponse = await getGroupingsGroup(groupingsGroupId);
       setParentGroup(parentResponse.data.data);
@@ -131,21 +131,23 @@ const GroupingsGroupDetail = () => {
   }, [groupingsGroupId]);
 
   const handleCreateGroup = async () => {
-    const title = window.prompt("Enter a title for the new group:");
+    const title = window.prompt('Enter a title for the new group:');
     if (!title || !title.trim()) return;
-    
+
     try {
       setProcessing(true);
       setError(null);
       await createSegregatorGroup(title.trim(), groupingsGroupId);
       setSuccess(`Group "${title}" created successfully!`);
-      
+
       // Refresh only sub-groups
       const childrenResponse = await getSegregatorGroups(groupingsGroupId);
       setGroupings(childrenResponse.data.data || []);
     } catch (err) {
       console.error('Error creating group:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to create group.');
+      setError(
+        err.response?.data?.message || err.message || 'Failed to create group.',
+      );
     } finally {
       setProcessing(false);
     }
@@ -158,14 +160,18 @@ const GroupingsGroupDetail = () => {
       setProcessing(true);
       setError(null);
       await deleteSegregatorGroup(id);
-      setSuccess(`Group "${title}" deleted successfully. Keywords migrated if any existed.`);
-      
+      setSuccess(
+        `Group "${title}" deleted successfully. Keywords migrated if any existed.`,
+      );
+
       // Refresh only sub-groups
       const childrenResponse = await getSegregatorGroups(groupingsGroupId);
       setGroupings(childrenResponse.data.data || []);
     } catch (err) {
       console.error('Error deleting group:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to delete group.');
+      setError(
+        err.response?.data?.message || err.message || 'Failed to delete group.',
+      );
     } finally {
       setProcessing(false);
     }
@@ -190,20 +196,27 @@ const GroupingsGroupDetail = () => {
       setSuccess('Group title updated successfully!');
       setEditingGroupId(null);
       setEditTitleText('');
-      
+
       // Refresh only sub-groups
       const childrenResponse = await getSegregatorGroups(groupingsGroupId);
       setGroupings(childrenResponse.data.data || []);
     } catch (err) {
       console.error('Error updating group title:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to update group title.');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Failed to update group title.',
+      );
     } finally {
       setProcessing(false);
     }
   };
 
   const handleSaveParentTitle = async () => {
-    if (!parentTitleText.trim() || parentTitleText.trim() === parentGroup.title) {
+    if (
+      !parentTitleText.trim() ||
+      parentTitleText.trim() === parentGroup.title
+    ) {
       setIsEditingParentTitle(false);
       return;
     }
@@ -213,12 +226,16 @@ const GroupingsGroupDetail = () => {
       await updateGroupingsGroup(groupingsGroupId, parentTitleText.trim());
       setSuccess('Session title updated successfully!');
       setIsEditingParentTitle(false);
-      
+
       // Update local state
-      setParentGroup(prev => ({ ...prev, title: parentTitleText.trim() }));
+      setParentGroup((prev) => ({ ...prev, title: parentTitleText.trim() }));
     } catch (err) {
       console.error('Error updating session title:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to update session title.');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Failed to update session title.',
+      );
     } finally {
       setProcessing(false);
     }
@@ -230,9 +247,11 @@ const GroupingsGroupDetail = () => {
       setActiveDropdownKeywordId(null);
     } else {
       const initialSelections = {};
-      groupings.forEach(group => {
+      groupings.forEach((group) => {
         const flat = group.keywords ? group.keywords.flat() : [];
-        const exists = flat.some(k => k.id === kwId || k._id?.toString() === kwId);
+        const exists = flat.some(
+          (k) => k.id === kwId || k._id?.toString() === kwId,
+        );
         initialSelections[group._id] = exists;
       });
       setDropdownGroupSelections(initialSelections);
@@ -241,9 +260,9 @@ const GroupingsGroupDetail = () => {
   };
 
   const handleCheckboxChange = (groupId, checked) => {
-    setDropdownGroupSelections(prev => ({
+    setDropdownGroupSelections((prev) => ({
       ...prev,
-      [groupId]: checked
+      [groupId]: checked,
     }));
   };
 
@@ -252,24 +271,32 @@ const GroupingsGroupDetail = () => {
       setProcessing(true);
       setError(null);
       const targetGroupIds = Object.keys(dropdownGroupSelections).filter(
-        groupId => dropdownGroupSelections[groupId]
+        (groupId) => dropdownGroupSelections[groupId],
       );
       const keywordToSend = {
         ...kw,
-        id: kw.id || kw._id
+        id: kw.id || kw._id,
       };
-      
+
       // Pass groupingsGroupId to enforce search limits and groupings constraints
-      await updateSegregatorKeywordGroups(keywordToSend, targetGroupIds, groupingsGroupId);
+      await updateSegregatorKeywordGroups(
+        keywordToSend,
+        targetGroupIds,
+        groupingsGroupId,
+      );
       setActiveDropdownKeywordId(null);
       setSuccess('Keyword groupings updated successfully.');
-      
+
       // REFACTORED STATE: Refresh groupings locally instead of page reload!
       const childrenResponse = await getSegregatorGroups(groupingsGroupId);
       setGroupings(childrenResponse.data.data || []);
     } catch (err) {
       console.error('Error updating keyword groups:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to update keyword groups.');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Failed to update keyword groups.',
+      );
     } finally {
       setProcessing(false);
     }
@@ -279,7 +306,9 @@ const GroupingsGroupDetail = () => {
     return (
       <div className="max-w-6xl mx-auto px-4 py-16 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-        <p className="text-gray-500 mt-4 font-medium text-lg">Loading session groupings...</p>
+        <p className="text-gray-500 mt-4 font-medium text-lg">
+          Loading session groupings...
+        </p>
       </div>
     );
   }
@@ -296,7 +325,7 @@ const GroupingsGroupDetail = () => {
           >
             ⬅️ Back
           </button>
-          
+
           <div className="flex-grow">
             {isEditingParentTitle ? (
               <div className="flex items-center gap-2 mt-1">
@@ -349,7 +378,9 @@ const GroupingsGroupDetail = () => {
               </div>
             )}
             <p className="text-gray-400 text-sm mt-1">
-              Session created on {new Date(parentGroup?.createdAt).toLocaleString()} • {groupings.length} subgroups
+              Session created on{' '}
+              {new Date(parentGroup?.createdAt).toLocaleString()} •{' '}
+              {groupings.length} subgroups
             </p>
           </div>
         </div>
@@ -382,8 +413,12 @@ const GroupingsGroupDetail = () => {
       {groupings.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
           <span className="text-5xl block mb-4">🗂️</span>
-          <h3 className="text-lg font-bold text-gray-700">No subgroups found in this session</h3>
-          <p className="text-gray-400 mt-1 mb-6">Create a group to start categorizing your keywords!</p>
+          <h3 className="text-lg font-bold text-gray-700">
+            No subgroups found in this session
+          </h3>
+          <p className="text-gray-400 mt-1 mb-6">
+            Create a group to start categorizing your keywords!
+          </p>
           <button
             onClick={handleCreateGroup}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md"
@@ -396,15 +431,26 @@ const GroupingsGroupDetail = () => {
           {groupings.map((group) => {
             const flatKeywords = group.keywords ? group.keywords.flat() : [];
             const sortedKeywords = getSortedKeywords(flatKeywords, group._id);
-            
-            const totalSearchVolume = flatKeywords.reduce((sum, kw) => sum + (Number(kw.search_volume) || 0), 0);
-            const avgOverall = flatKeywords.length > 0 
-              ? (flatKeywords.reduce((sum, kw) => sum + (Number(kw.overall) || 0), 0) / flatKeywords.length).toFixed(1)
-              : 0;
+
+            const totalSearchVolume = flatKeywords.reduce(
+              (sum, kw) => sum + (Number(kw.search_volume) || 0),
+              0,
+            );
+            const avgOverall =
+              flatKeywords.length > 0
+                ? (
+                    flatKeywords.reduce(
+                      (sum, kw) => sum + (Number(kw.overall) || 0),
+                      0,
+                    ) / flatKeywords.length
+                  ).toFixed(1)
+                : 0;
 
             return (
-              <div key={group._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col w-full overflow-hidden">
-                
+              <div
+                key={group._id}
+                className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col w-full overflow-hidden"
+              >
                 {/* Header of Subgroup Card */}
                 <div className="bg-gray-50 border-b border-gray-200 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex items-center gap-3 w-full md:w-auto">
@@ -418,7 +464,8 @@ const GroupingsGroupDetail = () => {
                           className="px-2.5 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                           autoFocus
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveGroupTitle(group._id);
+                            if (e.key === 'Enter')
+                              handleSaveGroupTitle(group._id);
                             if (e.key === 'Escape') handleCancelEditGroup();
                           }}
                         />
@@ -451,8 +498,10 @@ const GroupingsGroupDetail = () => {
                         >
                           ✏️
                         </button>
-                        <button 
-                          onClick={() => handleDeleteGroup(group._id, group.title)}
+                        <button
+                          onClick={() =>
+                            handleDeleteGroup(group._id, group.title)
+                          }
                           disabled={processing}
                           className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
                           title="Delete Group (Migrate Keywords)"
@@ -462,19 +511,23 @@ const GroupingsGroupDetail = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-3">
                     <span className="bg-indigo-50 text-indigo-700 text-sm font-semibold px-3 py-1.5 rounded-lg border border-indigo-100 flex items-center gap-1">
-                      Total Vol: <span className="font-bold">{totalSearchVolume.toLocaleString()}</span>
+                      Total Vol:{' '}
+                      <span className="font-bold">
+                        {totalSearchVolume.toLocaleString()}
+                      </span>
                     </span>
                     {flatKeywords.length > 0 && (
                       <span className="bg-blue-50 text-blue-700 text-sm font-semibold px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1">
-                        Avg Score: <span className="font-bold">{avgOverall}</span>
+                        Avg Score:{' '}
+                        <span className="font-bold">{avgOverall}</span>
                       </span>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Subgroup Keywords Table */}
                 <div className="p-0">
                   <div className="max-h-96 overflow-y-auto custom-scrollbar">
@@ -489,7 +542,7 @@ const GroupingsGroupDetail = () => {
                             <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-12 text-center">
                               Add
                             </th>
-                            <th 
+                            <th
                               onClick={() => handleSort(group._id, 'keyword')}
                               className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
                             >
@@ -497,23 +550,29 @@ const GroupingsGroupDetail = () => {
                                 Keyword {getSortIcon(group._id, 'keyword')}
                               </div>
                             </th>
-                            <th 
-                              onClick={() => handleSort(group._id, 'search_volume')}
+                            <th
+                              onClick={() =>
+                                handleSort(group._id, 'search_volume')
+                              }
                               className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
                             >
                               <div className="flex items-center justify-end gap-1">
-                                Search Vol {getSortIcon(group._id, 'search_volume')}
+                                Search Vol{' '}
+                                {getSortIcon(group._id, 'search_volume')}
                               </div>
                             </th>
-                            <th 
-                              onClick={() => handleSort(group._id, 'competition')}
+                            <th
+                              onClick={() =>
+                                handleSort(group._id, 'competition')
+                              }
                               className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
                             >
                               <div className="flex items-center justify-end gap-1">
-                                Competition {getSortIcon(group._id, 'competition')}
+                                Competition{' '}
+                                {getSortIcon(group._id, 'competition')}
                               </div>
                             </th>
-                            <th 
+                            <th
                               onClick={() => handleSort(group._id, 'overall')}
                               className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
                             >
@@ -527,9 +586,12 @@ const GroupingsGroupDetail = () => {
                           {sortedKeywords.map((kw, i) => {
                             const kwId = kw.id || kw._id;
                             return (
-                              <tr key={i} className="hover:bg-gray-50 transition-colors">
+                              <tr
+                                key={i}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
                                 <td className="px-4 py-3 text-center relative">
-                                  <button 
+                                  <button
                                     onClick={() => handleToggleDropdown(kw)}
                                     className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center font-bold text-sm transition-colors mx-auto"
                                   >
@@ -537,28 +599,47 @@ const GroupingsGroupDetail = () => {
                                   </button>
                                   {activeDropdownKeywordId === kwId && (
                                     <div className="absolute left-4 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 text-left animate-fade-in">
-                                      <h4 className="text-sm font-bold text-gray-800 mb-3">Manage Subgroups</h4>
+                                      <h4 className="text-sm font-bold text-gray-800 mb-3">
+                                        Manage Subgroups
+                                      </h4>
                                       <div className="max-h-48 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
-                                        {groupings.map(g => (
-                                          <label key={g._id} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:bg-gray-50 p-1.5 rounded transition-colors">
-                                            <input 
+                                        {groupings.map((g) => (
+                                          <label
+                                            key={g._id}
+                                            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:bg-gray-50 p-1.5 rounded transition-colors"
+                                          >
+                                            <input
                                               type="checkbox"
-                                              checked={!!dropdownGroupSelections[g._id]}
-                                              onChange={(e) => handleCheckboxChange(g._id, e.target.checked)}
+                                              checked={
+                                                !!dropdownGroupSelections[g._id]
+                                              }
+                                              onChange={(e) =>
+                                                handleCheckboxChange(
+                                                  g._id,
+                                                  e.target.checked,
+                                                )
+                                              }
                                               className="rounded text-indigo-600 focus:ring-indigo-500"
                                             />
-                                            <span className="truncate" title={g.title}>{g.title}</span>
+                                            <span
+                                              className="truncate"
+                                              title={g.title}
+                                            >
+                                              {g.title}
+                                            </span>
                                           </label>
                                         ))}
                                       </div>
                                       <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
-                                        <button 
-                                          onClick={() => setActiveDropdownKeywordId(null)}
+                                        <button
+                                          onClick={() =>
+                                            setActiveDropdownKeywordId(null)
+                                          }
                                           className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1"
                                         >
                                           Cancel
                                         </button>
-                                        <button 
+                                        <button
                                           onClick={() => handleSaveGroups(kw)}
                                           disabled={processing}
                                           className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
@@ -570,24 +651,35 @@ const GroupingsGroupDetail = () => {
                                   )}
                                 </td>
                                 <td className="px-6 py-3">
-                                  <span className="text-gray-800 font-medium" title={kw.keyword}>
+                                  <span
+                                    className="text-gray-800 font-medium"
+                                    title={kw.keyword}
+                                  >
                                     {kw.keyword}
                                   </span>
                                 </td>
                                 <td className="px-6 py-3 text-right">
-                                  <span className="text-sm text-gray-600 font-medium" title={kw.search_volume?.toLocaleString() || '0'}>
+                                  <span
+                                    className="text-sm text-gray-600 font-medium"
+                                    title={
+                                      kw.search_volume?.toLocaleString() || '0'
+                                    }
+                                  >
                                     {formatSearchVolume(kw.search_volume)}
                                   </span>
                                 </td>
                                 <td className="px-6 py-3 text-right">
-                                  {kw.competition !== undefined && kw.competition !== null ? (
-                                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-md ${
-                                      kw.competition <= 30
-                                        ? 'bg-green-100 text-green-700'
-                                        : kw.competition <= 60
-                                        ? 'bg-yellow-100 text-yellow-700'
-                                        : 'bg-red-100 text-red-700'
-                                    }`}>
+                                  {kw.competition !== undefined &&
+                                  kw.competition !== null ? (
+                                    <span
+                                      className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-md ${
+                                        kw.competition <= 30
+                                          ? 'bg-green-100 text-green-700'
+                                          : kw.competition <= 60
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-red-100 text-red-700'
+                                      }`}
+                                    >
                                       {kw.competition}
                                     </span>
                                   ) : (
@@ -596,13 +688,15 @@ const GroupingsGroupDetail = () => {
                                 </td>
                                 <td className="px-6 py-3 text-right">
                                   {kw.overall !== undefined ? (
-                                    <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-md ${
-                                      kw.overall >= 70
-                                        ? 'bg-green-100 text-green-700'
-                                        : kw.overall >= 60
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : 'bg-yellow-100 text-yellow-700'
-                                    }`}>
+                                    <span
+                                      className={`inline-block text-xs font-bold px-2.5 py-1 rounded-md ${
+                                        kw.overall >= 70
+                                          ? 'bg-green-100 text-green-700'
+                                          : kw.overall >= 60
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-yellow-100 text-yellow-700'
+                                      }`}
+                                    >
                                       {kw.overall}
                                     </span>
                                   ) : (
@@ -617,11 +711,15 @@ const GroupingsGroupDetail = () => {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Footer of Subgroup Card */}
                 <div className="bg-gray-50 text-xs text-gray-400 border-t border-gray-200 p-3 px-6 flex justify-between items-center">
-                  <span className="font-semibold text-gray-500">{flatKeywords.length} Keywords</span>
-                  <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
+                  <span className="font-semibold text-gray-500">
+                    {flatKeywords.length} Keywords
+                  </span>
+                  <span>
+                    Created {new Date(group.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             );

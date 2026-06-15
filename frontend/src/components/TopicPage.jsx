@@ -600,18 +600,16 @@ const TopicPage = () => {
           </div>
         )}
 
-        {/* Standard YouTube Thumbnails Section */}
+        {/* YouTube Thumbnail Section */}
         {topic.selectedTitle && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎨 YouTube Thumbnails (Standard)
+              🎨 YouTube Thumbnail
             </h2>
             <ThumbnailSelector
               topicId={topicId}
               selectedThumbnail={topic.selectedThumbnail}
-              generatedThumbnails={topic.generatedThumbnails || []}
               onThumbnailSelected={fetchTopic}
-              onGenerateComplete={fetchTopic}
             />
           </div>
         )}

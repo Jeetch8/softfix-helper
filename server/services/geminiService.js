@@ -1015,7 +1015,7 @@ Keywords to segregate:
 ${JSON.stringify(keywordsWithData)}
 `;
 
-    const responseText = await generateText(FLASH_MODEL, prompt, null, true);
+    const responseText = await generateText(PRO_MODEL, prompt, null, true);
 
     let cleanedText = responseText.trim();
     if (cleanedText.startsWith('```')) {

@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import Topic from '../models/Topic.js';
 import { processTopicsNow } from '../services/cronService.js';
 import {
@@ -8,9 +9,22 @@ import {
   generateTags,
 } from '../services/geminiService.js';
 import { generateMP3Audio } from '../services/audioService.js';
-import { deleteImageFromS3 } from '../services/s3Service.js';
+import { deleteImageFromS3, uploadImageToS3 } from '../services/s3Service.js';
 
 const router = express.Router();
+
+// Configure multer for file upload (memory storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (.jpg, .png, .webp) are allowed'), false);
+    }
+  },
+});
 
 /**
  * POST /api/topics
@@ -678,6 +692,58 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error generating thumbnails',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/topics/:id/upload-thumbnail
+ * Upload a manual thumbnail for a topic
+ */
+router.post('/topics/:id/upload-thumbnail', upload.single('thumbnail'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No thumbnail file uploaded',
+      });
+    }
+
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    // Upload to S3
+    const s3Url = await uploadImageToS3(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    // Update topic
+    topic.selectedThumbnail = s3Url;
+    topic.level = 'finished'; // Move to next level
+    await topic.save();
+
+    console.log(`✅ Manual thumbnail uploaded and selected for topic "${topic.topicName}"`);
+
+    res.json({
+      success: true,
+      message: 'Thumbnail uploaded and selected successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error uploading thumbnail:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading thumbnail',
       error: error.message,
     });
   }

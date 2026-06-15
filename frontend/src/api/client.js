@@ -107,6 +107,16 @@ export const selectThumbnail = (id, thumbnail) => {
   return apiClient.post(`/api/topics/${id}/select-thumbnail`, { thumbnail });
 };
 
+export const uploadThumbnail = (id, file) => {
+  const formData = new FormData();
+  formData.append('thumbnail', file);
+  return apiClient.post(`/api/topics/${id}/upload-thumbnail`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
 export const generateExtraAssets = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-extra-assets`);
 };
