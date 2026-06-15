@@ -264,7 +264,7 @@ Formatting: Write it as a continuous, spoken-word transcript. You do not need to
     const promises = [1, 2].map(async (i) => {
       console.log(`⏳ Generating script variation ${i}...`);
       const responseText = await generateText(
-        PRO_MODEL,
+        FLASH_MODEL,
         prompt,
         null,
         false,
