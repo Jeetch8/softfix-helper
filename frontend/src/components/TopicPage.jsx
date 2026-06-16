@@ -14,6 +14,7 @@ import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
 import ThumbnailSelector from './ThumbnailSelector';
 import ExtraAssetsSelector from './ExtraAssetsSelector';
+import YouTubePreview from './YouTubePreview';
 
 const parseKeywords = (keywordsStr) => {
   if (!keywordsStr) return [];
@@ -623,6 +624,15 @@ const TopicPage = () => {
               onThumbnailSelected={fetchTopic}
             />
           </div>
+        )}
+
+        {/* YouTube Feed Preview Section */}
+        {topic.selectedThumbnail && (
+          <YouTubePreview
+            thumbnail={topic.selectedThumbnail}
+            title={topic.selectedTitle}
+            channelName="Softfix Central"
+          />
         )}
 
         {/* Narration Script Section */}
