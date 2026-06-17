@@ -28,7 +28,7 @@ A 4-asset generation feature that:
 **services/audioService.js** (NEW)
 
 ```javascript
-- generateMP3Audio(script, topicId)
+- generateWAVAudio(script, topicId)
   ├─ Uses Gemini 2.5 flash TTS model
   ├─ Converts WAV to MP3 via FFmpeg
   └─ Uploads to S3 and returns URL

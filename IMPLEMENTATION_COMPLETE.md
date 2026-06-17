@@ -22,7 +22,7 @@
 
 #### ✅ audioService.js (New File)
 
-- **Function**: `generateMP3Audio(script, topicId)`
+- **Function**: `generateWAVAudio(script, topicId)`
   - Uses Gemini 2.5 flash TTS model
   - Converts text to natural speech
   - Supports multiple voice options
@@ -48,7 +48,7 @@
 
 - **Added Imports**:
   - `generateSEODescription`, `generateTags`, `generateTimestamps` from geminiService
-  - `generateMP3Audio` from audioService
+  - `generateWAVAudio` from audioService
 
 - **New Endpoint**: `POST /api/topics/:id/generate-extra-assets`
   - Validates topic exists and has script
@@ -168,7 +168,7 @@ Promise.all() executes 4 generators in parallel:
   ├─ generateSEODescription()
   ├─ generateTags()
   ├─ generateTimestamps()
-  └─ generateMP3Audio()
+  └─ generateWAVAudio()
     ↓
 Response returned with all assets
     ↓
@@ -180,7 +180,7 @@ User can copy individual assets or listen to audio
 ### Database Update Flow
 
 ```
-generateMP3Audio() creates:
+generateWAVAudio() creates:
   - Temp WAV file
   - Converted MP3 file
   - Uploads to S3

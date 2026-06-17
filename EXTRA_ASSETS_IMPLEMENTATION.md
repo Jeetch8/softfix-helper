@@ -16,7 +16,7 @@ Added a complete "Extra Assets" generation system that creates SEO-optimized met
 
 #### 2. **audioService.js** - New Audio Processing
 
-- `generateMP3Audio(script, topicId)` - Converts script to MP3 using Gemini TTS
+- `generateWAVAudio(script, topicId)` - Converts script to MP3 using Gemini TTS
 - Uses Gemini 2.5 flash TTS model for natural speech
 - Converts WAV to MP3 using FFmpeg
 - Uploads MP3 to S3 with public access

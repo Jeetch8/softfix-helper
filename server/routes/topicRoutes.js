@@ -8,7 +8,7 @@ import {
   generateSEODescription,
   generateTags,
 } from '../services/geminiService.js';
-import { generateMP3Audio } from '../services/audioService.js';
+import { generateWAVAudio } from '../services/audioService.js';
 import { deleteImageFromS3, uploadImageToS3 } from '../services/s3Service.js';
 
 const router = express.Router();
@@ -841,7 +841,7 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
         topic.keywords
       ),
       generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle, topic.keywords),
-      generateMP3Audio(topic.narrationScript, topic._id),
+      generateWAVAudio(topic.narrationScript, topic._id),
     ]);
 
     // Update topic with generated assets

@@ -40,7 +40,7 @@
 │                                                               │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │ audioService.js (NEW)                                │   │
-│  └─ generateMP3Audio(script, topicId)                   │   │
+│  └─ generateWAVAudio(script, topicId)                   │   │
 │     ├─ Gemini TTS Generation                            │   │
 │     ├─ FFmpeg Conversion (WAV → MP3)                    │   │
 │     └─ S3 Upload & Return URL                           │   │
@@ -122,7 +122,7 @@ User Click "Generate Extra Assets"
          │   └─→ Gemini API
          │       └─→ Return [{time, desc}]
          │
-         └─→ generateMP3Audio()
+         └─→ generateWAVAudio()
              ├─→ Gemini TTS API
              ├─→ Get audio buffer
              ├─→ Save WAV file
