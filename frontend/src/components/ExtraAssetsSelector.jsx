@@ -177,7 +177,7 @@ const ExtraAssetsSelector = ({
                 <div className="space-y-2">
                   <audio key={assets.audioUrl} controls className="w-full">
                     <source
-                      src={`https://${assets.audioUrl.split('https://')[1]}`}
+                      src={`https://${assets.audioUrl}`}
                       type={
                         assets.audioUrl?.toLowerCase().endsWith('.wav')
                           ? 'audio/wav'
