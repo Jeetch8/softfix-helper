@@ -175,13 +175,9 @@ const ExtraAssetsSelector = ({
                     : '🎵 MP3 Audio'}
                 </p>
                 <div className="space-y-2">
-                  <audio
-                    key={`https://${assets.audioUrl.split('https://')[1]}`}
-                    controls
-                    className="w-full"
-                  >
+                  <audio key={assets.audioUrl} controls className="w-full">
                     <source
-                      src={assets.audioUrl}
+                      src={`https://${assets.audioUrl.split('https://')[1]}`}
                       type={
                         assets.audioUrl?.toLowerCase().endsWith('.wav')
                           ? 'audio/wav'
