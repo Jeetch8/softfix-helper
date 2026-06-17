@@ -1,83 +1,17 @@
-import { GoogleGenAI } from '@google/genai';
-import wav from 'wav';
+import textToSpeech from '@google-cloud/text-to-speech';
 import fs from 'fs';
 import path from 'path';
-import ffmpeg from 'fluent-ffmpeg';
 import { uploadImageToS3 } from './s3Service.js';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let ai;
-const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
-
-if (useVertexAI) {
-  ai = new GoogleGenAI({
-    vertexai: true,
-    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
-  });
-  console.log(`🎯 Vertex AI Service Initialized for Audio Service`);
-} else if (process.env.GEMINI_API_KEY) {
-  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  console.log(`🎯 Google AI Studio (Gemini API) Initialized for Audio Service using GEMINI_API_KEY`);
-} else {
-  ai = new GoogleGenAI({
-    vertexai: true,
-    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: "global"
-    // location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
-  });
-  console.log(`🎯 Vertex AI Service Initialized as Fallback for Audio Service`);
-}
+// Instantiate the Google Cloud Text-to-Speech Client
+const client = new textToSpeech.TextToSpeechClient();
 
 /**
- * Save audio buffer to WAV file
- */
-async function saveWaveFile(
-  filename,
-  pcmData,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2,
-) {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.FileWriter(filename, {
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    writer.on('finish', resolve);
-    writer.on('error', reject);
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
-/**
- * Convert WAV file to MP3 using FFmpeg
- */
-function convertWavToMp3(inputPath, outputPath) {
-  return new Promise((resolve, reject) => {
-    ffmpeg(inputPath)
-      .toFormat('mp3')
-      .audioCodec('libmp3lame')
-      .audioBitrate('320k')
-      .on('end', () => {
-        resolve();
-      })
-      .on('error', (err) => {
-        reject(new Error(`FFmpeg conversion error: ${err.message}`));
-      })
-      .save(outputPath);
-  });
-}
-
-/**
- * Generate MP3 from text using Gemini TTS and upload to S3
+ * Generate MP3 from text using Google Cloud Text-to-Speech and upload to S3
  */
 export async function generateMP3Audio(script, topicId) {
   const tempDir = path.join(__dirname, '../temp');
@@ -87,42 +21,33 @@ export async function generateMP3Audio(script, topicId) {
     fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  const tempWavPath = path.join(tempDir, `temp_${Date.now()}.wav`);
   const tempMp3Path = path.join(tempDir, `audio_${Date.now()}.mp3`);
 
   try {
-    console.log('🎵 Generating audio using Gemini TTS via Vertex AI...');
+    console.log('🎵 Generating audio using Google Cloud Text-to-Speech (Chirp 3 HD)...');
 
-    // Generate audio using Gemini TTS via Vertex AI
-    const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-tts',
-      contents: `Read aloud in a warm, friendly, professional tone with no background noise, Professional yet approachable, Clear, precise instructions, Confident and knowledgeable tone: ${script}`,
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Alnilam' },
-          },
-        },
+    const request = {
+      input: { text: script },
+      voice: {
+        languageCode: 'en-US',
+        // Explicitly call a specific Chirp 3 HD model name variant
+        name: 'en-US-Chirp3-HD-Alnilam', 
       },
-    });
+      audioConfig: {
+        audioEncoding: 'MP3',
+      },
+    };
 
-    const audioData =
-      result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-    if (!audioData) {
-      throw new Error('Could not extract audio data from Gemini response');
+    console.log('Sending synthesis request to Cloud Text-to-Speech...');
+    const [response] = await client.synthesizeSpeech(request);
+    
+    if (!response.audioContent) {
+      throw new Error('Could not extract audio data from TTS response');
     }
 
-    const audioBuffer = Buffer.from(audioData, 'base64');
-
-    // Save to temporary WAV file
-    console.log('💾 Saving temporary WAV file...');
-    await saveWaveFile(tempWavPath, audioBuffer);
-
-    // Convert WAV to MP3
-    console.log('🔄 Converting WAV to MP3...');
-    await convertWavToMp3(tempWavPath, tempMp3Path);
+    // Save the binary data stream into a local MP3 file
+    console.log('💾 Saving temporary MP3 file...');
+    fs.writeFileSync(tempMp3Path, response.audioContent, 'binary');
 
     // Read MP3 file and upload to S3
     console.log('☁️  Uploading MP3 to S3...');
@@ -141,10 +66,7 @@ export async function generateMP3Audio(script, topicId) {
     console.error('❌ Error generating audio:', error.message);
     throw new Error(`Failed to generate audio: ${error.message}`);
   } finally {
-    // Clean up temporary files
-    if (fs.existsSync(tempWavPath)) {
-      fs.unlinkSync(tempWavPath);
-    }
+    // Clean up temporary file
     if (fs.existsSync(tempMp3Path)) {
       fs.unlinkSync(tempMp3Path);
     }
