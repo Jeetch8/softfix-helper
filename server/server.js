@@ -15,7 +15,6 @@ import keywordSegregatorRoutes from './routes/keywordSegregatorRoutes.js';
 import dns from 'node:dns/promises';
 dns.setServers(['1.1.1.1']);
 
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -23,17 +22,21 @@ const PORT = process.env.PORT || 3000;
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
   : [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://softfix-helper.vercel.app'
-  ];
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://softfix-helper.vercel.app',
+    ];
 
 app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'ngrok-skip-browser-warning',
+    ],
   }),
 );
 app.use(express.json());
@@ -67,7 +70,8 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       topics: {
-        'POST /api/topics': 'Create a new topic for narration script generation',
+        'POST /api/topics':
+          'Create a new topic for narration script generation',
         'GET /api/topics': 'Get all topics (supports ?userId=xxx filter)',
         'GET /api/topics/:id': 'Get a specific topic by ID',
         'GET /api/status/all': 'Get topic status statistics',
@@ -79,8 +83,10 @@ app.get('/', (req, res) => {
         'GET /api/keywords/stats': 'Get keyword statistics',
         'POST /api/keywords/upload': 'Upload Excel files to import keywords',
         'GET /api/keywords/local/list': 'List Excel files in a local directory',
-        'POST /api/keywords/local/import-directory': 'Import all Excel files from a local directory',
-        'POST /api/keywords/local/import-file': 'Import a single local Excel file',
+        'POST /api/keywords/local/import-directory':
+          'Import all Excel files from a local directory',
+        'POST /api/keywords/local/import-file':
+          'Import a single local Excel file',
         'PUT /api/keywords/:id': 'Update a keyword',
         'DELETE /api/keywords/:id': 'Delete a keyword',
         'POST /api/keywords/:id/add-to-title': 'Add keyword to title queue',
@@ -125,12 +131,12 @@ async function startServer() {
     });
 
     // Start the cron job
-    startCronJob();
+    // startCronJob();
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
       console.log('\n⏹️ Shutting down server...');
-      stopCronJob();
+      // stopCronJob();
       process.exit(0);
     });
   } catch (error) {

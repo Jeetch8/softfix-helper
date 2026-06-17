@@ -495,13 +495,74 @@ router.post('/topics/:id/generate-titles', async (req, res) => {
       `🎬 Generating YouTube titles for: "${topic.topicName}" (ID: ${topic._id})`,
     );
 
-    // Generate titles using Gemini AI
-    const titles = await generateYouTubeTitles(
-      topic.topicName,
-      topic.narrationScript,
-      topic.description,
-      topic.keywords
-    );
+    // Locally create the title with top search volume keywords (without using Gemini AI)
+    let titleStr = '';
+    const keywords = topic.keywords || '';
+    if (keywords.trim()) {
+      // Split by comma or newline
+      const items = keywords.split(/[,\n]/);
+      const kwList = [];
+      for (let item of items) {
+        if (!item.trim()) continue;
+        const parts = item.split('|');
+        const kwName = parts[0]?.trim();
+        const kwVolume = parseInt(parts[1]?.trim()) || 0;
+        if (kwName) {
+          kwList.push({ name: kwName, volume: kwVolume });
+        }
+      }
+
+      // Sort by search volume descending
+      kwList.sort((a, b) => b.volume - a.volume);
+
+      const titleParts = [];
+      let currentLen = 0;
+
+      for (const kw of kwList) {
+        // Capitalize words nicely
+        const capitalized = kw.name
+          .split(/\s+/)
+          .map((w) =>
+            w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '',
+          )
+          .join(' ');
+
+        const partLen = capitalized.length;
+        if (currentLen === 0) {
+          if (partLen > 100) {
+            titleParts.push(capitalized.substring(0, 100));
+            break;
+          }
+          titleParts.push(capitalized);
+          currentLen += partLen;
+        } else {
+          // Joined with " | " which is 3 characters
+          if (currentLen + 3 + partLen <= 100) {
+            titleParts.push(capitalized);
+            currentLen += 3 + partLen;
+          } else {
+            break;
+          }
+        }
+      }
+
+      titleStr = titleParts.join(' | ');
+    }
+
+    // Fallback: if no keywords are provided or parsed, fallback to capitalized topicName
+    if (!titleStr) {
+      titleStr = topic.topicName
+        .split(/\s+/)
+        .map((w) =>
+          w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '',
+        )
+        .join(' ');
+      if (titleStr.length > 100) {
+        titleStr = titleStr.substring(0, 100);
+      }
+    }
+
+    const titles = [titleStr];
 
     // Update topic with generated titles
     topic.generatedTitles = titles;

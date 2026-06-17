@@ -241,9 +241,9 @@ The script should sound like a knowledgeable friend walking someone through a pr
       prompt += `\n\nREGENERATION FEEDBACK / COMMENTS:\nPlease rewrite the script taking into account the following feedback from the user to improve or adjust the script:\n"${regenerationComments}"`;
     }
 
-    console.log(`⏳ Generating narration script using FLASH model...`);
+    console.log(`⏳ Generating narration script using PRO model...`);
     const responseText = await generateText(
-      FLASH_MODEL,
+      PRO_MODEL,
       prompt,
       null,
       false,
