@@ -14,19 +14,24 @@ const client = new textToSpeech.TextToSpeechClient();
  * Converts LINEAR16 raw PCM audio buffer to a valid WAV buffer.
  * If the buffer already contains a RIFF header, it returns the buffer as is.
  */
-function convertLinear16ToWav(audioBuffer, sampleRate = 22050, numChannels = 1, bitDepth = 16) {
+function convertLinear16ToWav(
+  audioBuffer,
+  sampleRate = 22050,
+  numChannels = 1,
+  bitDepth = 16,
+) {
   if (audioBuffer.length > 4 && audioBuffer.toString('utf8', 0, 4) === 'RIFF') {
     return audioBuffer;
   }
 
   const wavHeader = Buffer.alloc(44);
   const dataLength = audioBuffer.length;
-  
+
   // "RIFF" chunk descriptor
   wavHeader.write('RIFF', 0);
   wavHeader.writeUInt32LE(36 + dataLength, 4);
   wavHeader.write('WAVE', 8);
-  
+
   // "fmt " sub-chunk
   wavHeader.write('fmt ', 12);
   wavHeader.writeUInt32LE(16, 16);
@@ -36,11 +41,11 @@ function convertLinear16ToWav(audioBuffer, sampleRate = 22050, numChannels = 1, 
   wavHeader.writeUInt32LE(sampleRate * numChannels * (bitDepth / 8), 28);
   wavHeader.writeUInt16LE(numChannels * (bitDepth / 8), 32);
   wavHeader.writeUInt16LE(bitDepth, 34);
-  
+
   // "data" sub-chunk
   wavHeader.write('data', 36);
   wavHeader.writeUInt32LE(dataLength, 40);
-  
+
   return Buffer.concat([wavHeader, audioBuffer]);
 }
 
@@ -71,6 +76,7 @@ export async function generateWAVAudio(script, topicId) {
       },
       audioConfig: {
         sampleRateHertz: 22050,
+        speakingRate: 0.9,
         audioEncoding: 'LINEAR16',
       },
     };
