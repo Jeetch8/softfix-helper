@@ -308,6 +308,7 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                   </h4>
                   <ExtraAssetsSelector
                     topicId={topicId}
+                    topicTitle={topic.selectedTitle || topic.topicName}
                     extraAssets={
                       topic.seoDescription
                         ? {

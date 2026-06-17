@@ -827,6 +827,7 @@ const TopicPage = () => {
             </h2>
             <ExtraAssetsSelector
               topicId={topicId}
+              topicTitle={topic.selectedTitle || topic.topicName}
               extraAssets={
                 topic.seoDescription
                   ? {

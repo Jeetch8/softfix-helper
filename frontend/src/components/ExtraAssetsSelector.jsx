@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { generateExtraAssets } from '../api/client';
 
-const ExtraAssetsSelector = ({ topicId, extraAssets, onAssetsGenerated }) => {
+const ExtraAssetsSelector = ({ topicId, topicTitle, extraAssets, onAssetsGenerated }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [showAssets, setShowAssets] = useState(!!extraAssets);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [assets, setAssets] = useState(extraAssets || null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleGenerateAssets = async () => {
     setIsGenerating(true);
@@ -38,6 +39,37 @@ const ExtraAssetsSelector = ({ topicId, extraAssets, onAssetsGenerated }) => {
       setTimeout(() => setCopiedIndex(null), 2000);
     } catch (err) {
       setError('Failed to copy to clipboard');
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!assets || !assets.audioUrl) return;
+    setIsDownloading(true);
+    try {
+      const response = await fetch(assets.audioUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const isWav = assets.audioUrl.toLowerCase().endsWith('.wav');
+      const extension = assets.audioUrl.split('.').pop().split('?')[0] || (isWav ? 'wav' : 'mp3');
+      
+      const safeTitle = (topicTitle || 'audio')
+        .replace(/[/\\?%*:|"<>\s]/g, '_')
+        .replace(/_+/g, '_');
+        
+      a.download = `${safeTitle}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      // Fallback: open in new tab
+      window.open(assets.audioUrl, '_blank');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -131,20 +163,31 @@ const ExtraAssetsSelector = ({ topicId, extraAssets, onAssetsGenerated }) => {
             <div className="flex justify-between items-start gap-3">
               <div className="flex-1">
                 <p className="text-purple-700 text-xs font-semibold mb-2">
-                  🎵 MP3 Audio
+                  {assets.audioUrl?.toLowerCase().endsWith('.wav') ? '🎵 WAV Audio' : '🎵 MP3 Audio'}
                 </p>
                 <div className="space-y-2">
-                  <audio controls className="w-full" src={assets.audioUrl}>
+                  <audio key={assets.audioUrl} controls className="w-full">
+                    <source src={assets.audioUrl} type={assets.audioUrl?.toLowerCase().endsWith('.wav') ? "audio/wav" : "audio/mpeg"} />
                     Your browser does not support the audio element.
                   </audio>
-                  <a
-                    href={assets.audioUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-700 text-xs hover:underline"
-                  >
-                    Open in new tab
-                  </a>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={handleDownload}
+                      disabled={isDownloading}
+                      className="text-purple-700 text-xs hover:underline flex items-center gap-1 font-medium disabled:opacity-50"
+                    >
+                      {isDownloading ? '⏳ Downloading...' : '⬇️ Download Audio'}
+                    </button>
+                    <span className="text-purple-300 text-xs">|</span>
+                    <a
+                      href={assets.audioUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-700 text-xs hover:underline"
+                    >
+                      Open in new tab
+                    </a>
+                  </div>
                 </div>
               </div>
               <button
