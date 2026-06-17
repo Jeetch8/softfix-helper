@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { generateExtraAssets } from '../api/client';
 
-const ExtraAssetsSelector = ({ topicId, topicTitle, extraAssets, onAssetsGenerated }) => {
+const ExtraAssetsSelector = ({
+  topicId,
+  topicTitle,
+  extraAssets,
+  onAssetsGenerated,
+}) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [showAssets, setShowAssets] = useState(!!extraAssets);
@@ -51,14 +56,16 @@ const ExtraAssetsSelector = ({ topicId, topicTitle, extraAssets, onAssetsGenerat
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      
+
       const isWav = assets.audioUrl.toLowerCase().endsWith('.wav');
-      const extension = assets.audioUrl.split('.').pop().split('?')[0] || (isWav ? 'wav' : 'mp3');
-      
+      const extension =
+        assets.audioUrl.split('.').pop().split('?')[0] ||
+        (isWav ? 'wav' : 'mp3');
+
       const safeTitle = (topicTitle || 'audio')
         .replace(/[/\\?%*:|"<>\s]/g, '_')
         .replace(/_+/g, '_');
-        
+
       a.download = `${safeTitle}.${extension}`;
       document.body.appendChild(a);
       a.click();
@@ -163,11 +170,24 @@ const ExtraAssetsSelector = ({ topicId, topicTitle, extraAssets, onAssetsGenerat
             <div className="flex justify-between items-start gap-3">
               <div className="flex-1">
                 <p className="text-purple-700 text-xs font-semibold mb-2">
-                  {assets.audioUrl?.toLowerCase().endsWith('.wav') ? '🎵 WAV Audio' : '🎵 MP3 Audio'}
+                  {assets.audioUrl?.toLowerCase().endsWith('.wav')
+                    ? '🎵 WAV Audio'
+                    : '🎵 MP3 Audio'}
                 </p>
                 <div className="space-y-2">
-                  <audio key={assets.audioUrl} controls className="w-full">
-                    <source src={assets.audioUrl} type={assets.audioUrl?.toLowerCase().endsWith('.wav') ? "audio/wav" : "audio/mpeg"} />
+                  <audio
+                    key={`https://${assets.audioUrl.split('https://')[1]}`}
+                    controls
+                    className="w-full"
+                  >
+                    <source
+                      src={assets.audioUrl}
+                      type={
+                        assets.audioUrl?.toLowerCase().endsWith('.wav')
+                          ? 'audio/wav'
+                          : 'audio/mpeg'
+                      }
+                    />
                     Your browser does not support the audio element.
                   </audio>
                   <div className="flex items-center gap-4">
@@ -176,7 +196,9 @@ const ExtraAssetsSelector = ({ topicId, topicTitle, extraAssets, onAssetsGenerat
                       disabled={isDownloading}
                       className="text-purple-700 text-xs hover:underline flex items-center gap-1 font-medium disabled:opacity-50"
                     >
-                      {isDownloading ? '⏳ Downloading...' : '⬇️ Download Audio'}
+                      {isDownloading
+                        ? '⏳ Downloading...'
+                        : '⬇️ Download Audio'}
                     </button>
                     <span className="text-purple-300 text-xs">|</span>
                     <a
