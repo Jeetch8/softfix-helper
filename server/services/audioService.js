@@ -75,8 +75,8 @@ export async function generateWAVAudio(script, topicId) {
         name: 'en-US-Chirp3-HD-Alnilam',
       },
       audioConfig: {
-        sampleRateHertz: 22050,
-        speakingRate: 0.9,
+        sampleRateHertz: 44100,
+        speakingRate: 1,
         audioEncoding: 'LINEAR16',
       },
     };
