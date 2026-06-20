@@ -51,7 +51,7 @@ const ExtraAssetsSelector = ({
     if (!assets || !assets.audioUrl) return;
     setIsDownloading(true);
     try {
-      const response = await fetch(assets.audioUrl);
+      const response = await fetch(`https://${assets.audioUrl}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -198,7 +198,7 @@ const ExtraAssetsSelector = ({
                     </button>
                     <span className="text-purple-300 text-xs">|</span>
                     <a
-                      href={assets.audioUrl}
+                      href={`https://${assets.audioUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-purple-700 text-xs hover:underline"
@@ -209,7 +209,7 @@ const ExtraAssetsSelector = ({
                 </div>
               </div>
               <button
-                onClick={() => handleCopy(assets.audioUrl, 3)}
+                onClick={() => handleCopy(`https://${assets.audioUrl}`, 3)}
                 className={`flex-shrink-0 px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
                   copiedIndex === 3
                     ? 'bg-purple-500 text-white'
