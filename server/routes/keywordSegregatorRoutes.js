@@ -249,6 +249,17 @@ router.get('/segregator/groups', async (req, res) => {
 
         const groups = await Grouping.find(query).sort({ createdAt: -1 });
 
+        for (const group of groups) {
+            const obj = group.toObject({ defaults: false });
+            if (obj.priority === undefined) {
+                await Grouping.findByIdAndUpdate(group._id, { priority: false });
+                group.priority = false;
+                if (group._doc) {
+                    group._doc.priority = false;
+                }
+            }
+        }
+
         res.json({
             success: true,
             message: 'Groupings retrieved successfully',

@@ -332,6 +332,10 @@ const GroupingsGroupDetail = () => {
     }
   };
 
+  const displayedGroupings = showOnlyPriority
+    ? groupings.filter((group) => group.priority)
+    : groupings;
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-16 text-center">
