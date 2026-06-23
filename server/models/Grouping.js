@@ -52,6 +52,10 @@ const groupingSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'GroupingsGroup',
         },
+        priority: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

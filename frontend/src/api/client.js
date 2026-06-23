@@ -239,6 +239,10 @@ export const updateSegregatorGroup = (id, title) => {
   return apiClient.put(`/api/segregator/groups/${id}`, { title });
 };
 
+export const updateSegregatorGroupPriority = (id, priority) => {
+  return apiClient.put(`/api/segregator/groups/${id}/priority`, { priority });
+};
+
 export const flushSegregatorGroups = () => {
   return apiClient.delete('/api/segregator/groups');
 };

@@ -207,6 +207,35 @@ router.put('/segregator/groups/:id', async (req, res) => {
 });
 
 /**
+ * PUT /api/segregator/groups/:id/priority
+ * Updates a specific group's priority status
+ */
+router.put('/segregator/groups/:id/priority', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { priority } = req.body;
+        if (priority === undefined) {
+            return res.status(400).json({ success: false, message: 'Priority boolean is required' });
+        }
+
+        const updatedGroup = await Grouping.findByIdAndUpdate(
+            id,
+            { priority: !!priority },
+            { new: true }
+        );
+
+        if (!updatedGroup) {
+            return res.status(404).json({ success: false, message: 'Group not found' });
+        }
+
+        res.json({ success: true, message: `Group priority updated successfully`, data: updatedGroup });
+    } catch (error) {
+        console.error('❌ Error updating group priority:', error.message);
+        res.status(500).json({ success: false, message: 'Error updating group priority', error: error.message });
+    }
+});
+
+/**
  * GET /api/segregator/groups
  * Returns all groups and their keywords
  */

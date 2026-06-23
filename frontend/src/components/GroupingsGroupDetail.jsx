@@ -6,6 +6,7 @@ import {
   createSegregatorGroup,
   deleteSegregatorGroup,
   updateSegregatorGroup,
+  updateSegregatorGroupPriority,
   updateSegregatorKeywordGroups,
   updateGroupingsGroup,
 } from '../api/client';
@@ -27,6 +28,12 @@ const GroupingsGroupDetail = () => {
   const [dropdownGroupSelections, setDropdownGroupSelections] = useState({});
   const [editingGroupId, setEditingGroupId] = useState(null);
   const [editTitleText, setEditTitleText] = useState('');
+
+  // Dropdown states for individual group actions
+  const [activeGroupDropdownId, setActiveGroupDropdownId] = useState(null);
+
+  // Filter state for priority groups
+  const [showOnlyPriority, setShowOnlyPriority] = useState(false);
 
   // Parent title edit state
   const [isEditingParentTitle, setIsEditingParentTitle] = useState(false);
@@ -171,6 +178,29 @@ const GroupingsGroupDetail = () => {
       console.error('Error deleting group:', err);
       setError(
         err.response?.data?.message || err.message || 'Failed to delete group.',
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleTogglePriority = async (id, currentPriority) => {
+    try {
+      setProcessing(true);
+      setError(null);
+      const newPriority = !currentPriority;
+      await updateSegregatorGroupPriority(id, newPriority);
+      setSuccess(`Group updated to ${newPriority ? 'priority' : 'normal'}!`);
+
+      // Refresh groupings locally
+      const childrenResponse = await getSegregatorGroups(groupingsGroupId);
+      setGroupings(childrenResponse.data.data || []);
+    } catch (err) {
+      console.error('Error toggling priority:', err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Failed to update group priority.',
       );
     } finally {
       setProcessing(false);
@@ -385,13 +415,26 @@ const GroupingsGroupDetail = () => {
           </div>
         </div>
 
-        <button
-          onClick={handleCreateGroup}
-          disabled={processing}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <span>➕</span> Add New Group
-        </button>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          <button
+            onClick={() => setShowOnlyPriority(!showOnlyPriority)}
+            className={`px-5 py-3 rounded-xl font-bold transition-all shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
+              showOnlyPriority
+                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-100'
+                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm'
+            }`}
+          >
+            <span>{showOnlyPriority ? '★' : '☆'}</span> Priority Groups Only
+          </button>
+
+          <button
+            onClick={handleCreateGroup}
+            disabled={processing}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>➕</span> Add New Group
+          </button>
+        </div>
       </div>
 
       {/* Notifications */}
@@ -426,9 +469,25 @@ const GroupingsGroupDetail = () => {
             Create Subgroup
           </button>
         </div>
+      ) : showOnlyPriority && displayedGroupings.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm animate-fade-in">
+          <span className="text-5xl block mb-4">⭐</span>
+          <h3 className="text-lg font-bold text-gray-700">
+            No priority groups found
+          </h3>
+          <p className="text-gray-400 mt-1 mb-6">
+            Use the group options menu to mark subgroups as priority!
+          </p>
+          <button
+            onClick={() => setShowOnlyPriority(false)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md"
+          >
+            Show All Groups
+          </button>
+        </div>
       ) : (
         <div className="flex flex-col gap-8">
-          {groupings.map((group) => {
+          {displayedGroupings.map((group) => {
             const flatKeywords = group.keywords ? group.keywords.flat() : [];
             const sortedKeywords = getSortedKeywords(flatKeywords, group._id);
 
@@ -458,16 +517,16 @@ const GroupingsGroupDetail = () => {
                     {editingGroupId === group._id ? (
                       <div className="flex items-center gap-2 flex-grow">
                         <input
-                          type="text"
-                          value={editTitleText}
-                          onChange={(e) => setEditTitleText(e.target.value)}
-                          className="px-2.5 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter')
-                              handleSaveGroupTitle(group._id);
-                            if (e.key === 'Escape') handleCancelEditGroup();
-                          }}
+                           type="text"
+                           value={editTitleText}
+                           onChange={(e) => setEditTitleText(e.target.value)}
+                           className="px-2.5 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                           autoFocus
+                           onKeyDown={(e) => {
+                             if (e.key === 'Enter')
+                               handleSaveGroupTitle(group._id);
+                             if (e.key === 'Escape') handleCancelEditGroup();
+                           }}
                         />
                         <button
                           onClick={() => handleSaveGroupTitle(group._id)}
@@ -486,8 +545,13 @@ const GroupingsGroupDetail = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-bold text-gray-800 tracking-tight">
+                      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                        <h3 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-1.5">
+                          {group.priority && (
+                            <span className="text-amber-500 text-lg animate-pulse" title="Priority Group">
+                              ⭐
+                            </span>
+                          )}
                           {group.title}
                         </h3>
                         <button
@@ -498,16 +562,43 @@ const GroupingsGroupDetail = () => {
                         >
                           ✏️
                         </button>
-                        <button
-                          onClick={() =>
-                            handleDeleteGroup(group._id, group.title)
-                          }
-                          disabled={processing}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                          title="Delete Group (Migrate Keywords)"
-                        >
-                          🗑️
-                        </button>
+
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setActiveGroupDropdownId(
+                                activeGroupDropdownId === group._id ? null : group._id
+                              )
+                            }
+                            disabled={processing}
+                            className="text-gray-500 hover:text-indigo-600 font-bold bg-white border border-gray-200 hover:border-indigo-100 hover:bg-indigo-50 px-3 py-1.5 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-sm"
+                            title="Group Options"
+                          >
+                            ⚙️ Options
+                          </button>
+                          {activeGroupDropdownId === group._id && (
+                            <div className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 p-2 text-left animate-fade-in">
+                              <button
+                                onClick={() => {
+                                  setActiveGroupDropdownId(null);
+                                  handleTogglePriority(group._id, group.priority);
+                                }}
+                                className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors flex items-center gap-2 font-semibold"
+                              >
+                                <span>{group.priority ? '☆ Remove Priority' : '⭐ Mark as Priority'}</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setActiveGroupDropdownId(null);
+                                  handleDeleteGroup(group._id, group.title);
+                                }}
+                                className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-semibold border-t border-gray-50 mt-1"
+                              >
+                                <span>🗑️ Delete Group</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
