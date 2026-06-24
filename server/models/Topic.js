@@ -19,6 +19,10 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    groupingIds: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Grouping',
+    }],
     narrationScript: {
       type: String,
       default: null,
@@ -126,5 +130,21 @@ const topicSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+topicSchema.methods.getKeywordsString = async function() {
+  if (this.groupingIds && this.groupingIds.length > 0) {
+    const Grouping = mongoose.model('Grouping');
+    const groupings = await Grouping.find({ _id: { $in: this.groupingIds } });
+    let kwList = [];
+    for (const g of groupings) {
+      const flatKeywords = g.keywords ? g.keywords.flat() : [];
+      for (const kw of flatKeywords) {
+        kwList.push(`${kw.keyword} | ${kw.search_volume}`);
+      }
+    }
+    return kwList.join(', ');
+  }
+  return this.keywords || '';
+};
 
 export default mongoose.model('Topic', topicSchema);

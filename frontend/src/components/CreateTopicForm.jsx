@@ -10,7 +10,7 @@ const CreateTopicForm = ({ onSuccess }) => {
     userId: 'default-user',
   });
   const [groupings, setGroupings] = useState([]);
-  const [selectedGroupingId, setSelectedGroupingId] = useState('');
+  const [selectedGroupingIds, setSelectedGroupingIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -39,7 +39,7 @@ const CreateTopicForm = ({ onSuccess }) => {
     };
   });
 
-  const selectedOption = groupingOptions.find((o) => o.value === selectedGroupingId) || null;
+  const selectedOptions = groupingOptions.filter((o) => selectedGroupingIds.includes(o.value));
 
   useEffect(() => {
     const fetchGroupings = async () => {
@@ -61,10 +61,10 @@ const CreateTopicForm = ({ onSuccess }) => {
     }));
   };
 
-  const selectedGrouping = groupings.find(g => g._id === selectedGroupingId);
-  const keywordsList = selectedGrouping && selectedGrouping.keywords && selectedGrouping.keywords.length > 0
-    ? selectedGrouping.keywords.flat()
-    : [];
+  const selectedGroupings = groupings.filter(g => selectedGroupingIds.includes(g._id));
+  const keywordsList = selectedGroupings.flatMap(g => 
+    g.keywords && g.keywords.length > 0 ? g.keywords.flat() : []
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,19 +73,15 @@ const CreateTopicForm = ({ onSuccess }) => {
     setSuccess(false);
 
     try {
-      const formattedKeywords = keywordsList
-        .map(kw => `${kw.keyword} | ${kw.search_volume}`)
-        .join(', ');
-
       const submitData = {
         ...formData,
-        keywords: formattedKeywords
+        groupingIds: selectedGroupingIds
       };
 
       await createTopic(submitData);
       setSuccess(true);
       setFormData({ topicName: '', description: '', stepByStepInstructions: '', userId: 'default-user' });
-      setSelectedGroupingId('');
+      setSelectedGroupingIds([]);
 
       // Call parent callback to refresh list
       if (onSuccess) {
@@ -170,8 +166,9 @@ const CreateTopicForm = ({ onSuccess }) => {
           <Select
             isSearchable
             isClearable
-            value={selectedOption}
-            onChange={(opt) => setSelectedGroupingId(opt ? opt.value : '')}
+            isMulti
+            value={selectedOptions}
+            onChange={(opts) => setSelectedGroupingIds(opts ? opts.map(o => o.value) : [])}
             options={groupingOptions}
             placeholder="Search and select a grouping..."
             noOptionsMessage={() => 'No groupings found'}

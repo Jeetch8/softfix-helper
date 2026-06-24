@@ -32,7 +32,7 @@ const upload = multer({
  */
 router.post('/topics', async (req, res) => {
   try {
-    const { topicName, description, stepByStepInstructions, keywords, userId } = req.body;
+    const { topicName, description, stepByStepInstructions, groupingIds, userId } = req.body;
 
     if (!topicName || topicName.trim() === '') {
       return res.status(400).json({
@@ -45,7 +45,7 @@ router.post('/topics', async (req, res) => {
       topicName: topicName.trim(),
       description: description || '',
       stepByStepInstructions: stepByStepInstructions || '',
-      keywords: keywords || '',
+      groupingIds: Array.isArray(groupingIds) ? groupingIds : [],
       userId: userId || 'default-user',
       status: 'completed',
     });
@@ -81,11 +81,19 @@ router.get('/topics', async (req, res) => {
 
     const topics = await Topic.find(query).sort({ createdAt: -1 });
 
+    const topicsWithKeywords = await Promise.all(
+      topics.map(async (topic) => {
+        const topicObj = topic.toObject();
+        topicObj.keywords = await topic.getKeywordsString();
+        return topicObj;
+      })
+    );
+
     res.json({
       success: true,
       message: 'Topics retrieved successfully',
-      count: topics.length,
-      data: topics,
+      count: topicsWithKeywords.length,
+      data: topicsWithKeywords,
     });
   } catch (error) {
     console.error('❌ Error retrieving topics:', error.message);
@@ -114,10 +122,13 @@ router.get('/topics/:id', async (req, res) => {
       });
     }
 
+    const topicObj = topic.toObject();
+    topicObj.keywords = await topic.getKeywordsString();
+
     res.json({
       success: true,
       message: 'Topic retrieved successfully',
-      data: topic,
+      data: topicObj,
     });
   } catch (error) {
     console.error('❌ Error retrieving topic:', error.message);
@@ -392,6 +403,7 @@ router.put('/topics/:id/keywords', async (req, res) => {
       id,
       {
         keywords: keywords.trim(),
+        groupingIds: [], // Clear groupingIds so manual edits take precedence
       },
       { new: true },
     );
@@ -403,6 +415,9 @@ router.put('/topics/:id/keywords', async (req, res) => {
       });
     }
 
+    const topicObj = topic.toObject();
+    topicObj.keywords = await topic.getKeywordsString();
+
     console.log(
       `✏️ Topic keywords updated: "${topic.topicName}" (ID: ${topic._id})`,
     );
@@ -410,7 +425,7 @@ router.put('/topics/:id/keywords', async (req, res) => {
     res.json({
       success: true,
       message: 'Keywords updated successfully',
-      data: topic,
+      data: topicObj,
     });
   } catch (error) {
     console.error('❌ Error updating topic keywords:', error.message);
@@ -497,7 +512,7 @@ router.post('/topics/:id/generate-titles', async (req, res) => {
 
     // Locally create the title with top search volume keywords (without using Gemini AI)
     let titleStr = '';
-    const keywords = topic.keywords || '';
+    const keywords = await topic.getKeywordsString();
     if (keywords.trim()) {
       // Split by comma or newline
       const items = keywords.split(/[,\n]/);
@@ -724,7 +739,7 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
       topic.topicName,
       topic.selectedTitle,
       topic.narrationScript,
-      topic.keywords
+      await topic.getKeywordsString()
     );
 
     // Handle migration of old flat array data if necessary
@@ -899,9 +914,9 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
         topic.topicName,
         topic.narrationScript,
         topic.selectedTitle,
-        topic.keywords
+        await topic.getKeywordsString()
       ),
-      generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle, topic.keywords),
+      generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle, await topic.getKeywordsString()),
       generateWAVAudio(topic.narrationScript, topic._id),
     ]);
 

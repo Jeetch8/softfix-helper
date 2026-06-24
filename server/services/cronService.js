@@ -44,8 +44,9 @@ async function processPendingTopics() {
         );
 
         let videoTitle = topic.topicName;
-        if (topic.keywords) {
-          const kwList = topic.keywords.split(',').map(k => {
+        const keywordsStr = await topic.getKeywordsString();
+        if (keywordsStr) {
+          const kwList = keywordsStr.split(',').map(k => {
             const parts = k.split('|');
             return {
               keyword: parts[0]?.trim(),
@@ -63,7 +64,7 @@ async function processPendingTopics() {
           topic.topicName,
           videoTitle,
           topic.description,
-          topic.keywords,
+          keywordsStr,
           topic.regenerationComments
         );
 
