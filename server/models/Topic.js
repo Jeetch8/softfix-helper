@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { fetchKeywordsForGroups } from '../services/keywordHelper.js';
 
 const topicSchema = new mongoose.Schema(
   {
@@ -133,17 +134,9 @@ const topicSchema = new mongoose.Schema(
 
 topicSchema.methods.getKeywordsString = async function() {
   if (this.groupingIds && this.groupingIds.length > 0) {
-    const Grouping = mongoose.model('Grouping');
     const ids = this.groupingIds.map((g) => (g && g._id ? g._id : g));
-    const groupings = await Grouping.find({ _id: { $in: ids } });
-    let kwList = [];
-    for (const g of groupings) {
-      const flatKeywords = g.keywords ? g.keywords.flat() : [];
-      for (const kw of flatKeywords) {
-        kwList.push(`${kw.keyword} | ${kw.search_volume}`);
-      }
-    }
-    return kwList.join(', ');
+    const uniqueKeywords = await fetchKeywordsForGroups(ids);
+    return uniqueKeywords.map((kw) => `${kw.keyword} | ${kw.search_volume}`).join(', ');
   }
   return this.keywords || '';
 };

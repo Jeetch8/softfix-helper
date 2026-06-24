@@ -5,6 +5,7 @@ import QuestionKeyword from '../models/QuestionKeyword.js';
 import Grouping from '../models/Grouping.js';
 import GroupingsGroup from '../models/GroupingsGroup.js';
 import { filterNonEnglishKeywords, segregateKeywordsIntoGroups } from '../services/geminiService.js';
+import { fetchKeywordsForGroups } from '../services/keywordHelper.js';
 
 const roundDownToOneDecimal = (val) => {
     if (val === null || val === undefined) return val;
@@ -232,6 +233,31 @@ router.put('/segregator/groups/:id/priority', async (req, res) => {
     } catch (error) {
         console.error('❌ Error updating group priority:', error.message);
         res.status(500).json({ success: false, message: 'Error updating group priority', error: error.message });
+    }
+});
+
+/**
+ * GET /api/segregator/groups/keywords
+ * Fetches unique keywords for provided groups.
+ * Accepts multiple group IDs (comma-separated or array).
+ */
+router.get('/segregator/groups/keywords', async (req, res) => {
+    try {
+        const { groupIds } = req.query;
+        if (!groupIds) {
+            return res.status(400).json({ success: false, message: 'Group IDs are required' });
+        }
+        const ids = typeof groupIds === 'string' ? groupIds.split(',').map(id => id.trim()) : groupIds;
+        const keywords = await fetchKeywordsForGroups(ids);
+        res.json({
+            success: true,
+            message: 'Unique keywords retrieved successfully',
+            count: keywords.length,
+            data: keywords
+        });
+    } catch (error) {
+        console.error('❌ Error fetching keywords for groups:', error.message);
+        res.status(500).json({ success: false, message: 'Error fetching keywords for groups', error: error.message });
     }
 });
 
