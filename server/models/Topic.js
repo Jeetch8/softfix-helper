@@ -134,7 +134,8 @@ const topicSchema = new mongoose.Schema(
 topicSchema.methods.getKeywordsString = async function() {
   if (this.groupingIds && this.groupingIds.length > 0) {
     const Grouping = mongoose.model('Grouping');
-    const groupings = await Grouping.find({ _id: { $in: this.groupingIds } });
+    const ids = this.groupingIds.map((g) => (g && g._id ? g._id : g));
+    const groupings = await Grouping.find({ _id: { $in: ids } });
     let kwList = [];
     for (const g of groupings) {
       const flatKeywords = g.keywords ? g.keywords.flat() : [];

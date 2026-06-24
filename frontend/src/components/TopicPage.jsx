@@ -272,12 +272,42 @@ const TopicPage = () => {
     );
   }
 
-  // Parse, filter, and sort keywords
-  const parsedKeywords = parseKeywords(topic.keywords || '');
+  // Parse keywords from groupingIds if populated, else fallback to topic.keywords
+  const parsedKeywords = (() => {
+    if (
+      topic.groupingIds &&
+      Array.isArray(topic.groupingIds) &&
+      topic.groupingIds.length > 0 &&
+      typeof topic.groupingIds[0] === 'object'
+    ) {
+      const list = [];
+      for (const group of topic.groupingIds) {
+        if (group && group.title) {
+          const flatKeywords = group.keywords ? group.keywords.flat() : [];
+          for (const kw of flatKeywords) {
+            list.push({
+              keyword: kw.keyword,
+              volume: Number(kw.search_volume) || 0,
+              rawVolume: String(kw.search_volume || 0),
+              topicName: group.title,
+              overall: kw.overall,
+              competition: kw.competition,
+            });
+          }
+        }
+      }
+      return list;
+    }
+    return parseKeywords(topic.keywords || '').map((kw) => ({
+      ...kw,
+      topicName: 'Manual',
+    }));
+  })();
   
-  // Filter
+  // Filter by keyword or topic group name
   const filteredKeywords = parsedKeywords.filter((k) =>
-    k.keyword.toLowerCase().includes(keywordSearch.toLowerCase())
+    k.keyword.toLowerCase().includes(keywordSearch.toLowerCase()) ||
+    (k.topicName && k.topicName.toLowerCase().includes(keywordSearch.toLowerCase()))
   );
 
   // Sort
@@ -407,7 +437,7 @@ const TopicPage = () => {
                             type="text"
                             value={keywordSearch}
                             onChange={(e) => setKeywordSearch(e.target.value)}
-                            placeholder="🔍 Filter keywords..."
+                            placeholder="🔍 Filter by keyword or topic group..."
                             className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                           />
                           {keywordSearch && (
@@ -452,6 +482,24 @@ const TopicPage = () => {
                                 </th>
                                 <th
                                   onClick={() => {
+                                    if (keywordSortKey === 'topicName') {
+                                      setKeywordSortDir(keywordSortDir === 'asc' ? 'desc' : 'asc');
+                                    } else {
+                                      setKeywordSortKey('topicName');
+                                      setKeywordSortDir('asc');
+                                    }
+                                  }}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-200 select-none font-semibold text-gray-700 transition-colors"
+                                >
+                                  <div className="flex items-center gap-1">
+                                    Topic Group
+                                    {keywordSortKey === 'topicName' && (
+                                      <span>{keywordSortDir === 'asc' ? '▲' : '▼'}</span>
+                                    )}
+                                  </div>
+                                </th>
+                                <th
+                                  onClick={() => {
                                     if (keywordSortKey === 'volume') {
                                       setKeywordSortDir(keywordSortDir === 'asc' ? 'desc' : 'asc');
                                     } else {
@@ -476,6 +524,15 @@ const TopicPage = () => {
                                 <tr key={idx} className="hover:bg-blue-50/40 transition-colors">
                                   <td className="px-3 py-2 text-gray-800 break-words font-medium">
                                     {item.keyword}
+                                  </td>
+                                  <td className="px-3 py-2 text-gray-600 font-medium">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                      item.topicName === 'Manual'
+                                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                        : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                    }`}>
+                                      {item.topicName}
+                                    </span>
                                   </td>
                                   <td
                                     className="px-3 py-2 text-gray-600 text-right font-mono"

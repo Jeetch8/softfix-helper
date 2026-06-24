@@ -79,7 +79,7 @@ router.get('/topics', async (req, res) => {
     const { userId } = req.query;
     const query = userId ? { userId } : {};
 
-    const topics = await Topic.find(query).sort({ createdAt: -1 });
+    const topics = await Topic.find(query).populate('groupingIds').sort({ createdAt: -1 });
 
     const topicsWithKeywords = await Promise.all(
       topics.map(async (topic) => {
@@ -113,7 +113,7 @@ router.get('/topics/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const topic = await Topic.findById(id);
+    const topic = await Topic.findById(id).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -258,6 +258,7 @@ router.post('/topics/:id/regenerate', async (req, res) => {
     topic.errorMessage = null;
     topic.regenerationComments = comments || null;
     await topic.save();
+    await topic.populate('groupingIds');
 
     console.log(
       `🔄 Topic regeneration triggered: "${topic.topicName}" (ID: ${topic._id})`,
@@ -305,7 +306,7 @@ router.put('/topics/:id/script', async (req, res) => {
         processedAt: new Date(),
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -355,7 +356,7 @@ router.put('/topics/:id/description', async (req, res) => {
         description: description.trim(),
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -406,7 +407,7 @@ router.put('/topics/:id/keywords', async (req, res) => {
         groupingIds: [], // Clear groupingIds so manual edits take precedence
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -459,7 +460,7 @@ router.put('/topics/:id/instructions', async (req, res) => {
         stepByStepInstructions: stepByStepInstructions.trim(),
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -630,7 +631,7 @@ router.post('/topics/:id/select-title', async (req, res) => {
         level: 'thumbnail',
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -678,7 +679,7 @@ router.put('/topics/:id/update-title', async (req, res) => {
         selectedTitle: title.trim(),
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -809,6 +810,7 @@ router.post('/topics/:id/upload-thumbnail', upload.single('thumbnail'), async (r
     topic.selectedThumbnail = s3Url;
     topic.level = 'finished'; // Move to next level
     await topic.save();
+    await topic.populate('groupingIds');
 
     console.log(`✅ Manual thumbnail uploaded and selected for topic "${topic.topicName}"`);
 
@@ -850,7 +852,7 @@ router.post('/topics/:id/select-thumbnail', async (req, res) => {
         level: 'finished',
       },
       { new: true },
-    );
+    ).populate('groupingIds');
 
     if (!topic) {
       return res.status(404).json({
@@ -973,6 +975,7 @@ router.post('/topics/:id/mark-editing', async (req, res) => {
 
     topic.level = 'editing';
     await topic.save();
+    await topic.populate('groupingIds');
 
     console.log(`✏️ Topic marked as editing: "${topic.topicName}"`);
 
@@ -1016,6 +1019,7 @@ router.post('/topics/:id/mark-uploaded', async (req, res) => {
 
     topic.level = 'uploaded';
     await topic.save();
+    await topic.populate('groupingIds');
 
     console.log(`📤 Topic marked as uploaded: "${topic.topicName}"`);
 
