@@ -64,6 +64,7 @@ async function processPendingTopics() {
           topic.topicName,
           videoTitle,
           topic.description,
+          topic.stepByStepInstructions,
           keywordsStr,
           topic.regenerationComments
         );

@@ -188,12 +188,16 @@ export async function generateNarrationScript(
   topic,
   videoTitle,
   description = '',
+  stepByStepInstructions = '',
   keywords = '',
   regenerationComments = null,
 ) {
   try {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
+      : '';
+    const stepByStepInstructionsText = stepByStepInstructions
+      ? `\n\nStep-by-step instructions to follow/incorporate:\n${stepByStepInstructions}`
       : '';
     const keywordsText = keywords
       ? `\nKeywords: ${keywords}\nMake sure to incorporate these keywords into the script, but ONLY if they sound natural or make sense in a sentence, and ensure the resulting sentence also makes complete sense.`
@@ -237,7 +241,7 @@ export async function generateNarrationScript(
 
     // The script should sound like a knowledgeable friend walking someone through a process—direct, clear, and efficient.`;
 
-    let prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
+    let prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${stepByStepInstructionsText}${keywordsText}
 
 SCRIPT STRUCTURE:
 
@@ -248,7 +252,7 @@ OPENING (follow this exact pattern every time):
 - Do NOT say "let's get straight into it" or similar — the channel goes directly from the engagement line into the content
 
 INTRODUCTION (1–4 sentences, optional but common):
-Directly after the engagement line, add brief context ONLY when useful — such as:
+Direct after the engagement line, add brief context ONLY when useful — such as:
 - A caveat or limitation viewers should know upfront ("So unfortunately, Roblox does not give us anywhere in the settings to...")
 - Why this method works or what makes it noteworthy ("And the method I'm going to show you will work even if you're on the lock screen...")
 - A quick recommendation or opinion before diving in ("So, in my opinion, the best free VPN... is going to be ProtonVPN.")
