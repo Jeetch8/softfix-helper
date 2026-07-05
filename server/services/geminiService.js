@@ -1005,7 +1005,12 @@ export async function filterNonEnglishKeywords(keywordsArray) {
     console.log(
       `🔍 Filtering non-English keywords from ${keywordsArray.length} items using small model...`,
     );
-    const prompt = `You are a language detection assistant. Given the following list of keywords, return ONLY a JSON array containing the keywords that are in English. Exclude any keywords that are primarily in another language. Do NOT add markdown formatting around the output, just return the raw JSON array of strings.
+    const prompt = `You are a language detection assistant. Given the following list of keywords, return ONLY a JSON array containing the keywords that are in English. Exclude any keywords that are primarily in another language.
+
+CRITICAL RULES:
+1. Do NOT deduplicate, merge, or filter out similar or closely-related keywords.
+2. Every unique keyword string from the input (even if they are minor variations of each other, e.g., 'idm alternate' vs 'idm alternative', or 'idm alternative for pc' vs 'idm alternative for pc free') must be kept in the output array if they are in English.
+3. Do NOT add markdown formatting around the output, just return the raw JSON array of strings.
 
 Keywords to filter:
 ${JSON.stringify(keywordsArray)}
@@ -1041,6 +1046,14 @@ export async function segregateKeywordsIntoGroups(keywordsWithData) {
     const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, competition scores, and ids. 
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
 A keyword can be placed into multiple groups if it is appropriate.
+
+CRITICAL RULES FOR GROUPING:
+1. EVERY SINGLE keyword ID from the input list MUST be assigned to at least one group. Do NOT discard, omit, or leave out any keyword under any circumstances.
+2. DO NOT deduplicate, merge, or discard keywords that have similar phrasing or meaning. You must treat similar keywords as distinct, unique items.
+   - For example: if both 'idm alternative for pc' and 'idm alternative for pc free' are present, BOTH must be retained and assigned to groups.
+   - For example: if both 'idm alternate' and 'idm alternative' are present, BOTH must be retained and assigned to groups.
+   - Every input ID must find its way into the final grouped JSON structure.
+3. Do not attempt to merge close synonyms or keyword variants into a single representative ID. Keep every ID unique and intact.
 
 Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain ONLY the "id" of the keyword. Do NOT include keyword text, search_volume, overall, or competition in the output keywords list.
 

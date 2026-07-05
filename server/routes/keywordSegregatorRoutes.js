@@ -429,16 +429,28 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
             const data = XLSX.utils.sheet_to_json(worksheet);
 
             for (const row of data) {
-                const keyword = row['Keyword'] || row['keyword'];
+                let rawKeyword = row['Keyword'] || row['keyword'];
+                if (!rawKeyword) continue;
+
+                if (typeof rawKeyword !== 'string') {
+                    if (typeof rawKeyword.toString === 'function') {
+                        rawKeyword = rawKeyword.toString();
+                    } else {
+                        continue;
+                    }
+                }
+
+                const keyword = rawKeyword.trim().replace(/\s+/g, ' ');
                 const searchVolume = parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0;
                 const overall = parseFloat(row['Overall'] || row['overall']) || 0;
                 
                 // 2. Filter out keywords with search volume < 5000 (do not filter by overall score)
                 if (!keyword || searchVolume < 5000) continue;
 
-                // 3. Remove duplicates across files
-                if (!uniqueKeywordsMap.has(keyword)) {
-                    uniqueKeywordsMap.set(keyword, {
+                // 3. Remove duplicates across files (normalized case-insensitively)
+                const normalizedKeyword = keyword.toLowerCase();
+                if (!uniqueKeywordsMap.has(normalizedKeyword)) {
+                    uniqueKeywordsMap.set(normalizedKeyword, {
                         keyword,
                         competition: roundDownToOneDecimal(row['Competition'] || row['competition']),
                         overall: roundDownToOneDecimal(overall),
@@ -477,7 +489,10 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
         const savedKeywordsInfo = [];
         for (const kData of finalFilteredKeywordsData) {
             let savedKeyword;
-            const existing = await QuestionKeyword.findOne({ keyword: kData.keyword, userId: kData.userId });
+            const existing = await QuestionKeyword.findOne({ 
+                keyword: { $regex: new RegExp('^' + kData.keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') }, 
+                userId: kData.userId 
+            });
             if (existing) {
                 savedKeyword = await QuestionKeyword.findByIdAndUpdate(existing._id, kData, { new: true });
             } else {
