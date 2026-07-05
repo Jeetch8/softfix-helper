@@ -9,6 +9,7 @@ import {
   regenerateScript,
   markAsEditing,
   markAsUploaded,
+  generateRecordingCues,
 } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
@@ -60,6 +61,9 @@ const TopicPage = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [isMarkingEditing, setIsMarkingEditing] = useState(false);
   const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
+  
+  const [isGeneratingCues, setIsGeneratingCues] = useState(false);
+  const [showCuesDialog, setShowCuesDialog] = useState(false);
   
   const [showRegenInput, setShowRegenInput] = useState(false);
   const [regenComments, setRegenComments] = useState('');
@@ -148,6 +152,20 @@ const TopicPage = () => {
       setError('Failed to regenerate script');
     } finally {
       setIsRegenerating(false);
+    }
+  };
+
+  const handleGenerateCues = async () => {
+    setIsGeneratingCues(true);
+    try {
+      const response = await generateRecordingCues(topicId);
+      setTopic(response.data.data);
+      setShowCuesDialog(true);
+      setError(null);
+    } catch (err) {
+      setError('Failed to generate recording cues');
+    } finally {
+      setIsGeneratingCues(false);
     }
   };
 
@@ -873,6 +891,79 @@ const TopicPage = () => {
                 </div>
               )
             )}
+          </div>
+        )}
+
+        {/* Recording Cues Section */}
+        {topic.narrationScript && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                🎥 Recording Cues
+              </h2>
+              <button
+                onClick={topic.recordingCues ? () => setShowCuesDialog(true) : handleGenerateCues}
+                disabled={isGeneratingCues}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+              >
+                {isGeneratingCues ? '⏳ Generating...' : topic.recordingCues ? '👁️ View Cues' : '🚀 Generate Cues'}
+              </button>
+            </div>
+            
+            {topic.recordingCues && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
+                <p className="text-sm text-gray-500 mb-2 italic">Cues ready. Click "View Cues" to open the recording dialog.</p>
+                <div className="text-gray-800 text-sm whitespace-pre-wrap font-sans max-h-32 overflow-hidden relative">
+                  {topic.recordingCues}
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Recording Cues Dialog (Modal) */}
+        {showCuesDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in fade-in zoom-in duration-200">
+              <div className="flex justify-between items-center p-5 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <span>🎥</span> Screen Recording Cues
+                </h3>
+                <button
+                  onClick={() => setShowCuesDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1 text-gray-700 text-lg leading-relaxed whitespace-pre-wrap font-medium">
+                {topic.recordingCues ? (
+                  <div className="space-y-2">
+                    {topic.recordingCues.split('\n').map((line, i) => (
+                      line.trim() ? (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-indigo-500 mt-1">•</span>
+                          <span>{line.replace(/^[-*•]\s*/, '')}</span>
+                        </div>
+                      ) : <div key={i} className="h-2"></div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic text-center py-8">No cues generated yet.</p>
+                )}
+              </div>
+              <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end gap-3">
+                <button
+                  onClick={() => setShowCuesDialog(false)}
+                  className="px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

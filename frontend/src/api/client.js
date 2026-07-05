@@ -129,6 +129,10 @@ export const markAsUploaded = (id) => {
   return apiClient.post(`/api/topics/${id}/mark-uploaded`);
 };
 
+export const generateRecordingCues = (id) => {
+  return apiClient.post(`/api/topics/${id}/generate-cues`);
+};
+
 // ==================== KEYWORDS API ====================
 
 export const getKeywords = (params = {}) => {

@@ -28,6 +28,10 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    recordingCues: {
+      type: String,
+      default: null,
+    },
     // Store 4 variations of narration scripts with their prompts
     narrationScriptVariations: [
       {

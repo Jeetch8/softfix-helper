@@ -184,6 +184,27 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
   }
 }
 
+export async function generateRecordingCues(script) {
+  try {
+    const prompt = `given script of a youtube video. list all the cues that will help me while recording the screen (alone, wihtout narration, standalone recording screen) to look at. Do not make lengthy or explainatory. use bullet points for cues.\n\nscript - '${script}'`;
+    
+    console.log('⏳ Generating recording cues...');
+    const responseText = await generateText(
+      FLASH_MODEL,
+      prompt,
+      null,
+      false,
+      false
+    );
+    console.log('✅ Generated recording cues');
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ Error generating recording cues:', error.message);
+    throw new Error(`Failed to generate recording cues: ${error.message}`);
+  }
+}
+
 export async function generateNarrationScript(
   topic,
   videoTitle,
@@ -192,6 +213,7 @@ export async function generateNarrationScript(
   keywords = '',
   regenerationComments = null,
 ) {
+//	console.log(keywords);
   try {
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`

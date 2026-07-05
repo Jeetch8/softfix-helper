@@ -7,6 +7,7 @@ import {
   generateYouTubeThumbnails,
   generateSEODescription,
   generateTags,
+  generateRecordingCues,
 } from '../services/geminiService.js';
 import { generateWAVAudio } from '../services/audioService.js';
 import { deleteImageFromS3, uploadImageToS3 } from '../services/s3Service.js';
@@ -1033,6 +1034,53 @@ router.post('/topics/:id/mark-uploaded', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error marking topic as uploaded',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/topics/:id/generate-cues
+ * Generate recording cues for a topic based on narration script
+ */
+router.post('/topics/:id/generate-cues', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    if (!topic.narrationScript) {
+      return res.status(400).json({
+        success: false,
+        message: 'Narration script not generated yet',
+      });
+    }
+
+    console.log(`🎯 Generating recording cues for topic "${topic.topicName}"...`);
+
+    const recordingCues = await generateRecordingCues(topic.narrationScript);
+
+    topic.recordingCues = recordingCues;
+    await topic.save();
+
+    console.log(`✅ Recording cues generated for topic "${topic.topicName}"`);
+
+    res.json({
+      success: true,
+      message: 'Recording cues generated successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error generating recording cues:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating recording cues',
       error: error.message,
     });
   }
