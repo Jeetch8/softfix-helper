@@ -35,6 +35,9 @@ const GroupingsGroupDetail = () => {
   // Filter state for priority groups
   const [showOnlyPriority, setShowOnlyPriority] = useState(false);
 
+  // Accordion state for groupings
+  const [openGroupIds, setOpenGroupIds] = useState({});
+
   // Parent title edit state
   const [isEditingParentTitle, setIsEditingParentTitle] = useState(false);
   const [parentTitleText, setParentTitleText] = useState('');
@@ -139,6 +142,13 @@ const GroupingsGroupDetail = () => {
 
   useEffect(() => {
     if (groupings && groupings.length > 0) {
+      setOpenGroupIds((prev) => {
+        if (Object.keys(prev).length === 0) {
+          return { [groupings[0]._id]: true };
+        }
+        return prev;
+      });
+
       setSortConfig((prev) => {
         let changed = false;
         const updated = { ...prev };
@@ -348,6 +358,34 @@ const GroupingsGroupDetail = () => {
     }
   };
 
+  const toggleGroupOpen = (groupId) => {
+    setOpenGroupIds((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
+
+  const allOpen =
+    groupings.length > 0 && groupings.every((g) => openGroupIds[g._id]);
+
+  const handleToggleAllAccordions = () => {
+    if (allOpen) {
+      const updated = {};
+      groupings.forEach((g) => {
+        updated[g._id] = false;
+      });
+      setOpenGroupIds(updated);
+    } else {
+      const updated = {};
+      groupings.forEach((g) => {
+        updated[g._id] = true;
+      });
+      setOpenGroupIds(updated);
+    }
+  };
+
+  const priorityCount = groupings.filter((group) => group.priority).length;
+
   const displayedGroupings = showOnlyPriority
     ? groupings.filter((group) => group.priority)
     : groupings;
@@ -432,6 +470,16 @@ const GroupingsGroupDetail = () => {
               {new Date(parentGroup?.createdAt).toLocaleString()} •{' '}
               {groupings.length} subgroups
             </p>
+            {groupings.length > 0 && (
+              <div className="mt-3">
+                <button
+                  onClick={handleToggleAllAccordions}
+                  className="px-4 py-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100/50 flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span>{allOpen ? '👐' : '📖'}</span> {allOpen ? 'Collapse All' : 'Expand All'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -444,7 +492,7 @@ const GroupingsGroupDetail = () => {
                 : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm'
             }`}
           >
-            <span>{showOnlyPriority ? '★' : '☆'}</span> Priority Groups Only
+            <span>{showOnlyPriority ? '★' : '☆'}</span> Priority Groups Only ({priorityCount})
           </button>
 
           <button
@@ -525,14 +573,39 @@ const GroupingsGroupDetail = () => {
                   ).toFixed(1)
                 : 0;
 
+            const isOpen = !!openGroupIds[group._id];
+
             return (
               <div
                 key={group._id}
                 className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col w-full overflow-hidden"
               >
                 {/* Header of Subgroup Card */}
-                <div className="bg-gray-50 border-b border-gray-200 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div
+                  onClick={(e) => {
+                    if (
+                      e.target.closest('button') ||
+                      e.target.closest('input') ||
+                      e.target.closest('.relative')
+                    ) {
+                      return;
+                    }
+                    toggleGroupOpen(group._id);
+                  }}
+                  className={`bg-gray-50 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer select-none hover:bg-gray-100/70 transition-colors ${
+                    isOpen ? 'border-b border-gray-200' : ''
+                  }`}
+                >
                   <div className="flex items-center gap-3 w-full md:w-auto">
+                    <span
+                      className="text-gray-400 transition-transform duration-200 text-xs mr-1"
+                      style={{
+                        transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                        display: 'inline-block',
+                      }}
+                    >
+                      ▶
+                    </span>
                     <span className="text-indigo-500 text-xl">📁</span>
                     {editingGroupId === group._id ? (
                       <div className="flex items-center gap-2 flex-grow">
@@ -640,198 +713,202 @@ const GroupingsGroupDetail = () => {
                 </div>
 
                 {/* Subgroup Keywords Table */}
-                <div className="p-0">
-                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
-                    {flatKeywords.length === 0 ? (
-                      <div className="p-8 text-center text-gray-400 italic">
-                        No keywords in this subgroup
-                      </div>
-                    ) : (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-white sticky top-0 z-10 shadow-sm border-b border-gray-200">
-                          <tr>
-                            <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-12 text-center">
-                              Add
-                            </th>
-                            <th
-                              onClick={() => handleSort(group._id, 'keyword')}
-                              className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
-                            >
-                              <div className="flex items-center gap-1">
-                                Keyword {getSortIcon(group._id, 'keyword')}
-                              </div>
-                            </th>
-                            <th
-                              onClick={() =>
-                                handleSort(group._id, 'search_volume')
-                              }
-                              className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
-                            >
-                              <div className="flex items-center justify-end gap-1">
-                                Search Vol{' '}
-                                {getSortIcon(group._id, 'search_volume')}
-                              </div>
-                            </th>
-                            <th
-                              onClick={() =>
-                                handleSort(group._id, 'competition')
-                              }
-                              className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
-                            >
-                              <div className="flex items-center justify-end gap-1">
-                                Competition{' '}
-                                {getSortIcon(group._id, 'competition')}
-                              </div>
-                            </th>
-                            <th
-                              onClick={() => handleSort(group._id, 'overall')}
-                              className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
-                            >
-                              <div className="flex items-center justify-end gap-1">
-                                Overall {getSortIcon(group._id, 'overall')}
-                              </div>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                          {sortedKeywords.map((kw, i) => {
-                            const kwId = kw.id || kw._id;
-                            return (
-                              <tr
-                                key={i}
-                                className="hover:bg-gray-50 transition-colors"
+                {isOpen && (
+                  <div className="p-0">
+                    <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                      {flatKeywords.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400 italic">
+                          No keywords in this subgroup
+                        </div>
+                      ) : (
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-white sticky top-0 z-10 shadow-sm border-b border-gray-200">
+                            <tr>
+                              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-12 text-center">
+                                Add
+                              </th>
+                              <th
+                                onClick={() => handleSort(group._id, 'keyword')}
+                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
                               >
-                                <td className="px-4 py-3 text-center relative">
-                                  <button
-                                    onClick={() => handleToggleDropdown(kw)}
-                                    className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center font-bold text-sm transition-colors mx-auto"
-                                  >
-                                    +
-                                  </button>
-                                  {activeDropdownKeywordId === kwId && (
-                                    <div className="absolute left-4 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 text-left animate-fade-in">
-                                      <h4 className="text-sm font-bold text-gray-800 mb-3">
-                                        Manage Subgroups
-                                      </h4>
-                                      <div className="max-h-48 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
-                                        {groupings.map((g) => (
-                                          <label
-                                            key={g._id}
-                                            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:bg-gray-50 p-1.5 rounded transition-colors"
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={
-                                                !!dropdownGroupSelections[g._id]
-                                              }
-                                              onChange={(e) =>
-                                                handleCheckboxChange(
-                                                  g._id,
-                                                  e.target.checked,
-                                                )
-                                              }
-                                              className="rounded text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span
-                                              className="truncate"
-                                              title={g.title}
+                                <div className="flex items-center gap-1">
+                                  Keyword {getSortIcon(group._id, 'keyword')}
+                                </div>
+                              </th>
+                              <th
+                                onClick={() =>
+                                  handleSort(group._id, 'search_volume')
+                                }
+                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center justify-end gap-1">
+                                  Search Vol{' '}
+                                  {getSortIcon(group._id, 'search_volume')}
+                                </div>
+                              </th>
+                              <th
+                                onClick={() =>
+                                  handleSort(group._id, 'competition')
+                                }
+                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center justify-end gap-1">
+                                  Competition{' '}
+                                  {getSortIcon(group._id, 'competition')}
+                                </div>
+                              </th>
+                              <th
+                                onClick={() => handleSort(group._id, 'overall')}
+                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center justify-end gap-1">
+                                  Overall {getSortIcon(group._id, 'overall')}
+                                </div>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 bg-white">
+                            {sortedKeywords.map((kw, i) => {
+                              const kwId = kw.id || kw._id;
+                              return (
+                                <tr
+                                  key={i}
+                                  className="hover:bg-gray-50 transition-colors"
+                                >
+                                  <td className="px-4 py-3 text-center relative">
+                                    <button
+                                      onClick={() => handleToggleDropdown(kw)}
+                                      className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center font-bold text-sm transition-colors mx-auto"
+                                    >
+                                      +
+                                    </button>
+                                    {activeDropdownKeywordId === kwId && (
+                                      <div className="absolute left-4 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 text-left animate-fade-in">
+                                        <h4 className="text-sm font-bold text-gray-800 mb-3">
+                                          Manage Subgroups
+                                        </h4>
+                                        <div className="max-h-48 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
+                                          {groupings.map((g) => (
+                                            <label
+                                              key={g._id}
+                                              className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:bg-gray-50 p-1.5 rounded transition-colors"
                                             >
-                                              {g.title}
-                                            </span>
-                                          </label>
-                                        ))}
+                                              <input
+                                                type="checkbox"
+                                                checked={
+                                                  !!dropdownGroupSelections[g._id]
+                                                }
+                                                onChange={(e) =>
+                                                  handleCheckboxChange(
+                                                    g._id,
+                                                    e.target.checked,
+                                                  )
+                                                }
+                                                className="rounded text-indigo-600 focus:ring-indigo-500"
+                                              />
+                                              <span
+                                                className="truncate"
+                                                title={g.title}
+                                              >
+                                                {g.title}
+                                              </span>
+                                            </label>
+                                          ))}
+                                        </div>
+                                        <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
+                                          <button
+                                            onClick={() =>
+                                              setActiveDropdownKeywordId(null)
+                                            }
+                                            className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1"
+                                          >
+                                            Cancel
+                                          </button>
+                                          <button
+                                            onClick={() => handleSaveGroups(kw)}
+                                            disabled={processing}
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
+                                          >
+                                            Save
+                                          </button>
+                                        </div>
                                       </div>
-                                      <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
-                                        <button
-                                          onClick={() =>
-                                            setActiveDropdownKeywordId(null)
-                                          }
-                                          className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1"
-                                        >
-                                          Cancel
-                                        </button>
-                                        <button
-                                          onClick={() => handleSaveGroups(kw)}
-                                          disabled={processing}
-                                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
-                                        >
-                                          Save
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-3">
-                                  <span
-                                    className="text-gray-800 font-medium"
-                                    title={kw.keyword}
-                                  >
-                                    {kw.keyword}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-3 text-right">
-                                  <span
-                                    className="text-sm text-gray-600 font-medium"
-                                    title={
-                                      kw.search_volume?.toLocaleString() || '0'
-                                    }
-                                  >
-                                    {formatSearchVolume(kw.search_volume)}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-3 text-right">
-                                  {kw.competition !== undefined &&
-                                  kw.competition !== null ? (
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-3">
                                     <span
-                                      className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-md ${
-                                        kw.competition <= 30
-                                          ? 'bg-green-100 text-green-700'
-                                          : kw.competition <= 60
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : 'bg-red-100 text-red-700'
-                                      }`}
+                                      className="text-gray-800 font-medium"
+                                      title={kw.keyword}
                                     >
-                                      {kw.competition}
+                                      {kw.keyword}
                                     </span>
-                                  ) : (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-3 text-right">
-                                  {kw.overall !== undefined ? (
+                                  </td>
+                                  <td className="px-6 py-3 text-right">
                                     <span
-                                      className={`inline-block text-xs font-bold px-2.5 py-1 rounded-md ${
-                                        kw.overall >= 70
-                                          ? 'bg-green-100 text-green-700'
-                                          : kw.overall >= 60
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : 'bg-yellow-100 text-yellow-700'
-                                      }`}
+                                      className="text-sm text-gray-600 font-medium"
+                                      title={
+                                        kw.search_volume?.toLocaleString() || '0'
+                                      }
                                     >
-                                      {kw.overall}
+                                      {formatSearchVolume(kw.search_volume)}
                                     </span>
-                                  ) : (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
+                                  </td>
+                                  <td className="px-6 py-3 text-right">
+                                    {kw.competition !== undefined &&
+                                    kw.competition !== null ? (
+                                      <span
+                                        className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-md ${
+                                          kw.competition <= 30
+                                            ? 'bg-green-100 text-green-700'
+                                            : kw.competition <= 60
+                                              ? 'bg-yellow-100 text-yellow-700'
+                                              : 'bg-red-100 text-red-700'
+                                        }`}
+                                      >
+                                        {kw.competition}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-3 text-right">
+                                    {kw.overall !== undefined ? (
+                                      <span
+                                        className={`inline-block text-xs font-bold px-2.5 py-1 rounded-md ${
+                                          kw.overall >= 70
+                                            ? 'bg-green-100 text-green-700'
+                                            : kw.overall >= 60
+                                              ? 'bg-blue-100 text-blue-700'
+                                              : 'bg-yellow-100 text-yellow-700'
+                                        }`}
+                                      >
+                                        {kw.overall}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Footer of Subgroup Card */}
-                <div className="bg-gray-50 text-xs text-gray-400 border-t border-gray-200 p-3 px-6 flex justify-between items-center">
-                  <span className="font-semibold text-gray-500">
-                    {flatKeywords.length} Keywords
-                  </span>
-                  <span>
-                    Created {new Date(group.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
+                {isOpen && (
+                  <div className="bg-gray-50 text-xs text-gray-400 border-t border-gray-200 p-3 px-6 flex justify-between items-center">
+                    <span className="font-semibold text-gray-500">
+                      {flatKeywords.length} Keywords
+                    </span>
+                    <span>
+                      Created {new Date(group.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
