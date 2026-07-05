@@ -55,8 +55,8 @@ const GroupingsGroupDetail = () => {
 
   const handleSort = (groupId, key) => {
     setSortConfig((prev) => {
-      const current = prev[groupId];
-      if (current && current.key === key) {
+      const current = prev[groupId] || { key: 'search_volume', direction: 'desc' };
+      if (current.key === key) {
         return {
           ...prev,
           [groupId]: {
@@ -75,7 +75,7 @@ const GroupingsGroupDetail = () => {
   };
 
   const getSortIcon = (groupId, key) => {
-    const config = sortConfig[groupId];
+    const config = sortConfig[groupId] || { key: 'search_volume', direction: 'desc' };
     if (!config || config.key !== key) {
       return <span className="text-gray-300 ml-1">↕</span>;
     }
@@ -83,7 +83,7 @@ const GroupingsGroupDetail = () => {
   };
 
   const getSortedKeywords = (keywords, groupId) => {
-    const config = sortConfig[groupId];
+    const config = sortConfig[groupId] || { key: 'search_volume', direction: 'desc' };
     if (!config) return keywords;
 
     const { key, direction } = config;
@@ -136,6 +136,22 @@ const GroupingsGroupDetail = () => {
       fetchData();
     }
   }, [groupingsGroupId]);
+
+  useEffect(() => {
+    if (groupings && groupings.length > 0) {
+      setSortConfig((prev) => {
+        let changed = false;
+        const updated = { ...prev };
+        groupings.forEach((group) => {
+          if (!updated[group._id]) {
+            updated[group._id] = { key: 'search_volume', direction: 'desc' };
+            changed = true;
+          }
+        });
+        return changed ? updated : prev;
+      });
+    }
+  }, [groupings]);
 
   const handleCreateGroup = async () => {
     const title = window.prompt('Enter a title for the new group:');
