@@ -186,10 +186,21 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
 
 export async function generateRecordingCues(script) {
   try {
-    const prompt = `given script of a youtube video. list all the cues that will help me while recording the screen (alone, wihtout narration, standalone recording screen) to look at. Do not make lengthy or explainatory. use bullet points for cues.\n\nscript - '${script}'`;
+    const prompt = `Given the following script of a tech tutorial YouTube video, list all the key cues that will guide me while recording the screen (stand-alone screen recording, without narration).
+    
+Format requirements:
+- Use clean, structured Markdown format.
+- Use headers (like ##), lists (ordered or unordered), bold text (**bold**), or inline code (\`UI elements/buttons\`) where helpful.
+- Keep the cues extremely concise, brief, and action-oriented. Do not include lengthy explanations or paragraphs.
+- Return ONLY the cues.
+- Do NOT include any introductory greetings, meta-commentary, notes, or outro.
+- Do NOT wrap the entire output in code blocks like \`\`\`markdown or \`\`\`. Just return the raw markdown content.
+
+Script:
+"${script}"`;
     
     console.log('⏳ Generating recording cues...');
-    const responseText = await generateText(
+    let responseText = await generateText(
       FLASH_MODEL,
       prompt,
       null,
@@ -197,6 +208,19 @@ export async function generateRecordingCues(script) {
       false
     );
     console.log('✅ Generated recording cues');
+    
+    // Clean up markdown code blocks if the model wrapped the response
+    if (responseText) {
+      responseText = responseText.trim();
+      if (responseText.startsWith('```markdown')) {
+        responseText = responseText.substring(11).trim();
+      } else if (responseText.startsWith('```')) {
+        responseText = responseText.substring(3).trim();
+      }
+      if (responseText.endsWith('```')) {
+        responseText = responseText.substring(0, responseText.length - 3).trim();
+      }
+    }
     
     return responseText;
   } catch (error) {

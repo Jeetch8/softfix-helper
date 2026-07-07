@@ -48,6 +48,161 @@ const formatSearchVolume = (num) => {
   return num.toString();
 };
 
+const parseInlineStyles = (text) => {
+  if (!text) return '';
+  const inlineRegex = /(\*\*.*?\*\*|__.*?__|`.*?`|\*.*?\*|_.*?_)/g;
+  const parts = text.split(inlineRegex);
+  return parts.map((part, idx) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={idx} className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded font-mono text-sm font-semibold border border-amber-200/50">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
+      return <strong key={idx} className="font-extrabold text-gray-900">{part.slice(2, -2)}</strong>;
+    }
+    if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
+      return <em key={idx} className="italic text-gray-800">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
+const renderMarkdown = (text) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const elements = [];
+  
+  let inList = false;
+  let listItems = [];
+  let listType = null; // 'ul' or 'ol'
+
+  const flushList = (key) => {
+    if (listItems.length > 0) {
+      if (listType === 'ol') {
+        elements.push(
+          <ol key={`ol-${key}`} className="list-decimal pl-6 my-3 space-y-1.5 text-gray-800">
+            {listItems}
+          </ol>
+        );
+      } else {
+        elements.push(
+          <ul key={`ul-${key}`} className="list-disc pl-6 my-3 space-y-1.5 text-gray-800">
+            {listItems}
+          </ul>
+        );
+      }
+      listItems = [];
+      inList = false;
+      listType = null;
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    // Check for empty line
+    if (!trimmed) {
+      flushList(index);
+      elements.push(<div key={`empty-${index}`} className="h-3"></div>);
+      return;
+    }
+
+    // Check for Headings
+    if (trimmed.startsWith('#')) {
+      flushList(index);
+      const match = trimmed.match(/^(#{1,6})\s+(.*)$/);
+      if (match) {
+        const level = match[1].length;
+        const content = match[2];
+        const parsedContent = parseInlineStyles(content);
+        
+        switch (level) {
+          case 1:
+            elements.push(
+              <h1 key={index} className="text-2xl font-extrabold text-gray-900 mt-6 mb-3 border-b pb-1.5">
+                {parsedContent}
+              </h1>
+            );
+            break;
+          case 2:
+            elements.push(
+              <h2 key={index} className="text-xl font-bold text-gray-800 mt-5 mb-2.5 border-b pb-1">
+                {parsedContent}
+              </h2>
+            );
+            break;
+          case 3:
+            elements.push(
+              <h3 key={index} className="text-lg font-bold text-gray-800 mt-4 mb-2">
+                {parsedContent}
+              </h3>
+            );
+            break;
+          default:
+            elements.push(
+              <h4 key={index} className="text-base font-semibold text-gray-700 mt-3 mb-1.5">
+                {parsedContent}
+              </h4>
+            );
+            break;
+        }
+        return;
+      }
+    }
+
+    // Check for Unordered List items
+    const ulMatch = line.match(/^(\s*)[-*•]\s+(.*)$/);
+    if (ulMatch) {
+      if (inList && listType !== 'ul') {
+        flushList(index);
+      }
+      inList = true;
+      listType = 'ul';
+      listItems.push(
+        <li key={`li-${index}`} className="pl-1">
+          {parseInlineStyles(ulMatch[2])}
+        </li>
+      );
+      return;
+    }
+
+    // Check for Ordered List items
+    const olMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
+    if (olMatch) {
+      if (inList && listType !== 'ol') {
+        flushList(index);
+      }
+      inList = true;
+      listType = 'ol';
+      listItems.push(
+        <li key={`li-${index}`} className="pl-1">
+          {parseInlineStyles(olMatch[2])}
+        </li>
+      );
+      return;
+    }
+
+    // If not a list item, flush any accumulated list items
+    flushList(index);
+
+    // Render as a paragraph
+    elements.push(
+      <p key={index} className="my-2 text-gray-800">
+        {parseInlineStyles(line)}
+      </p>
+    );
+  });
+
+  // Flush any remaining list items at the end
+  flushList(lines.length);
+
+  return <div className="markdown-preview font-sans">{elements}</div>;
+};
+
 const TopicPage = () => {
   const { topicId } = useParams();
   const navigate = useNavigate();
@@ -913,9 +1068,9 @@ const TopicPage = () => {
             {topic.recordingCues && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
                 <p className="text-sm text-gray-500 mb-2 italic">Cues ready. Click "View Cues" to open the recording dialog.</p>
-                <div className="text-gray-800 text-sm whitespace-pre-wrap font-sans max-h-32 overflow-hidden relative">
-                  {topic.recordingCues}
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                <div className="text-gray-800 text-sm max-h-40 overflow-hidden relative">
+                  {renderMarkdown(topic.recordingCues)}
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
                 </div>
               </div>
             )}
@@ -939,17 +1094,10 @@ const TopicPage = () => {
                   </svg>
                 </button>
               </div>
-              <div className="p-6 overflow-y-auto flex-1 text-gray-700 text-lg leading-relaxed whitespace-pre-wrap font-medium">
+              <div className="p-6 overflow-y-auto flex-1 text-gray-700 text-base leading-relaxed">
                 {topic.recordingCues ? (
-                  <div className="space-y-2">
-                    {topic.recordingCues.split('\n').map((line, i) => (
-                      line.trim() ? (
-                        <div key={i} className="flex items-start gap-2">
-                          <span className="text-indigo-500 mt-1">•</span>
-                          <span>{line.replace(/^[-*•]\s*/, '')}</span>
-                        </div>
-                      ) : <div key={i} className="h-2"></div>
-                    ))}
+                  <div className="bg-gray-50/50 rounded-xl p-5 border border-gray-100 shadow-inner">
+                    {renderMarkdown(topic.recordingCues)}
                   </div>
                 ) : (
                   <p className="text-gray-500 italic text-center py-8">No cues generated yet.</p>
