@@ -55,7 +55,7 @@ const parseInlineStyles = (text) => {
   return parts.map((part, idx) => {
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
-        <code key={idx} className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded font-mono text-sm font-semibold border border-amber-200/50">
+        <code key={idx} className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono text-sm font-semibold border border-amber-200/50">
           {part.slice(1, -1)}
         </code>
       );
