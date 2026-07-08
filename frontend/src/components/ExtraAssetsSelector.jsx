@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { generateExtraAssets } from '../api/client';
+import React, { useState, useEffect } from 'react';
+import { generateExtraAssets, regenerateAudio } from '../api/client';
 
 const ExtraAssetsSelector = ({
   topicId,
@@ -13,6 +13,14 @@ const ExtraAssetsSelector = ({
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [assets, setAssets] = useState(extraAssets || null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
+
+  useEffect(() => {
+    setAssets(extraAssets);
+    if (extraAssets) {
+      setShowAssets(true);
+    }
+  }, [extraAssets]);
 
   const handleGenerateAssets = async () => {
     setIsGenerating(true);
@@ -77,6 +85,29 @@ const ExtraAssetsSelector = ({
       window.open(assets.audioUrl, '_blank');
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleRegenerateAudio = async () => {
+    setIsRegeneratingAudio(true);
+    setError(null);
+    try {
+      const response = await regenerateAudio(topicId);
+      const data = response.data.data;
+      setAssets((prev) => ({
+        ...prev,
+        audioUrl: data.audioUrl,
+      }));
+      if (onAssetsGenerated) {
+        onAssetsGenerated();
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || 'Failed to regenerate audio',
+      );
+      console.error('Error:', err);
+    } finally {
+      setIsRegeneratingAudio(false);
     }
   };
 
@@ -186,7 +217,7 @@ const ExtraAssetsSelector = ({
                     />
                     Your browser does not support the audio element.
                   </audio>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
                     <button
                       onClick={handleDownload}
                       disabled={isDownloading}
@@ -195,6 +226,16 @@ const ExtraAssetsSelector = ({
                       {isDownloading
                         ? '⏳ Downloading...'
                         : '⬇️ Download Audio'}
+                    </button>
+                    <span className="text-purple-300 text-xs">|</span>
+                    <button
+                      onClick={handleRegenerateAudio}
+                      disabled={isRegeneratingAudio}
+                      className="text-purple-700 text-xs hover:underline flex items-center gap-1 font-medium disabled:opacity-50"
+                    >
+                      {isRegeneratingAudio
+                        ? '⏳ Regenerating...'
+                        : '🔄 Regenerate Audio'}
                     </button>
                     <span className="text-purple-300 text-xs">|</span>
                     <a

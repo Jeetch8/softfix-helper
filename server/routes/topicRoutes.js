@@ -1086,4 +1086,53 @@ router.post('/topics/:id/generate-cues', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/topics/:id/regenerate-audio
+ * Regenerate WAV audio for a topic
+ */
+router.post('/topics/:id/regenerate-audio', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    if (!topic.narrationScript) {
+      return res.status(400).json({
+        success: false,
+        message: 'Narration script not generated yet',
+      });
+    }
+
+    console.log(`🎯 Regenerating WAV audio for topic "${topic.topicName}"...`);
+
+    const audioUrl = await generateWAVAudio(topic.narrationScript, topic._id);
+
+    topic.audioUrl = audioUrl;
+    await topic.save();
+
+    console.log(`✅ Audio regenerated for topic "${topic.topicName}"`);
+
+    res.json({
+      success: true,
+      message: 'Audio regenerated successfully',
+      data: {
+        audioUrl,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error regenerating audio:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error regenerating audio',
+      error: error.message,
+    });
+  }
+});
+
 export default router;

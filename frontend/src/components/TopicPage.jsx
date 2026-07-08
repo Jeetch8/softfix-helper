@@ -10,6 +10,7 @@ import {
   markAsEditing,
   markAsUploaded,
   generateRecordingCues,
+  regenerateAudio,
 } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
@@ -219,6 +220,7 @@ const TopicPage = () => {
   
   const [isGeneratingCues, setIsGeneratingCues] = useState(false);
   const [showCuesDialog, setShowCuesDialog] = useState(false);
+  const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
   
   const [showRegenInput, setShowRegenInput] = useState(false);
   const [regenComments, setRegenComments] = useState('');
@@ -321,6 +323,22 @@ const TopicPage = () => {
       setError('Failed to generate recording cues');
     } finally {
       setIsGeneratingCues(false);
+    }
+  };
+
+  const handleRegenerateAudio = async () => {
+    setIsRegeneratingAudio(true);
+    setError(null);
+    try {
+      const response = await regenerateAudio(topicId);
+      setTopic((prev) => ({
+        ...prev,
+        audioUrl: response.data.data.audioUrl,
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to regenerate audio');
+    } finally {
+      setIsRegeneratingAudio(false);
     }
   };
 
@@ -1036,14 +1054,76 @@ const TopicPage = () => {
               </div>
             ) : (
               topic.narrationScript && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-3 border-b pb-2">
-                    Active Script (Source of Truth)
-                  </h3>
-                  <div className="text-gray-800 whitespace-pre-wrap text-base leading-relaxed font-serif">
-                    {topic.narrationScript}
+                <>
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-sm font-semibold text-gray-600 mb-3 border-b pb-2">
+                      Active Script (Source of Truth)
+                    </h3>
+                    <div className="text-gray-800 whitespace-pre-wrap text-base leading-relaxed font-serif">
+                      {topic.narrationScript}
+                    </div>
                   </div>
-                </div>
+
+                  <div className="mt-6 border-t border-gray-100 pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        🎙️ Script Audio Generation
+                      </h3>
+                      <button
+                        onClick={handleRegenerateAudio}
+                        disabled={isRegeneratingAudio || isSaving}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white text-sm font-semibold rounded-lg shadow-md transition-all duration-200 flex items-center gap-1.5"
+                      >
+                        {isRegeneratingAudio ? (
+                          <>
+                            <span className="animate-spin text-xs">⏳</span> Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <span>🔄</span> Regenerate Audio
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {topic.audioUrl ? (
+                      <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 shadow-inner flex flex-col md:flex-row items-center gap-4">
+                        <div className="flex-1 w-full">
+                          <audio key={topic.audioUrl} controls className="w-full">
+                            <source
+                              src={`https://${topic.audioUrl}`}
+                              type={
+                                topic.audioUrl.toLowerCase().endsWith('.wav')
+                                  ? 'audio/wav'
+                                  : 'audio/mpeg'
+                              }
+                            />
+                            Your browser does not support the audio element.
+                          </audio>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <a
+                            href={`https://${topic.audioUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-white border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <span>🔗</span> Open Link
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 text-center">
+                        <p className="text-amber-800 text-sm font-medium">
+                          ⚠️ No audio generated for this script yet.
+                        </p>
+                        <p className="text-xs text-amber-600 mt-1">
+                          Click the "Regenerate Audio" button to generate the narration voiceover.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
               )
             )}
           </div>
