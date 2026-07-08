@@ -1,4 +1,4 @@
-import textToSpeech from '@google-cloud/text-to-speech';
+import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
 import { uploadImageToS3 } from './s3Service.js';
@@ -7,8 +7,27 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Instantiate the Google Cloud Text-to-Speech Client
-const client = new textToSpeech.TextToSpeechClient();
+let ai;
+const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+
+if (useVertexAI) {
+  ai = new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
+    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
+  });
+  console.log(`🎯 Vertex AI Service Initialized for Audio Service`);
+} else if (process.env.GEMINI_API_KEY) {
+  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  console.log(`🎯 Google AI Studio (Gemini API) Initialized for Audio Service using GEMINI_API_KEY`);
+} else {
+  ai = new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
+    location: "global"
+  });
+  console.log(`🎯 Vertex AI Service Initialized as Fallback for Audio Service`);
+}
 
 /**
  * Converts LINEAR16 raw PCM audio buffer to a valid WAV buffer.
@@ -64,33 +83,32 @@ export async function generateWAVAudio(script, topicId) {
 
   try {
     console.log(
-      '🎵 Generating audio using Google Cloud Text-to-Speech (Chirp 3 HD)...',
+      '🎵 Generating audio using Gemini TTS via Vertex AI...',
     );
 
-    const request = {
-      input: { text: script },
-      voice: {
-        languageCode: 'en-US',
-        // Explicitly call a specific Chirp 3 HD model name variant
-        name: 'en-US-Chirp3-HD-Alnilam',
+    const result = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-tts-preview',
+      contents: script,
+      config: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Alnilam' },
+          },
+        },
       },
-      audioConfig: {
-        sampleRateHertz: 44100,
-        speakingRate: 1,
-        audioEncoding: 'LINEAR16',
-      },
-    };
+    });
 
-    console.log('Sending synthesis request to Cloud Text-to-Speech...');
-    const [response] = await client.synthesizeSpeech(request);
+    const audioData =
+      result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
-    if (!response.audioContent) {
-      throw new Error('Could not extract audio data from TTS response');
+    if (!audioData) {
+      throw new Error('Could not extract audio data from Gemini response');
     }
 
     // Convert to WAV buffer
-    const rawBuffer = Buffer.from(response.audioContent, 'binary');
-    const wavBuffer = convertLinear16ToWav(rawBuffer, 22050, 1, 16);
+    const rawBuffer = Buffer.from(audioData, 'base64');
+    const wavBuffer = convertLinear16ToWav(rawBuffer, 24000, 1, 16);
 
     // Save the binary data stream into a local WAV file
     console.log('💾 Saving temporary WAV file...');
