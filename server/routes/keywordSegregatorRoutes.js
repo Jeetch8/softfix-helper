@@ -477,8 +477,8 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
                 const searchVolume = parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0;
                 const overall = parseFloat(row['Overall'] || row['overall']) || 0;
                 
-                // 2. Filter out keywords with search volume < 5000 (do not filter by overall score)
-                if (!keyword || searchVolume < 5000) continue;
+                // 2. Filter out keywords with search volume < 6000 (do not filter by overall score)
+                if (!keyword || searchVolume < 6000) continue;
 
                 // 3. Remove duplicates across files (normalized case-insensitively)
                 const normalizedKeyword = keyword.toLowerCase();
