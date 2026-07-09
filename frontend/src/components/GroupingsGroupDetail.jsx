@@ -734,51 +734,53 @@ const GroupingsGroupDetail = () => {
                       )}
 
                       {/* Description Line Below Title */}
-                      {editingDescGroupId === group._id ? (
-                        <div className="flex items-center gap-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
-                          <input
-                             type="text"
-                             value={editDescText}
-                             onChange={(e) => setEditDescText(e.target.value)}
-                             placeholder="Add a group description..."
-                             className="px-2.5 py-1 border border-indigo-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-64 md:w-80"
-                             autoFocus
-                             onKeyDown={(e) => {
-                               if (e.key === 'Enter')
-                                 handleSaveGroupDescription(group._id);
-                               if (e.key === 'Escape') handleCancelEditDesc();
-                             }}
-                          />
-                          <button
-                            onClick={() => handleSaveGroupDescription(group._id)}
-                            disabled={processing}
-                            className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
-                            title="Save Description"
-                          >
-                            💾
-                          </button>
-                          <button
-                            onClick={handleCancelEditDesc}
-                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
-                            title="Cancel"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 mt-1.5 min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-sm text-gray-500 font-medium">
-                            {group.description || ''}
-                          </span>
-                          <button
-                            onClick={() => handleStartEditDesc(group)}
-                            disabled={processing}
-                            className="text-gray-400 hover:text-indigo-600 transition-colors p-1 rounded-lg hover:bg-indigo-50 flex items-center"
-                            title="Edit Description"
-                          >
-                            ✏️
-                          </button>
-                        </div>
+                      {isOpen && (
+                        editingDescGroupId === group._id ? (
+                          <div className="flex items-center gap-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                            <input
+                               type="text"
+                               value={editDescText}
+                               onChange={(e) => setEditDescText(e.target.value)}
+                               placeholder="Add a group description..."
+                               className="px-2.5 py-1 border border-indigo-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-64 md:w-80"
+                               autoFocus
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter')
+                                   handleSaveGroupDescription(group._id);
+                                 if (e.key === 'Escape') handleCancelEditDesc();
+                               }}
+                            />
+                            <button
+                              onClick={() => handleSaveGroupDescription(group._id)}
+                              disabled={processing}
+                              className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
+                              title="Save Description"
+                            >
+                              💾
+                            </button>
+                            <button
+                              onClick={handleCancelEditDesc}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-1.5 min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-sm text-gray-500 font-medium">
+                              {group.description || ''}
+                            </span>
+                            <button
+                              onClick={() => handleStartEditDesc(group)}
+                              disabled={processing}
+                              className="text-gray-400 hover:text-indigo-600 transition-colors p-1 rounded-lg hover:bg-indigo-50 flex items-center"
+                              title="Edit Description"
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )
                       )}
                     </div>
                   </div>
