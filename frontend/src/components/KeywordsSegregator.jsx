@@ -469,8 +469,8 @@ const KeywordsSegregator = () => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 mt-1.5 min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
-                      <p className="text-xs text-gray-500 line-clamp-2 font-medium">
-                        {session.description || ''}
+                      <p className={`text-xs line-clamp-2 font-medium ${session.description ? 'text-gray-500' : 'text-gray-400 italic'}`}>
+                        {session.description || 'No description'}
                       </p>
                       <button
                         onClick={(e) => handleStartEditSessionDesc(e, session)}
