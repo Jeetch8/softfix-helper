@@ -266,7 +266,7 @@ export const updateSegregatorKeywordGroups = (keyword, targetGroupIds, groupings
   return apiClient.put('/api/segregator/groups/keyword', { keyword, targetGroupIds, groupingsGroupId, userId });
 };
 
-export const uploadSegregatorFiles = (files, groupingsGroupTitle, userId = 'default-user') => {
+export const uploadSegregatorFiles = (files, groupingsGroupTitle, customGroupsList = '', userId = 'default-user') => {
   const formData = new FormData();
   files.forEach((file) => {
     if (file) {
@@ -275,6 +275,7 @@ export const uploadSegregatorFiles = (files, groupingsGroupTitle, userId = 'defa
   });
   formData.append('userId', userId);
   formData.append('groupingsGroupTitle', groupingsGroupTitle);
+  formData.append('customGroupsList', customGroupsList);
 
   return apiClient.post('/api/segregator/upload', formData, {
     headers: {

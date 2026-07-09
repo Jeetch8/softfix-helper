@@ -451,7 +451,7 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
             return res.status(400).json({ success: false, message: 'No files uploaded' });
         }
 
-        const { userId = 'default-user', groupingsGroupTitle = 'Untitled Groupings Group' } = req.body;
+        const { userId = 'default-user', groupingsGroupTitle = 'Untitled Groupings Group', customGroupsList = '' } = req.body;
         const uniqueKeywordsMap = new Map();
 
         // 1. Read files and load into array
@@ -543,7 +543,7 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
         }
 
         // 6. Send keywords to Gemini for segregation
-        const groupingsData = await segregateKeywordsIntoGroups(savedKeywordsInfo);
+        const groupingsData = await segregateKeywordsIntoGroups(savedKeywordsInfo, customGroupsList);
         
         // Create the GroupingsGroup parent document first
         const groupingsGroup = await GroupingsGroup.create({
@@ -557,6 +557,7 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
         const savedGroups = [];
         for (const group of groupingsData) {
             const populatedKeywords = [];
+            let highestSearchVolume = 0;
             if (group.keywords && Array.isArray(group.keywords)) {
                 for (const kw of group.keywords) {
                     const kwIdStr = kw.id ? kw.id.toString() : '';
@@ -569,17 +570,22 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
                             overall: fullInfo.overall,
                             competition: fullInfo.competition
                         });
+                        if (fullInfo.search_volume > highestSearchVolume) {
+                            highestSearchVolume = fullInfo.search_volume;
+                        }
                     }
                 }
             }
 
             const totalVolume = populatedKeywords.reduce((sum, kw) => sum + (kw.search_volume || 0), 0);
+            const priority = highestSearchVolume >= 20000;
             const newGroup = await Grouping.create({
                 title: group.title,
                 keywords: [populatedKeywords], // Note: Grouping model expects [[ { ... } ]]
                 total_average_volume: totalVolume,
                 userId,
-                groupingsGroupId: groupingsGroup._id
+                groupingsGroupId: groupingsGroup._id,
+                priority
             });
             savedGroups.push(newGroup);
         }

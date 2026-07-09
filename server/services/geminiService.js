@@ -1060,16 +1060,29 @@ ${JSON.stringify(keywordsArray)}
   }
 }
 
-export async function segregateKeywordsIntoGroups(keywordsWithData) {
+export async function segregateKeywordsIntoGroups(keywordsWithData, customGroupsList = '') {
   try {
-    console.log(keywordsWithData);
+//    console.log(keywordsWithData);
     console.log(
       `🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`,
     );
 
+    let providedGroupsInstruction = '';
+    if (customGroupsList && customGroupsList.trim()) {
+      providedGroupsInstruction = `
+I have provided a specific list of groups (with titles and descriptions) below. You MUST segregate the keywords into these provided groups based on their description.
+If a keyword fits into one or more of these provided groups, you must add it to them.
+You can create additional groups if you find keywords that do not fit into any of the provided groups, but DO NOT skip any of the provided groups if there are keywords that fit them.
+
+Provided Groups:
+${customGroupsList.trim()}
+`;
+    }
+
     const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, competition scores, and ids. 
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
 A keyword can be placed into multiple groups if it is appropriate.
+${providedGroupsInstruction}
 
 CRITICAL RULES FOR GROUPING:
 1. EVERY SINGLE keyword ID from the input list MUST be assigned to at least one group. Do NOT discard, omit, or leave out any keyword under any circumstances.

@@ -19,6 +19,7 @@ const KeywordsSegregator = () => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [customGroupsList, setCustomGroupsList] = useState('');
 
   // Editing session title inline state
   const [editingSessionId, setEditingSessionId] = useState(null);
@@ -70,13 +71,14 @@ const KeywordsSegregator = () => {
     const finalTitle = sessionTitle.trim() || 'New Keywords Session';
 
     try {
-      const response = await uploadSegregatorFiles(filesToUpload, finalTitle);
+      const response = await uploadSegregatorFiles(filesToUpload, finalTitle, customGroupsList);
       setSuccess(response.data.message || 'Files uploaded and processed successfully! New session created.');
       
       // Reset upload states
       setFile1(null);
       setFile2(null);
       setSessionTitle('');
+      setCustomGroupsList('');
       
       const file1Input = document.getElementById('file1-input');
       const file2Input = document.getElementById('file2-input');
@@ -221,8 +223,19 @@ const KeywordsSegregator = () => {
             value={sessionTitle}
             onChange={(e) => setSessionTitle(e.target.value)}
             placeholder="e.g., Softfix SEO Keyword Expansion - June 2026"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 hover:bg-white focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 hover:bg-white focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400 mb-4"
           />
+
+          <label htmlFor="custom-groups" className="block text-sm font-bold text-gray-700 mb-2">
+            Custom Groups (Optional)
+          </label>
+          <textarea
+            id="custom-groups"
+            value={customGroupsList}
+            onChange={(e) => setCustomGroupsList(e.target.value)}
+            placeholder="e.g., VPNs | Best VPNs for streaming&#10;Antivirus | Top Antivirus software"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 hover:bg-white focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400 min-h-[100px]"
+          ></textarea>
         </div>
 
         {/* Grid of File Uploads */}
