@@ -6,6 +6,7 @@ import {
   createSegregatorGroup,
   deleteSegregatorGroup,
   updateSegregatorGroup,
+  updateSegregatorGroupDescription,
   updateSegregatorGroupPriority,
   updateSegregatorKeywordGroups,
   updateGroupingsGroup,
@@ -28,6 +29,8 @@ const GroupingsGroupDetail = () => {
   const [dropdownGroupSelections, setDropdownGroupSelections] = useState({});
   const [editingGroupId, setEditingGroupId] = useState(null);
   const [editTitleText, setEditTitleText] = useState('');
+  const [editingDescGroupId, setEditingDescGroupId] = useState(null);
+  const [editDescText, setEditDescText] = useState('');
 
   // Dropdown states for individual group actions
   const [activeGroupDropdownId, setActiveGroupDropdownId] = useState(null);
@@ -262,6 +265,40 @@ const GroupingsGroupDetail = () => {
         err.response?.data?.message ||
           err.message ||
           'Failed to update group title.',
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleStartEditDesc = (group) => {
+    setEditingDescGroupId(group._id);
+    setEditDescText(group.description || '');
+  };
+
+  const handleCancelEditDesc = () => {
+    setEditingDescGroupId(null);
+    setEditDescText('');
+  };
+
+  const handleSaveGroupDescription = async (id) => {
+    try {
+      setProcessing(true);
+      setError(null);
+      await updateSegregatorGroupDescription(id, editDescText.trim());
+      setSuccess('Group description updated successfully!');
+      setEditingDescGroupId(null);
+      setEditDescText('');
+
+      // Refresh only sub-groups
+      const childrenResponse = await getSegregatorGroups(groupingsGroupId);
+      setGroupings(childrenResponse.data.data || []);
+    } catch (err) {
+      console.error('Error updating group description:', err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Failed to update group description.',
       );
     } finally {
       setProcessing(false);
@@ -596,9 +633,9 @@ const GroupingsGroupDetail = () => {
                     isOpen ? 'border-b border-gray-200' : ''
                   }`}
                 >
-                  <div className="flex items-center gap-3 w-full md:w-auto">
+                  <div className="flex items-start gap-3 w-full md:w-auto">
                     <span
-                      className="text-gray-400 transition-transform duration-200 text-xs mr-1"
+                      className="text-gray-400 transition-transform duration-200 text-xs mr-1 mt-2.5"
                       style={{
                         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
                         display: 'inline-block',
@@ -606,94 +643,144 @@ const GroupingsGroupDetail = () => {
                     >
                       ▶
                     </span>
-                    <span className="text-indigo-500 text-xl">📁</span>
-                    {editingGroupId === group._id ? (
-                      <div className="flex items-center gap-2 flex-grow">
-                        <input
-                           type="text"
-                           value={editTitleText}
-                           onChange={(e) => setEditTitleText(e.target.value)}
-                           className="px-2.5 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                           autoFocus
-                           onKeyDown={(e) => {
-                             if (e.key === 'Enter')
-                               handleSaveGroupTitle(group._id);
-                             if (e.key === 'Escape') handleCancelEditGroup();
-                           }}
-                        />
-                        <button
-                          onClick={() => handleSaveGroupTitle(group._id)}
-                          disabled={processing}
-                          className="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center shadow-sm"
-                          title="Save Title"
-                        >
-                          💾
-                        </button>
-                        <button
-                          onClick={handleCancelEditGroup}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center shadow-sm"
-                          title="Cancel"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                        <h3 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-1.5">
-                          {group.priority && (
-                            <span className="text-amber-500 text-lg animate-pulse" title="Priority Group">
-                              ⭐
-                            </span>
-                          )}
-                          {group.title}
-                        </h3>
-                        <button
-                          onClick={() => handleStartEditGroup(group)}
-                          disabled={processing}
-                          className="text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-lg hover:bg-indigo-50"
-                          title="Edit Group Title"
-                        >
-                          ✏️
-                        </button>
-
-                        <div className="relative">
+                    <span className="text-indigo-500 text-xl mt-1">📁</span>
+                    <div className="flex flex-col flex-grow">
+                      {editingGroupId === group._id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                             type="text"
+                             value={editTitleText}
+                             onChange={(e) => setEditTitleText(e.target.value)}
+                             className="px-2.5 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                             autoFocus
+                             onKeyDown={(e) => {
+                               if (e.key === 'Enter')
+                                 handleSaveGroupTitle(group._id);
+                               if (e.key === 'Escape') handleCancelEditGroup();
+                             }}
+                          />
                           <button
-                            onClick={() =>
-                              setActiveGroupDropdownId(
-                                activeGroupDropdownId === group._id ? null : group._id
-                              )
-                            }
+                            onClick={() => handleSaveGroupTitle(group._id)}
                             disabled={processing}
-                            className="text-gray-500 hover:text-indigo-600 font-bold bg-white border border-gray-200 hover:border-indigo-100 hover:bg-indigo-50 px-3 py-1.5 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-sm"
-                            title="Group Options"
+                            className="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center shadow-sm"
+                            title="Save Title"
                           >
-                            ⚙️ Options
+                            💾
                           </button>
-                          {activeGroupDropdownId === group._id && (
-                            <div className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 p-2 text-left animate-fade-in">
-                              <button
-                                onClick={() => {
-                                  setActiveGroupDropdownId(null);
-                                  handleTogglePriority(group._id, group.priority);
-                                }}
-                                className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors flex items-center gap-2 font-semibold"
-                              >
-                                <span>{group.priority ? '☆ Remove Priority' : '⭐ Mark as Priority'}</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setActiveGroupDropdownId(null);
-                                  handleDeleteGroup(group._id, group.title);
-                                }}
-                                className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-semibold border-t border-gray-50 mt-1"
-                              >
-                                <span>🗑️ Delete Group</span>
-                              </button>
-                            </div>
-                          )}
+                          <button
+                            onClick={handleCancelEditGroup}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center shadow-sm"
+                            title="Cancel"
+                          >
+                            ✕
+                          </button>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                          <h3 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-1.5">
+                            {group.priority && (
+                              <span className="text-amber-500 text-lg animate-pulse" title="Priority Group">
+                                ⭐
+                              </span>
+                            )}
+                            {group.title}
+                          </h3>
+                          <button
+                            onClick={() => handleStartEditGroup(group)}
+                            disabled={processing}
+                            className="text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-lg hover:bg-indigo-50"
+                            title="Edit Group Title"
+                          >
+                            ✏️
+                          </button>
+
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setActiveGroupDropdownId(
+                                  activeGroupDropdownId === group._id ? null : group._id
+                                )
+                              }
+                              disabled={processing}
+                              className="text-gray-500 hover:text-indigo-600 font-bold bg-white border border-gray-200 hover:border-indigo-100 hover:bg-indigo-50 px-3 py-1.5 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-sm"
+                              title="Group Options"
+                            >
+                              ⚙️ Options
+                            </button>
+                            {activeGroupDropdownId === group._id && (
+                              <div className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 p-2 text-left animate-fade-in">
+                                <button
+                                  onClick={() => {
+                                    setActiveGroupDropdownId(null);
+                                    handleTogglePriority(group._id, group.priority);
+                                  }}
+                                  className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors flex items-center gap-2 font-semibold"
+                                >
+                                  <span>{group.priority ? '☆ Remove Priority' : '⭐ Mark as Priority'}</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setActiveGroupDropdownId(null);
+                                    handleDeleteGroup(group._id, group.title);
+                                  }}
+                                  className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-semibold border-t border-gray-50 mt-1"
+                                >
+                                  <span>🗑️ Delete Group</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Description Line Below Title */}
+                      {editingDescGroupId === group._id ? (
+                        <div className="flex items-center gap-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                          <input
+                             type="text"
+                             value={editDescText}
+                             onChange={(e) => setEditDescText(e.target.value)}
+                             placeholder="Add a group description..."
+                             className="px-2.5 py-1 border border-indigo-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-64 md:w-80"
+                             autoFocus
+                             onKeyDown={(e) => {
+                               if (e.key === 'Enter')
+                                 handleSaveGroupDescription(group._id);
+                               if (e.key === 'Escape') handleCancelEditDesc();
+                             }}
+                          />
+                          <button
+                            onClick={() => handleSaveGroupDescription(group._id)}
+                            disabled={processing}
+                            className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
+                            title="Save Description"
+                          >
+                            💾
+                          </button>
+                          <button
+                            onClick={handleCancelEditDesc}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
+                            title="Cancel"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 mt-1.5 min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-sm text-gray-500 font-medium">
+                            {group.description || ''}
+                          </span>
+                          <button
+                            onClick={() => handleStartEditDesc(group)}
+                            disabled={processing}
+                            className="text-gray-400 hover:text-indigo-600 transition-colors p-1 rounded-lg hover:bg-indigo-50 flex items-center"
+                            title="Edit Description"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-3">

@@ -219,8 +219,11 @@ export const getGroupingsGroup = (id) => {
   return apiClient.get(`/api/segregator/groupings-groups/${id}`);
 };
 
-export const updateGroupingsGroup = (id, title) => {
-  return apiClient.put(`/api/segregator/groupings-groups/${id}`, { title });
+export const updateGroupingsGroup = (id, title, description) => {
+  const data = {};
+  if (title !== undefined) data.title = title;
+  if (description !== undefined) data.description = description;
+  return apiClient.put(`/api/segregator/groupings-groups/${id}`, data);
 };
 
 export const deleteGroupingsGroup = (id) => {
@@ -245,6 +248,10 @@ export const deleteSegregatorGroup = (id) => {
 
 export const updateSegregatorGroup = (id, title) => {
   return apiClient.put(`/api/segregator/groups/${id}`, { title });
+};
+
+export const updateSegregatorGroupDescription = (id, description) => {
+  return apiClient.put(`/api/segregator/groups/${id}/description`, { description });
 };
 
 export const updateSegregatorGroupPriority = (id, priority) => {

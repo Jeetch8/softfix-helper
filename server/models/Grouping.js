@@ -14,6 +14,11 @@ const groupingSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        description: {
+            type: String,
+            default: '',
+            trim: true,
+        },
         keywords: {
             type: [[{
                 id: {

@@ -88,10 +88,15 @@ export async function generateWAVAudio(script, topicId) {
 
     const result = await ai.models.generateContent({
       model: 'gemini-3.1-flash-tts-preview',
-      contents: script,
+    //  contents: script,
+ contents: [
+    { text: "Director's Notes: Deliver this script with crisp, distinct enunciation and professional clarity. Speak at a confident, natural pace. Ensure every consonant is clean and easily comprehensible, maintaining a bright and engaging tone."  },
+    { text: script }
+  ],
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
+//	speed: 0.9,
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName: 'Alnilam' },
           },

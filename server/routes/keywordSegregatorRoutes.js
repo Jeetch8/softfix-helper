@@ -208,6 +208,32 @@ router.put('/segregator/groups/:id', async (req, res) => {
 });
 
 /**
+ * PUT /api/segregator/groups/:id/description
+ * Updates a specific group's description
+ */
+router.put('/segregator/groups/:id/description', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { description } = req.body;
+
+        const updatedGroup = await Grouping.findByIdAndUpdate(
+            id,
+            { description: description ?? '' },
+            { new: true }
+        );
+
+        if (!updatedGroup) {
+            return res.status(404).json({ success: false, message: 'Group not found' });
+        }
+
+        res.json({ success: true, message: 'Group description updated successfully', data: updatedGroup });
+    } catch (error) {
+        console.error('❌ Error updating group description:', error.message);
+        res.status(500).json({ success: false, message: 'Error updating group description', error: error.message });
+    }
+});
+
+/**
  * PUT /api/segregator/groups/:id/priority
  * Updates a specific group's priority status
  */
@@ -345,16 +371,23 @@ router.get('/segregator/groupings-groups/:id', async (req, res) => {
 
 /**
  * PUT /api/segregator/groupings-groups/:id
- * Updates groupings group title
+ * Updates groupings group title and/or description
  */
 router.put('/segregator/groupings-groups/:id', async (req, res) => {
     try {
-        const { title } = req.body;
-        if (!title) {
-            return res.status(400).json({ success: false, message: 'Title is required' });
+        const { title, description } = req.body;
+        const updateFields = {};
+        if (title !== undefined) {
+            if (!title) {
+                return res.status(400).json({ success: false, message: 'Title is required' });
+            }
+            updateFields.title = title;
+        }
+        if (description !== undefined) {
+            updateFields.description = description;
         }
 
-        const group = await GroupingsGroup.findByIdAndUpdate(req.params.id, { title }, { new: true });
+        const group = await GroupingsGroup.findByIdAndUpdate(req.params.id, updateFields, { new: true });
         if (!group) {
             return res.status(404).json({ success: false, message: 'Groupings group not found' });
         }

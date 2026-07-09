@@ -23,6 +23,8 @@ const KeywordsSegregator = () => {
   // Editing session title inline state
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editTitleText, setEditTitleText] = useState('');
+  const [editingSessionDescId, setEditingSessionDescId] = useState(null);
+  const [editSessionDescText, setEditSessionDescText] = useState('');
 
   const fetchSessions = async () => {
     try {
@@ -136,6 +138,36 @@ const KeywordsSegregator = () => {
     } catch (err) {
       console.error('Error updating session title:', err);
       setError(err.response?.data?.message || err.message || 'Failed to update session title.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleStartEditSessionDesc = (e, session) => {
+    e.stopPropagation();
+    setEditingSessionDescId(session._id);
+    setEditSessionDescText(session.description || '');
+  };
+
+  const handleCancelEditSessionDesc = (e) => {
+    if (e) e.stopPropagation();
+    setEditingSessionDescId(null);
+    setEditSessionDescText('');
+  };
+
+  const handleSaveSessionDesc = async (e, id) => {
+    e.stopPropagation();
+    try {
+      setProcessing(true);
+      setError(null);
+      await updateGroupingsGroup(id, undefined, editSessionDescText.trim());
+      setSuccess('Session description updated successfully!');
+      setEditingSessionDescId(null);
+      setEditSessionDescText('');
+      await fetchSessions();
+    } catch (err) {
+      console.error('Error updating session description:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to update session description.');
     } finally {
       setProcessing(false);
     }
@@ -340,7 +372,7 @@ const KeywordsSegregator = () => {
               <div
                 key={session._id}
                 onClick={() => navigate(`/segregator/groups/${session._id}`)}
-                className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between h-56 relative overflow-hidden group shadow-sm"
+                className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[14rem] h-auto pb-6 relative overflow-hidden group shadow-sm"
               >
                 {/* Visual Accent Bar */}
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
@@ -403,6 +435,52 @@ const KeywordsSegregator = () => {
                     <h3 className="text-lg font-bold text-gray-800 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors">
                       {session.title}
                     </h3>
+                  )}
+
+                  {/* Session Description */}
+                  {editingSessionDescId === session._id ? (
+                    <div className="flex items-center gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="text"
+                        value={editSessionDescText}
+                        onChange={(e) => setEditSessionDescText(e.target.value)}
+                        placeholder="Add description..."
+                        className="px-2 py-1 text-xs border border-indigo-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveSessionDesc(e, session._id);
+                          if (e.key === 'Escape') handleCancelEditSessionDesc(e);
+                        }}
+                      />
+                      <button
+                        onClick={(e) => handleSaveSessionDesc(e, session._id)}
+                        className="bg-green-50 hover:bg-green-100 text-green-700 p-1 rounded-md text-3xs font-bold transition-colors"
+                        title="Save Description"
+                      >
+                        💾
+                      </button>
+                      <button
+                        onClick={(e) => handleCancelEditSessionDesc(e)}
+                        className="bg-gray-50 hover:bg-gray-100 text-gray-700 p-1 rounded-md text-3xs font-bold transition-colors"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 mt-1.5 min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
+                      <p className="text-xs text-gray-500 line-clamp-2 font-medium">
+                        {session.description || ''}
+                      </p>
+                      <button
+                        onClick={(e) => handleStartEditSessionDesc(e, session)}
+                        disabled={processing}
+                        className="text-gray-400 hover:text-indigo-600 p-0.5 rounded transition-colors"
+                        title="Edit Description"
+                      >
+                        ✏️
+                      </button>
+                    </div>
                   )}
                 </div>
 

@@ -7,6 +7,11 @@ const groupingsGroupSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        description: {
+            type: String,
+            default: '',
+            trim: true,
+        },
         numberOfGroups: {
             type: Number,
             default: 0,
