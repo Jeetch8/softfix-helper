@@ -239,55 +239,27 @@ export async function generateNarrationScript(
 ) {
 //	console.log(keywords);
   try {
+    const titleText = videoTitle
+      ? `\n\nVideo Title: "${videoTitle}"`
+      : '';
     const descriptionText = description
       ? `\n\nAdditional context: ${description}`
       : '';
     const stepByStepInstructionsText = stepByStepInstructions
       ? `\n\nStep-by-step instructions to follow/incorporate:\n${stepByStepInstructions}`
       : '';
+    const stepsText = stepByStepInstructionsText;
     const keywordsText = keywords
       ? `\nKeywords: ${keywords}\nMake sure to incorporate these keywords into the script, but ONLY if they sound natural or make sense in a sentence, and ensure the resulting sentence also makes complete sense.`
       : '';
-    //     let prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${keywordsText}
+    const additionalInstructionsText = regenerationComments
+      ? `\n\nREGENERATION FEEDBACK / COMMENTS:\nPlease rewrite the script taking into account the following feedback from the user to improve or adjust the script:\n"${regenerationComments}"`
+      : '';
 
-    // SCRIPT STRUCTURE:
+    let prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel that publishes clear, efficient tech tutorials solving everyday software and computer problems — Windows, Google Chrome, Excel, FL Studio, and similar everyday tools. Create a narration script for a screen-recorded tutorial video about: "${topic}".${titleText}${descriptionText}${keywordsText}${stepsText}${additionalInstructionsText}
 
-    // OPENING (vary the phrasing each time):
-    // - Begin with "In this video, [topic/what viewers will learn]"
-    // - Smoothly transition to asking viewers to subscribe and like
-    // - Include "let's get straight into this video" or a natural variation
-    // - Flow should feel conversational, not formulaic
-
-    // INTRODUCTION (100-200 characters):
-    // Provide a brief, engaging setup that does ONE or MORE of these:
-    // - Identify the problem viewers are facing
-    // - Explain why this matters or when they'd need this
-    // - Preview what will be covered
-    // - Keep it concise and relevant
-
-    // MAIN CONTENT:
-    // - Present steps as flowing, continuous paragraphs—NOT numbered or bulleted lists
-    // - Be precise and detailed, anticipating user questions
-    // - Use transitional phrases like "Next," "Now," "After that," or "Once you've done this"
-    // - Maintain a professional but approachable tone
-    // - Assume viewers are following along in real-time
-
-    // CLOSING (vary the phrasing each time):
-    // - Brief thank you for watching
-    // - Invite viewers to comment with questions or video requests
-    // - Keep it under 30 words and natural
-
-    // CRITICAL RULES:
-    // - No headings, subheadings, or section labels in the output
-    // - No numbered steps or bullet points
-    // - Vary the subscribe/like call-to-action wording each time
-    // - Vary the closing wording each time
-    // - Smooth transitions between all sections
-    // - Output ONLY the script—no meta-commentary, no explanations, no formatting markers
-
-    // The script should sound like a knowledgeable friend walking someone through a process—direct, clear, and efficient.`;
-
-    let prompt = `You are a professional scriptwriter for "Softfix Central," a YouTube channel known for clear, efficient tech tutorials. Create a narration script for a video about: "${topic}".${descriptionText}${stepByStepInstructionsText}${keywordsText}
+NARRATION CONTEXT (read carefully):
+This script will be read aloud over a screen recording. The viewer is watching the exact steps happen on their own screen in real time while listening to you. Every sentence in the main content should feel like you're looking at the same screen as the viewer — guiding their eyes to buttons, menus, and results as they appear, not describing the process in the abstract.
 
 SCRIPT STRUCTURE:
 
@@ -295,44 +267,38 @@ OPENING (follow this exact pattern every time):
 - Start with the video topic phrased as a question or short statement — exactly like the title of the video. Examples: "How to hide apps on iPhone." / "What's the best free VPN for a Windows PC or laptop?"
 - Immediately follow with: "In this video, I'm going to show you [specific description of what will be demonstrated — be precise about devices/platforms/scope]."
 - Then add the engagement line in this exact form: "And if this video helps you, please consider giving it a like, and also subscribe to my channel because that really helps me out."
-- Do NOT say "let's get straight into it" or similar — the channel goes directly from the engagement line into the content
+- Do NOT say "let's get straight into it" or similar — go directly from the engagement line into the main content
 
-INTRODUCTION (1–4 sentences, optional but common):
-Direct after the engagement line, add brief context ONLY when useful — such as:
-- A caveat or limitation viewers should know upfront ("So unfortunately, Roblox does not give us anywhere in the settings to...")
-- Why this method works or what makes it noteworthy ("And the method I'm going to show you will work even if you're on the lock screen...")
-- A quick recommendation or opinion before diving in ("So, in my opinion, the best free VPN... is going to be ProtonVPN.")
-- Skip this section entirely for simple, self-explanatory topics and go straight to the steps
+MAIN CONTENT (follow the provided steps — do not invent or skip steps):
+- Go straight into the first step immediately after the opening — no separate setup, framing, or "why this matters" paragraph
+- Turn the step-by-step outline into flowing, continuous paragraphs—NOT numbered or bulleted lists
+- Narrate each action as it would appear on screen: name the exact menu, button, setting, or option the viewer should look for, and describe what happens after they click or select it
+- Be precise and detailed, anticipating points of confusion (e.g., what to do if a menu looks different or an option is missing)
+- Use transitional phrases like "Next," "Now," "After that," "Once you've done this," or "You'll now see"
+- Maintain a professional but approachable tone
+- Assume viewers are following along on their own screen in real time, one action at a time
+- Stay faithful to the provided outline — expand it with natural narration detail, but don't add steps it doesn't imply
 
-MAIN CONTENT:
-- Begin steps with "So, to get started..." or "So, to do this..." — the word "So," is a natural lead-in used throughout
-- Present all steps as flowing, continuous paragraphs — no numbered lists, no bullet points, no headers
-- Be precise and literal: name exact UI elements ("select the three dots in the top right," "select the power icon," "select the gear in the top right")
-- Use natural transitions: "Once you do that," "From here," "Once in here," "Then," "Now," "After that," "Go ahead and"
-- Anticipate what the viewer sees on screen and narrate it ("And as you can see here...," "yours will have a get button")
-- Keep a calm, helpful, slightly conversational tone — like a knowledgeable friend walking through a process step by step
-- Assume viewers are following along in real-time
+KEYWORD INTEGRATION:
+- Weave the provided keywords into the script naturally, wherever they fit the sentence
+- Prioritize keywords with higher search volume — they should appear earlier and/or more often than lower-volume keywords
+- Never force a keyword in a way that breaks natural sentence flow or reads like a list
 
-CLOSING (use one of these two patterns — vary between them):
-- Short version: "If this video helped you, give it a thumbs up, and please consider subscribing to my channel."
-- With summary: "So, that's how you [restate the topic briefly]. If this video helped you, give it a thumbs up, and please consider subscribing to my channel."
-- Keep it under 30 words — never add extra commentary after this line
+CLOSING (vary the phrasing each time):
+- Brief thank you for watching
+- Invite viewers to comment with questions or video requests
+- Keep it under 30 words and natural
 
 CRITICAL RULES:
 - No headings, subheadings, or section labels in the output
-- No numbered steps or bullet points anywhere
-- The opening question/title line must always come first — before "In this video..."
-- The like/subscribe line must appear in the opening, not the closing
-- Use "So," naturally at the start of sentences — it's a signature verbal tic of this channel
-- Use "go ahead and" as a natural softener before action steps
-- Refer to the viewer's device/UI elements specifically — avoid vague instructions
-- Output ONLY the script — no meta-commentary, no explanations, no formatting markers
+- No numbered steps or bullet points
+- Follow the opening pattern exactly as specified — do not vary its wording or structure
+- Vary the closing wording each time
+- Smooth transition directly from the opening into the first step of main content
+- Output ONLY the script—no meta-commentary, no explanations, no formatting markers
+- If "Additional Instructions" are provided above, they override any rule in this prompt they conflict with — follow them exactly. If none are provided, follow the default structure and tone above.
 
-The script should sound like a calm, efficient tech tutorial host who respects the viewer's time — direct, precise, and friendly without being performative.`;
-
-    if (regenerationComments) {
-      prompt += `\n\nREGENERATION FEEDBACK / COMMENTS:\nPlease rewrite the script taking into account the following feedback from the user to improve or adjust the script:\n"${regenerationComments}"`;
-    }
+The script should sound like a knowledgeable friend sitting beside the viewer, narrating their own screen back to them as they work through it — direct, clear, and efficient.`;
 
     console.log(`⏳ Generating narration script using PRO model...`);
     const responseText = await generateText(

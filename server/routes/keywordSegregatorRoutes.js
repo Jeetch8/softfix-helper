@@ -544,6 +544,25 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
 
         // 6. Send keywords to Gemini for segregation
         const groupingsData = await segregateKeywordsIntoGroups(savedKeywordsInfo, customGroupsList);
+
+        // Parse custom groups list for descriptions
+        const customGroupsDescriptions = {};
+        if (customGroupsList) {
+            const parts = customGroupsList.split(/[\n,]+/);
+            for (const part of parts) {
+                const splitIndex = part.indexOf('|');
+                if (splitIndex !== -1) {
+                    let t = part.substring(0, splitIndex).trim();
+                    if (t.startsWith('-')) {
+                        t = t.substring(1).trim();
+                    }
+                    const d = part.substring(splitIndex + 1).trim();
+                    if (t) {
+                        customGroupsDescriptions[t.toLowerCase()] = d;
+                    }
+                }
+            }
+        }
         
         // Create the GroupingsGroup parent document first
         const groupingsGroup = await GroupingsGroup.create({
@@ -579,8 +598,13 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
 
             const totalVolume = populatedKeywords.reduce((sum, kw) => sum + (kw.search_volume || 0), 0);
             const priority = highestSearchVolume >= 20000;
+            
+            const groupTitleLower = group.title ? group.title.toLowerCase() : '';
+            const description = customGroupsDescriptions[groupTitleLower] || '';
+
             const newGroup = await Grouping.create({
                 title: group.title,
+                description: description,
                 keywords: [populatedKeywords], // Note: Grouping model expects [[ { ... } ]]
                 total_average_volume: totalVolume,
                 userId,

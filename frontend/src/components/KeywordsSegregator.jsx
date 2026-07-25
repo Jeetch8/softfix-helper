@@ -11,8 +11,7 @@ import {
 const KeywordsSegregator = () => {
   const navigate = useNavigate();
 
-  const [file1, setFile1] = useState(null);
-  const [file2, setFile2] = useState(null);
+  const [files, setFiles] = useState([]);
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,28 +45,29 @@ const KeywordsSegregator = () => {
     fetchSessions();
   }, []);
 
-  const handleFileChange = (e, setFile) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setFiles((prevFiles) => [...prevFiles, ...newFiles]);
       setError(null);
       setSuccess(null);
     }
+    // Reset input value to allow selecting the same file again if removed
+    e.target.value = '';
   };
 
-  const handleClearFile = (setFile, inputId) => {
-    setFile(null);
-    const element = document.getElementById(inputId);
-    if (element) element.value = '';
+  const handleRemoveFile = (index) => {
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
   const handleProcess = async () => {
-    if (!file1 && !file2) return;
+    if (files.length === 0) return;
 
     setProcessing(true);
     setError(null);
     setSuccess(null);
 
-    const filesToUpload = [file1, file2].filter(Boolean);
+    const filesToUpload = files;
     const finalTitle = sessionTitle.trim() || 'New Keywords Session';
 
     try {
@@ -75,15 +75,9 @@ const KeywordsSegregator = () => {
       setSuccess(response.data.message || 'Files uploaded and processed successfully! New session created.');
       
       // Reset upload states
-      setFile1(null);
-      setFile2(null);
+      setFiles([]);
       setSessionTitle('');
       setCustomGroupsList('');
-      
-      const file1Input = document.getElementById('file1-input');
-      const file2Input = document.getElementById('file2-input');
-      if (file1Input) file1Input.value = '';
-      if (file2Input) file2Input.value = '';
 
       // Refresh list
       await fetchSessions();
@@ -238,94 +232,61 @@ const KeywordsSegregator = () => {
           ></textarea>
         </div>
 
-        {/* Grid of File Uploads */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Upload Card 1 */}
+        {/* File Upload Box */}
+        <div className="mb-6">
           <div className="bg-gray-50 p-6 rounded-xl border border-gray-150 flex flex-col justify-between text-center relative">
             <div>
               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl mx-auto mb-3">
                 📄
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">Keywords File 1</h3>
-              <p className="text-gray-400 text-sm mb-4">Select first file for segregation.</p>
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">Upload Keywords Files</h3>
+              <p className="text-gray-400 text-sm mb-4">Select multiple files for segregation.</p>
               
               <label className="cursor-pointer bg-white hover:bg-gray-100 border-2 border-dashed border-gray-200 rounded-xl px-4 py-6 w-full flex flex-col items-center transition-all shadow-sm">
-                <span className="text-gray-600 text-sm font-medium">Browse File</span>
+                <span className="text-gray-600 text-sm font-medium">Browse Files</span>
                 <span className="text-xs text-gray-400 mt-1">Excel or CSV</span>
                 <input 
-                  id="file1-input"
+                  id="files-input"
                   type="file" 
+                  multiple
                   className="hidden" 
                   accept=".xlsx,.xls,.csv,text/csv"
-                  onChange={(e) => handleFileChange(e, setFile1)}
+                  onChange={handleFileChange}
                 />
               </label>
             </div>
-            
-            {file1 && (
-              <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-lg flex items-center justify-between w-full text-left text-sm">
-                <div className="flex items-center gap-2 truncate">
-                  <span>✅</span>
-                  <span className="truncate font-medium">{file1.name}</span>
-                </div>
-                <button 
-                  onClick={() => handleClearFile(setFile1, 'file1-input')}
-                  className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                  title="Remove file"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
           </div>
-
-          {/* Upload Card 2 */}
-          <div className="bg-gray-50 p-6 rounded-xl border border-gray-150 flex flex-col justify-between text-center relative">
-            <div>
-              <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xl mx-auto mb-3">
-                📄
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">Keywords File 2</h3>
-              <p className="text-gray-400 text-sm mb-4">Select second file for segregation.</p>
-              
-              <label className="cursor-pointer bg-white hover:bg-gray-100 border-2 border-dashed border-gray-200 rounded-xl px-4 py-6 w-full flex flex-col items-center transition-all shadow-sm">
-                <span className="text-gray-600 text-sm font-medium">Browse File</span>
-                <span className="text-xs text-gray-400 mt-1">Excel or CSV</span>
-                <input 
-                  id="file2-input"
-                  type="file" 
-                  className="hidden" 
-                  accept=".xlsx,.xls,.csv,text/csv"
-                  onChange={(e) => handleFileChange(e, setFile2)}
-                />
-              </label>
+          
+          {/* List of selected files */}
+          {files.length > 0 && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {files.map((file, index) => (
+                <div key={index} className="p-3 bg-blue-50 text-blue-700 rounded-lg flex items-center justify-between w-full text-left text-sm border border-blue-100 shadow-sm">
+                  <div className="flex items-center gap-2 truncate">
+                    <span>✅</span>
+                    <span className="truncate font-medium">{file.name}</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-gray-400 hover:text-red-500 transition-colors p-1 flex-shrink-0"
+                    title="Remove file"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
-            
-            {file2 && (
-              <div className="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg flex items-center justify-between w-full text-left text-sm">
-                <div className="flex items-center gap-2 truncate">
-                  <span>✅</span>
-                  <span className="truncate font-medium">{file2.name}</span>
-                </div>
-                <button 
-                  onClick={() => handleClearFile(setFile2, 'file2-input')}
-                  className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                  title="Remove file"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Process Button */}
         <div className="flex justify-end">
           <button
             onClick={handleProcess}
-            disabled={(!file1 && !file2) || processing}
+            disabled={files.length === 0 || processing}
             className={`px-8 py-4 rounded-xl font-bold text-white transition-all duration-300 flex items-center gap-3 shadow-md ${
-              (!file1 && !file2) || processing
+              files.length === 0 || processing
                 ? 'bg-gray-300 cursor-not-allowed shadow-none'
                 : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:shadow-indigo-100 hover:scale-[1.01] active:scale-[0.99]'
             }`}
