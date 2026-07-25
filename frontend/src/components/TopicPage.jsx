@@ -5,6 +5,7 @@ import {
   updateScript,
   updateDescription,
   updateKeywords,
+  updateTopicName,
   updateInstructions,
   regenerateScript,
   markAsEditing,
@@ -229,6 +230,10 @@ const TopicPage = () => {
   const [editedDescription, setEditedDescription] = useState('');
   const [isSavingDescription, setIsSavingDescription] = useState(false);
 
+  const [isEditingTopicName, setIsEditingTopicName] = useState(false);
+  const [editedTopicName, setEditedTopicName] = useState('');
+  const [isSavingTopicName, setIsSavingTopicName] = useState(false);
+
   const [isEditingKeywords, setIsEditingKeywords] = useState(false);
   const [editedKeywords, setEditedKeywords] = useState('');
   const [isSavingKeywords, setIsSavingKeywords] = useState(false);
@@ -251,12 +256,14 @@ const TopicPage = () => {
     setLoading(true);
     setError(null);
     setIsEditing(false);
+    setIsEditingTopicName(false);
     setIsEditingDescription(false);
     setIsEditingKeywords(false);
     setIsEditingInstructions(false);
     try {
       const response = await getTopic(topicId);
       setTopic(response.data.data);
+      setEditedTopicName(response.data.data.topicName || '');
       setEditedScript(response.data.data.narrationScript || '');
       setEditedDescription(response.data.data.description || '');
       setEditedKeywords(response.data.data.keywords || '');
@@ -388,6 +395,25 @@ const TopicPage = () => {
       setError(err.response?.data?.message || 'Failed to mark as uploaded');
     } finally {
       setIsMarkingUploaded(false);
+    }
+  };
+
+  const handleSaveTopicName = async () => {
+    if (!editedTopicName.trim()) {
+      setError('Topic name cannot be empty');
+      return;
+    }
+
+    setIsSavingTopicName(true);
+    try {
+      const response = await updateTopicName(topicId, editedTopicName);
+      setTopic(response.data.data);
+      setIsEditingTopicName(false);
+      setError(null);
+    } catch (err) {
+      setError('Failed to save topic name');
+    } finally {
+      setIsSavingTopicName(false);
     }
   };
 
@@ -531,9 +557,50 @@ const TopicPage = () => {
               >
                 ← Back to Topics
               </button>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                {topic.topicName}
-              </h1>
+              {isEditingTopicName ? (
+                <div className="mb-3 space-y-2 max-w-2xl">
+                  <input
+                    type="text"
+                    value={editedTopicName}
+                    onChange={(e) => setEditedTopicName(e.target.value)}
+                    className="w-full p-2 text-2xl font-bold text-gray-800 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter topic name..."
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveTopicName}
+                      disabled={isSavingTopicName}
+                      className="px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      {isSavingTopicName ? '💾 Saving...' : '💾 Save'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingTopicName(false);
+                        setEditedTopicName(topic.topicName || '');
+                      }}
+                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      ✕ Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-800">
+                    {topic.topicName}
+                  </h1>
+                  <button
+                    onClick={() => {
+                      setEditedTopicName(topic.topicName || '');
+                      setIsEditingTopicName(true);
+                    }}
+                    className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
+                  >
+                    ✏️ Edit
+                  </button>
+                </div>
+              )}
               <div className="mb-4">
                 <StatusBadge status={topic.status} />
               </div>

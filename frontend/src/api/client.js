@@ -83,6 +83,10 @@ export const updateKeywords = (id, keywords) => {
   return apiClient.put(`/api/topics/${id}/keywords`, { keywords });
 };
 
+export const updateTopicName = (id, topicName) => {
+  return apiClient.put(`/api/topics/${id}/name`, { topicName });
+};
+
 export const updateInstructions = (id, stepByStepInstructions) => {
   return apiClient.put(`/api/topics/${id}/instructions`, { stepByStepInstructions });
 };

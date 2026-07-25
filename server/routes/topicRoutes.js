@@ -440,6 +440,59 @@ router.put('/topics/:id/keywords', async (req, res) => {
 });
 
 /**
+ * PUT /api/topics/:id/name
+ * Update the topic name
+ */
+router.put('/topics/:id/name', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { topicName } = req.body;
+
+    if (!topicName || topicName.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Topic name is required',
+      });
+    }
+
+    const topic = await Topic.findByIdAndUpdate(
+      id,
+      {
+        topicName: topicName.trim(),
+      },
+      { new: true },
+    ).populate('groupingIds');
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    const topicObj = topic.toObject();
+    topicObj.keywords = await topic.getKeywordsString();
+
+    console.log(
+      `✏️ Topic name updated to: "${topic.topicName}" (ID: ${topic._id})`,
+    );
+
+    res.json({
+      success: true,
+      message: 'Topic name updated successfully',
+      data: topicObj,
+    });
+  } catch (error) {
+    console.error('❌ Error updating topic name:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating topic name',
+      error: error.message,
+    });
+  }
+});
+
+/**
  * PUT /api/topics/:id/instructions
  * Update the topic step-by-step instructions
  */
