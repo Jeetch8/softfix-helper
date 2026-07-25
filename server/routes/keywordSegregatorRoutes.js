@@ -568,7 +568,8 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
         const groupingsGroup = await GroupingsGroup.create({
             title: groupingsGroupTitle,
             numberOfGroups: groupingsData.length,
-            userId
+            userId,
+            customGroupsList
         });
 
         // 7. Save generated groups to Grouping DB, populating keyword info from memory mapping and linking to GroupingsGroup parent

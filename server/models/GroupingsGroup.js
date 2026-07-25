@@ -16,6 +16,10 @@ const groupingsGroupSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        customGroupsList: {
+            type: String,
+            default: '',
+        },
         userId: {
             type: String,
             default: 'default-user',
