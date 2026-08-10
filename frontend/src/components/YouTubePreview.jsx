@@ -53,7 +53,7 @@ const YouTubePreview = ({ thumbnail, title, channelName = "Softfix Central" }) =
                 className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
               />
               <div className="absolute bottom-1.5 right-1.5 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded">
-                10:24
+                21:23
               </div>
             </div>
 
@@ -91,7 +91,7 @@ const YouTubePreview = ({ thumbnail, title, channelName = "Softfix Central" }) =
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-1.5 right-1.5 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded">
-                10:24
+                21:23
               </div>
             </div>
 

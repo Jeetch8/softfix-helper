@@ -945,6 +945,8 @@ const TopicPage = () => {
               topicId={topicId}
               selectedThumbnail={topic.selectedThumbnail}
               onThumbnailSelected={fetchTopic}
+              audioUrl={audioBlobUrl || topic.audioUrl}
+              timestamps={topic.timestamps}
             />
           </div>
         )}
@@ -955,6 +957,8 @@ const TopicPage = () => {
             thumbnail={topic.selectedThumbnail}
             title={topic.selectedTitle}
             channelName="Softfix Central"
+            audioUrl={audioBlobUrl || topic.audioUrl}
+            timestamps={topic.timestamps}
           />
         )}
 

@@ -70,11 +70,16 @@ const ThumbnailSelector = ({
               />
             </label>
           </div>
-          <img
-            src={blobUrl || localSelectedThumbnail}
-            alt="Selected Thumbnail"
-            className="w-full rounded max-h-96 object-contain bg-black"
-          />
+          <div className="relative inline-block w-full">
+            <img
+              src={blobUrl || localSelectedThumbnail}
+              alt="Selected Thumbnail"
+              className="w-full rounded max-h-96 object-contain bg-black"
+            />
+            <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-2 py-1 rounded shadow">
+              21:23
+            </div>
+          </div>
         </div>
       )}
 
