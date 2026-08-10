@@ -121,6 +121,10 @@ export const uploadThumbnail = (id, file) => {
   });
 };
 
+export const skipThumbnail = (id) => {
+  return apiClient.post(`/api/topics/${id}/skip-thumbnail`);
+};
+
 export const generateExtraAssets = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-extra-assets`);
 };

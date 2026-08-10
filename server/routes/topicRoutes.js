@@ -911,6 +911,47 @@ router.post('/topics/:id/upload-thumbnail', upload.single('thumbnail'), async (r
 });
 
 /**
+ * POST /api/topics/:id/skip-thumbnail
+ * Skip thumbnail upload for a topic
+ */
+router.post('/topics/:id/skip-thumbnail', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const topic = await Topic.findByIdAndUpdate(
+      id,
+      {
+        selectedThumbnail: 'skipped',
+        level: 'finished',
+      },
+      { new: true },
+    ).populate('groupingIds');
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    console.log(`⏭️ Thumbnail skipped for topic "${topic.topicName}"`);
+
+    res.json({
+      success: true,
+      message: 'Thumbnail skipped successfully',
+      data: topic,
+    });
+  } catch (error) {
+    console.error('❌ Error skipping thumbnail:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error skipping thumbnail',
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/topics/:id/select-thumbnail
  * Select one of the generated thumbnails
  */

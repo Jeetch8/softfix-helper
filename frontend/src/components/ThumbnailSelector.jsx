@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { uploadThumbnail, fetchMediaAsBlobUrl } from '../api/client';
+import { uploadThumbnail, skipThumbnail, fetchMediaAsBlobUrl } from '../api/client';
 
 const ThumbnailSelector = ({
   topicId,
@@ -51,9 +51,29 @@ const ThumbnailSelector = ({
     }
   };
 
+  const handleSkip = async () => {
+    setIsUploading(true);
+    setError(null);
+    try {
+      const response = await skipThumbnail(topicId);
+      const updatedTopic = response.data.data;
+      const newThumbnailUrl = updatedTopic.selectedThumbnail;
+      
+      setLocalSelectedThumbnail(newThumbnailUrl);
+      if (onThumbnailSelected) onThumbnailSelected({ url: newThumbnailUrl });
+    } catch (err) {
+      setError(
+        'Failed to skip thumbnail: ' +
+          (err.response?.data?.message || err.message),
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {localSelectedThumbnail && (
+      {localSelectedThumbnail && localSelectedThumbnail !== 'skipped' && (
         <div className="bg-green-50 border border-green-200 rounded p-4">
           <div className="flex justify-between items-center mb-2">
             <p className="text-green-700 text-sm">
@@ -83,29 +103,46 @@ const ThumbnailSelector = ({
         </div>
       )}
 
-      {!localSelectedThumbnail && (
+      {(!localSelectedThumbnail || localSelectedThumbnail === 'skipped') && (
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
+          {localSelectedThumbnail === 'skipped' && (
+            <div className="mb-4 text-amber-600 font-semibold text-sm">
+              ⏭️ Thumbnail generation skipped. You can still upload one below if you change your mind.
+            </div>
+          )}
           {isUploading ? (
             <div className="space-y-3">
               <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-              <p className="text-blue-600 font-medium">Uploading thumbnail...</p>
+              <p className="text-blue-600 font-medium">Processing...</p>
             </div>
           ) : (
-            <label className="cursor-pointer block">
-              <div className="space-y-3">
-                <div className="text-4xl">📸</div>
-                <div className="text-gray-600">
-                  <span className="text-blue-500 font-semibold">Click to upload</span> or drag and drop
+            <div className="space-y-4">
+              <label className="cursor-pointer block">
+                <div className="space-y-3">
+                  <div className="text-4xl">📸</div>
+                  <div className="text-gray-600">
+                    <span className="text-blue-500 font-semibold">Click to upload</span> or drag and drop
+                  </div>
+                  <p className="text-xs text-gray-400">PNG, JPG or WEBP (max. 10MB)</p>
                 </div>
-                <p className="text-xs text-gray-400">PNG, JPG or WEBP (max. 10MB)</p>
-              </div>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileUpload}
-              />
-            </label>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                />
+              </label>
+              {localSelectedThumbnail !== 'skipped' && (
+                <div className="pt-4 border-t border-gray-200">
+                  <button
+                    onClick={handleSkip}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded transition-colors"
+                  >
+                    Skip Thumbnail for Now
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -13,7 +13,7 @@ const YouTubePreview = ({ thumbnail, title, channelName = "Softfix Central" }) =
     }
   }, [thumbnail]);
 
-  if (!thumbnail) return null;
+  if (!thumbnail || thumbnail === 'skipped') return null;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
