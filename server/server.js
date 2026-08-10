@@ -4,14 +4,18 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 // import dotenv from 'dotenv';
-// import path from 'path';
+import path from 'path';
 import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { connectDB } from './config/database.js';
 import { startCronJob, stopCronJob } from './services/cronService.js';
 import topicRoutes from './routes/topicRoutes.js';
 import keywordRoutes from './routes/keywordRoutes.js';
 // import ideaRoutes from './routes/ideaRoutes.js';
 import keywordSegregatorRoutes from './routes/keywordSegregatorRoutes.js';
+import mediaRoutes from './routes/mediaRoutes.js';
 import dns from 'node:dns/promises';
 dns.setServers(['1.1.1.1']);
 
@@ -25,6 +29,7 @@ const allowedOrigins = process.env.CORS_ORIGINS
       'http://localhost:5173',
       'http://localhost:3000',
       'https://softfix-helper.vercel.app',
+      'https://succeedable-perspiringly-aracely.ngrok-free.dev',
     ];
 
 app.use(
@@ -41,6 +46,9 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -62,6 +70,7 @@ app.use('/api', topicRoutes);
 app.use('/api', keywordRoutes);
 // app.use('/api', ideaRoutes);
 app.use('/api', keywordSegregatorRoutes);
+app.use('/api', mediaRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

@@ -36,7 +36,7 @@ const GroupingsGroupDetail = () => {
   const [activeGroupDropdownId, setActiveGroupDropdownId] = useState(null);
 
   // Filter state for priority groups
-  const [showOnlyPriority, setShowOnlyPriority] = useState(false);
+  const [showOnlyPriority, setShowOnlyPriority] = useState(true);
 
   // Accordion state for groupings
   const [openGroupIds, setOpenGroupIds] = useState({});

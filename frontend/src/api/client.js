@@ -288,4 +288,16 @@ export const uploadSegregatorFiles = (files, groupingsGroupTitle, customGroupsLi
   });
 };
 
+export const fetchMediaAsBlobUrl = async (url) => {
+  if (!url) return null;
+  try {
+    const path = url.replace(/^http(s)?:\/\/[^\/]+/, '');
+    const response = await apiClient.get(path, { responseType: 'blob' });
+    return URL.createObjectURL(response.data);
+  } catch (err) {
+    console.error('Failed to fetch media as blob:', err);
+    return url;
+  }
+};
+
 export default apiClient;

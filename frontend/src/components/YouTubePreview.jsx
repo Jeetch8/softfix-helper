@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchMediaAsBlobUrl } from '../api/client';
 
 const YouTubePreview = ({ thumbnail, title, channelName = "Softfix Central" }) => {
   const [isDesktop, setIsDesktop] = useState(true);
+  const [blobUrl, setBlobUrl] = useState(null);
+
+  useEffect(() => {
+    if (thumbnail) {
+      fetchMediaAsBlobUrl(thumbnail).then(url => setBlobUrl(url));
+    } else {
+      setBlobUrl(null);
+    }
+  }, [thumbnail]);
 
   if (!thumbnail) return null;
 
@@ -38,7 +48,7 @@ const YouTubePreview = ({ thumbnail, title, channelName = "Softfix Central" }) =
             {/* Thumbnail Container */}
             <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-200">
               <img 
-                src={thumbnail} 
+                src={blobUrl || thumbnail} 
                 alt="Video Thumbnail" 
                 className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
               />
@@ -76,7 +86,7 @@ const YouTubePreview = ({ thumbnail, title, channelName = "Softfix Central" }) =
             {/* Thumbnail Container */}
             <div className="relative w-full aspect-video bg-gray-200">
               <img 
-                src={thumbnail} 
+                src={blobUrl || thumbnail} 
                 alt="Video Thumbnail" 
                 className="w-full h-full object-cover"
               />

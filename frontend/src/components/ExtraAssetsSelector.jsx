@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generateExtraAssets, regenerateAudio } from '../api/client';
+import { generateExtraAssets, regenerateAudio, fetchMediaAsBlobUrl } from '../api/client';
 
 const ExtraAssetsSelector = ({
   topicId,
@@ -14,6 +14,13 @@ const ExtraAssetsSelector = ({
   const [assets, setAssets] = useState(extraAssets || null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
+  const [audioBlobUrl, setAudioBlobUrl] = useState(null);
+
+  useEffect(() => {
+    if (assets && assets.audioUrl) {
+      fetchMediaAsBlobUrl(assets.audioUrl).then(url => setAudioBlobUrl(url));
+    }
+  }, [assets?.audioUrl]);
 
   useEffect(() => {
     setAssets(extraAssets);
@@ -59,9 +66,7 @@ const ExtraAssetsSelector = ({
     if (!assets || !assets.audioUrl) return;
     setIsDownloading(true);
     try {
-      const response = await fetch(`https://${assets.audioUrl}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = audioBlobUrl || assets.audioUrl;
       const a = document.createElement('a');
       a.href = url;
 
@@ -78,7 +83,6 @@ const ExtraAssetsSelector = ({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to download file:', err);
       // Fallback: open in new tab
@@ -206,9 +210,9 @@ const ExtraAssetsSelector = ({
                     : '🎵 MP3 Audio'}
                 </p>
                 <div className="space-y-2">
-                  <audio key={assets.audioUrl} controls className="w-full">
+                  <audio key={audioBlobUrl || assets.audioUrl} controls className="w-full">
                     <source
-                      src={`https://${assets.audioUrl}`}
+                      src={audioBlobUrl || assets.audioUrl}
                       type={
                         assets.audioUrl?.toLowerCase().endsWith('.wav')
                           ? 'audio/wav'
@@ -239,7 +243,7 @@ const ExtraAssetsSelector = ({
                     </button>
                     <span className="text-purple-300 text-xs">|</span>
                     <a
-                      href={`https://${assets.audioUrl}`}
+                      href={audioBlobUrl || assets.audioUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-purple-700 text-xs hover:underline"
@@ -250,7 +254,7 @@ const ExtraAssetsSelector = ({
                 </div>
               </div>
               <button
-                onClick={() => handleCopy(`https://${assets.audioUrl}`, 3)}
+                onClick={() => handleCopy(assets.audioUrl, 3)}
                 className={`flex-shrink-0 px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
                   copiedIndex === 3
                     ? 'bg-purple-500 text-white'

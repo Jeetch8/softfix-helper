@@ -137,8 +137,8 @@ export async function generateWAVAudio(script, topicId) {
     throw new Error(`Failed to generate audio: ${error.message}`);
   } finally {
     // Clean up temporary file
-    if (fs.existsSync(tempWavPath)) {
-      fs.unlinkSync(tempWavPath);
-    }
+    // if (fs.existsSync(tempWavPath)) {
+    //   fs.unlinkSync(tempWavPath);
+    // }
   }
 }

@@ -10,9 +10,34 @@ import {
   generateRecordingCues,
 } from '../services/geminiService.js';
 import { generateWAVAudio } from '../services/audioService.js';
-import { deleteImageFromS3, uploadImageToS3 } from '../services/s3Service.js';
+import { deleteImageFromS3, uploadImageToS3, resolveMediaUrl } from '../services/s3Service.js';
 
 const router = express.Router();
+
+/**
+ * Recursively resolves all relative media URLs in a topic object to signed S3 URLs
+ */
+async function resolveTopicMediaUrls(topicObj) {
+  if (topicObj.selectedThumbnail) {
+    topicObj.selectedThumbnail = await resolveMediaUrl(topicObj.selectedThumbnail);
+  }
+  if (topicObj.audioUrl) {
+    topicObj.audioUrl = await resolveMediaUrl(topicObj.audioUrl);
+  }
+  if (topicObj.generatedThumbnails) {
+    for (let i = 0; i < topicObj.generatedThumbnails.length; i++) {
+      for (let j = 0; j < topicObj.generatedThumbnails[i].length; j++) {
+        topicObj.generatedThumbnails[i][j].url = await resolveMediaUrl(topicObj.generatedThumbnails[i][j].url);
+      }
+    }
+  }
+  if (topicObj.thumbnailPromptResults) {
+    for (let i = 0; i < topicObj.thumbnailPromptResults.length; i++) {
+      topicObj.thumbnailPromptResults[i].url = await resolveMediaUrl(topicObj.thumbnailPromptResults[i].url);
+    }
+  }
+  return topicObj;
+}
 
 // Configure multer for file upload (memory storage)
 const upload = multer({
@@ -84,8 +109,9 @@ router.get('/topics', async (req, res) => {
 
     const topicsWithKeywords = await Promise.all(
       topics.map(async (topic) => {
-        const topicObj = topic.toObject();
+        let topicObj = topic.toObject();
         topicObj.keywords = await topic.getKeywordsString();
+        topicObj = await resolveTopicMediaUrls(topicObj);
         return topicObj;
       })
     );
@@ -123,8 +149,9 @@ router.get('/topics/:id', async (req, res) => {
       });
     }
 
-    const topicObj = topic.toObject();
+    let topicObj = topic.toObject();
     topicObj.keywords = await topic.getKeywordsString();
+    topicObj = await resolveTopicMediaUrls(topicObj);
 
     res.json({
       success: true,

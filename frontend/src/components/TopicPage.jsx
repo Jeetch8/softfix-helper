@@ -12,6 +12,7 @@ import {
   markAsUploaded,
   generateRecordingCues,
   regenerateAudio,
+  fetchMediaAsBlobUrl,
 } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
@@ -222,6 +223,7 @@ const TopicPage = () => {
   const [isGeneratingCues, setIsGeneratingCues] = useState(false);
   const [showCuesDialog, setShowCuesDialog] = useState(false);
   const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
+  const [audioBlobUrl, setAudioBlobUrl] = useState(null);
   
   const [showRegenInput, setShowRegenInput] = useState(false);
   const [regenComments, setRegenComments] = useState('');
@@ -251,6 +253,12 @@ const TopicPage = () => {
       fetchTopic();
     }
   }, [topicId]);
+
+  useEffect(() => {
+    if (topic && topic.audioUrl) {
+      fetchMediaAsBlobUrl(topic.audioUrl).then(url => setAudioBlobUrl(url));
+    }
+  }, [topic?.audioUrl]);
 
   const fetchTopic = async () => {
     setLoading(true);
@@ -1156,9 +1164,9 @@ const TopicPage = () => {
                     {topic.audioUrl ? (
                       <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 shadow-inner flex flex-col md:flex-row items-center gap-4">
                         <div className="flex-1 w-full">
-                          <audio key={topic.audioUrl} controls className="w-full">
+                          <audio key={audioBlobUrl || topic.audioUrl} controls className="w-full">
                             <source
-                              src={`https://${topic.audioUrl}`}
+                              src={audioBlobUrl || topic.audioUrl}
                               type={
                                 topic.audioUrl.toLowerCase().endsWith('.wav')
                                   ? 'audio/wav'
@@ -1170,7 +1178,8 @@ const TopicPage = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <a
-                            href={`https://${topic.audioUrl}`}
+                            href={audioBlobUrl || topic.audioUrl}
+                            download={audioBlobUrl ? 'audio.wav' : undefined}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1.5 bg-white border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"

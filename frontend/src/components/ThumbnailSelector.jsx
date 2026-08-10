@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { uploadThumbnail } from '../api/client';
+import React, { useState, useEffect } from 'react';
+import { uploadThumbnail, fetchMediaAsBlobUrl } from '../api/client';
 
 const ThumbnailSelector = ({
   topicId,
@@ -11,6 +11,15 @@ const ThumbnailSelector = ({
   const [localSelectedThumbnail, setLocalSelectedThumbnail] = useState(
     selectedThumbnail || null,
   );
+  const [blobUrl, setBlobUrl] = useState(null);
+
+  useEffect(() => {
+    if (localSelectedThumbnail) {
+      fetchMediaAsBlobUrl(localSelectedThumbnail).then(url => setBlobUrl(url));
+    } else {
+      setBlobUrl(null);
+    }
+  }, [localSelectedThumbnail]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -62,7 +71,7 @@ const ThumbnailSelector = ({
             </label>
           </div>
           <img
-            src={localSelectedThumbnail}
+            src={blobUrl || localSelectedThumbnail}
             alt="Selected Thumbnail"
             className="w-full rounded max-h-96 object-contain bg-black"
           />
