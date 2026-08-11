@@ -1,25 +1,5 @@
-import cron from 'node-cron';
 import Topic from '../models/Topic.js';
 import { generateNarrationScript } from './geminiService.js';
-
-let cronJob = null;
-
-export function startCronJob() {
-  // Run the cron job every 2 minutes
-  cronJob = cron.schedule('*/2 * * * *', async () => {
-    console.log('🔄 Running cron job to process pending topics...');
-    await processPendingTopics();
-  });
-
-  console.log('✅ Cron job scheduled - runs every 2 minutes');
-}
-
-export function stopCronJob() {
-  if (cronJob) {
-    cronJob.stop();
-    console.log('⏹️ Cron job stopped');
-  }
-}
 
 async function processPendingTopics() {
   try {
@@ -76,6 +56,12 @@ async function processPendingTopics() {
           prompt: topic.regenerationComments ? `Regenerated with comments: ${topic.regenerationComments.substring(0, 50)}...` : `Auto-generated Variation ${index + 1}`,
           result: script,
         }));
+        
+        topic.scriptVersions.push({
+          script: scripts[0],
+          comments: topic.regenerationComments || 'Initial generation',
+          generatedAt: new Date()
+        });
 
         topic.status = 'completed';
         topic.processedAt = new Date();
@@ -96,7 +82,7 @@ async function processPendingTopics() {
       }
     }
   } catch (error) {
-    console.error('❌ Error in cron job:', error.message);
+    console.error('❌ Error in topic processor:', error.message);
   }
 }
 

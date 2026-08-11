@@ -111,7 +111,7 @@ const CreateTopicForm = ({ onSuccess }) => {
 
       {success && (
         <div className="bg-green-50 border border-green-200 rounded p-4 mb-4 text-green-700 text-sm">
-          ✅ Topic created successfully! Processing will start in ~2 minutes.
+          ✅ Topic created successfully!
         </div>
       )}
 

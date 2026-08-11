@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { connectDB } from './config/database.js';
-import { startCronJob, stopCronJob } from './services/cronService.js';
 import topicRoutes from './routes/topicRoutes.js';
 import keywordRoutes from './routes/keywordRoutes.js';
 // import ideaRoutes from './routes/ideaRoutes.js';
@@ -139,13 +138,10 @@ async function startServer() {
       );
     });
 
-    // Start the cron job
-    // startCronJob();
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
       console.log('\n⏹️ Shutting down server...');
-      // stopCronJob();
       process.exit(0);
     });
   } catch (error) {

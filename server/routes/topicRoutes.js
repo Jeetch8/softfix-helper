@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import Topic from '../models/Topic.js';
-import { processTopicsNow } from '../services/cronService.js';
+import { processTopicsNow } from '../services/topicProcessor.js';
 import {
   generateYouTubeTitles,
   generateYouTubeThumbnails,
@@ -82,8 +82,7 @@ router.post('/topics', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message:
-        'Topic created successfully. It will be processed by the cron job.',
+      message: 'Topic created successfully.',
       data: newTopic,
     });
   } catch (error) {
@@ -211,7 +210,7 @@ router.get('/status/all', async (req, res) => {
 
 /**
  * POST /api/process-now
- * Manually trigger the cron job to process pending topics immediately
+ * Manually trigger the processor to process pending topics immediately
  */
 router.post('/process-now', async (req, res) => {
   try {
@@ -329,9 +328,18 @@ router.put('/topics/:id/script', async (req, res) => {
     const topic = await Topic.findByIdAndUpdate(
       id,
       {
-        narrationScript: narrationScript.trim(),
-        status: 'completed',
-        processedAt: new Date(),
+        $set: {
+          narrationScript: narrationScript.trim(),
+          status: 'completed',
+          processedAt: new Date(),
+        },
+        $push: {
+          scriptVersions: {
+            script: narrationScript.trim(),
+            comments: 'Manual edit',
+            generatedAt: new Date(),
+          },
+        },
       },
       { new: true },
     ).populate('groupingIds');
@@ -1048,6 +1056,7 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
     topic.seoDescription = seoDescription;
     topic.tags = tags;
     topic.audioUrl = audioUrl;
+    topic.audioVersions.push({ audioUrl, generatedAt: new Date() });
 
     await topic.save();
 
@@ -1235,6 +1244,7 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
     const audioUrl = await generateWAVAudio(topic.narrationScript, topic._id);
 
     topic.audioUrl = audioUrl;
+    topic.audioVersions.push({ audioUrl, generatedAt: new Date() });
     await topic.save();
 
     console.log(`✅ Audio regenerated for topic "${topic.topicName}"`);
@@ -1251,6 +1261,52 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error regenerating audio',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * PUT /api/topics/:id/audio
+ * Manually update the audio URL
+ */
+router.put('/topics/:id/audio', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { audioUrl } = req.body;
+
+    if (!audioUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Audio URL is required',
+      });
+    }
+
+    const topic = await Topic.findByIdAndUpdate(
+      id,
+      { audioUrl: audioUrl.trim() },
+      { new: true }
+    ).populate('groupingIds');
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    const topicObj = await resolveTopicMediaUrls(topic.toObject());
+
+    res.json({
+      success: true,
+      message: 'Audio URL updated successfully',
+      data: topicObj,
+    });
+  } catch (error) {
+    console.error('❌ Error updating audio URL:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating audio URL',
       error: error.message,
     });
   }

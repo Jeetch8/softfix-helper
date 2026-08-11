@@ -32,6 +32,25 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    scriptVersions: [
+      {
+        script: String,
+        comments: String,
+        generatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }
+    ],
+    audioVersions: [
+      {
+        audioUrl: String,
+        generatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }
+    ],
     // Store 4 variations of narration scripts with their prompts
     narrationScriptVariations: [
       {

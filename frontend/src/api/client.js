@@ -133,6 +133,10 @@ export const regenerateAudio = (id) => {
   return apiClient.post(`/api/topics/${id}/regenerate-audio`);
 };
 
+export const updateAudioUrl = (id, audioUrl) => {
+  return apiClient.put(`/api/topics/${id}/audio`, { audioUrl });
+};
+
 export const markAsEditing = (id) => {
   return apiClient.post(`/api/topics/${id}/mark-editing`);
 };

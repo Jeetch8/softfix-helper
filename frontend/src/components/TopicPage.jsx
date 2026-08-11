@@ -12,6 +12,7 @@ import {
   markAsUploaded,
   generateRecordingCues,
   regenerateAudio,
+  updateAudioUrl,
   fetchMediaAsBlobUrl,
 } from '../api/client';
 import StatusBadge from './StatusBadge';
@@ -1040,29 +1041,34 @@ const TopicPage = () => {
               </div>
             )}
 
-            {/* Script Variations */}
-            {topic.narrationScriptVariations &&
-              topic.narrationScriptVariations.length > 0 &&
+            {/* Script Versions */}
+            {topic.scriptVersions &&
+              topic.scriptVersions.length > 0 &&
               !isEditing && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                    Generated Variations (Select one to use)
+                    Script Versions (Select one to view/use)
                   </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {topic.narrationScriptVariations.map((variation, idx) => (
+                  <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
+                    {topic.scriptVersions.slice().reverse().map((version, idx) => (
                       <div
                         key={idx}
                         className={`border rounded-lg p-3 ${
-                          topic.narrationScript === variation.result
+                          topic.narrationScript === version.script
                             ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
                             : 'border-gray-200 bg-gray-50'
                         }`}
                       >
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-medium text-gray-500">
-                            {variation.prompt}
-                          </span>
-                          {topic.narrationScript === variation.result ? (
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-500">
+                              {new Date(version.generatedAt).toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-700 italic">
+                              {version.comments}
+                            </span>
+                          </div>
+                          {topic.narrationScript === version.script ? (
                             <span className="text-xs font-bold text-blue-600">
                               ✓ Active
                             </span>
@@ -1071,13 +1077,13 @@ const TopicPage = () => {
                               onClick={async () => {
                                 if (
                                   window.confirm(
-                                    'Use this variation as the main script?',
+                                    'Restore and use this version as the main script?',
                                   )
                                 ) {
                                   try {
                                     const response = await updateScript(
                                       topicId,
-                                      variation.result,
+                                      version.script,
                                     );
                                     setTopic(response.data.data);
                                     setEditedScript(
@@ -1090,12 +1096,12 @@ const TopicPage = () => {
                               }}
                               className="text-xs bg-white border border-gray-300 hover:bg-gray-100 px-2 py-1 rounded"
                             >
-                              Use This
+                              Restore
                             </button>
                           )}
                         </div>
-                        <div className="text-xs text-gray-700 whitespace-pre-wrap h-64 overflow-y-auto bg-white border border-gray-100 rounded p-2">
-                          {variation.result}
+                        <div className="text-xs text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto bg-white border border-gray-100 rounded p-2">
+                          {version.script}
                         </div>
                       </div>
                     ))}
@@ -1192,6 +1198,65 @@ const TopicPage = () => {
                           </a>
                         </div>
                       </div>
+
+                      {/* Audio Versions */}
+                      {topic.audioVersions && topic.audioVersions.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="text-sm font-semibold text-gray-600 mb-3">Audio Versions</h4>
+                          <div className="flex flex-col gap-3 max-h-64 overflow-y-auto pr-2">
+                            {topic.audioVersions.slice().reverse().map((version, idx) => {
+                              // We need to resolve the blob URL comparison carefully
+                              // topic.audioUrl may be a blob URL from the effect, but version.audioUrl is the s3 key/url
+                              const isCurrent = (topic.audioUrl && topic.audioUrl.includes(version.audioUrl.split('?')[0].split('/').pop()));
+                              
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`border rounded-xl p-3 flex flex-col md:flex-row justify-between items-center gap-3 ${
+                                    isCurrent
+                                      ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500'
+                                      : 'border-gray-200 bg-gray-50'
+                                  }`}
+                                >
+                                  <div className="flex flex-col gap-1 w-full flex-1">
+                                    <span className="text-xs font-medium text-gray-500">
+                                      Generated At: {new Date(version.generatedAt).toLocaleString()}
+                                    </span>
+                                    <audio controls className="w-full h-10" preload="none">
+                                      <source src={version.audioUrl} type={version.audioUrl.toLowerCase().endsWith('.wav') ? 'audio/wav' : 'audio/mpeg'} />
+                                    </audio>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {isCurrent ? (
+                                      <span className="text-xs font-bold text-purple-600 px-3">✓ Active</span>
+                                    ) : (
+                                      <button
+                                        onClick={async () => {
+                                          if (window.confirm('Restore this audio version as active?')) {
+                                            try {
+                                              const response = await updateAudioUrl(topicId, version.audioUrl);
+                                              setTopic((prev) => ({
+                                                ...prev,
+                                                ...response.data.data,
+                                              }));
+                                            } catch (err) {
+                                              console.error(err);
+                                              setError('Failed to restore audio version');
+                                            }
+                                          }
+                                        }}
+                                        className="text-xs bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors font-medium whitespace-nowrap"
+                                      >
+                                        Restore Audio
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     ) : (
                       <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 text-center">
                         <p className="text-amber-800 text-sm font-medium">
