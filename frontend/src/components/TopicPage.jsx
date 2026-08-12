@@ -1193,6 +1193,7 @@ const TopicPage = () => {
                     </div>
 
                     {topic.audioUrl ? (
+                      <>
                       <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 shadow-inner flex flex-col md:flex-row items-center gap-4">
                         <div className="flex-1 w-full">
                           <audio key={audioBlobUrl || topic.audioUrl} controls className="w-full">
@@ -1278,6 +1279,7 @@ const TopicPage = () => {
                           </div>
                         </div>
                       )}
+                      </>
                     ) : (
                       <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 text-center">
                         <p className="text-amber-800 text-sm font-medium">
