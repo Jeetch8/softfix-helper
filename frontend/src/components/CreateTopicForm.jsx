@@ -33,9 +33,10 @@ const CreateTopicForm = ({ onSuccess }) => {
   // Build react-select options from the groupings list
   const groupingOptions = groupings.map((g) => {
     const vol = fmtVol(g.total_average_volume);
+    const usedText = g.isUsed ? ' [Used]' : '';
     return {
       value: g._id,
-      label: vol ? `${g.title}  ·  ${vol} avg vol` : g.title,
+      label: vol ? `${g.title}${usedText}  ·  ${vol} avg vol` : `${g.title}${usedText}`,
     };
   });
 

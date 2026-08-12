@@ -145,6 +145,10 @@ export const markAsUploaded = (id) => {
   return apiClient.post(`/api/topics/${id}/mark-uploaded`);
 };
 
+export const updateUploadInfo = (id, localVideoPath, privacyStatus) => {
+  return apiClient.put(`/api/topics/${id}/upload-info`, { localVideoPath, privacyStatus });
+};
+
 export const generateRecordingCues = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-cues`);
 };

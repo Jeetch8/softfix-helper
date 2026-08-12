@@ -61,6 +61,10 @@ const groupingSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        isUsed: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import Topic from '../models/Topic.js';
+import Grouping from '../models/Grouping.js';
 import { processTopicsNow } from '../services/topicProcessor.js';
 import {
   generateYouTubeTitles,
@@ -77,6 +78,13 @@ router.post('/topics', async (req, res) => {
     });
 
     await newTopic.save();
+
+    if (newTopic.groupingIds && newTopic.groupingIds.length > 0) {
+      await Grouping.updateMany(
+        { _id: { $in: newTopic.groupingIds } },
+        { $set: { isUsed: true } }
+      );
+    }
 
     console.log(`📝 New topic created: "${topicName}" (ID: ${newTopic._id})`);
 
@@ -244,6 +252,15 @@ router.delete('/topics/:id', async (req, res) => {
         success: false,
         message: 'Topic not found',
       });
+    }
+
+    if (topic.groupingIds && topic.groupingIds.length > 0) {
+      for (const groupId of topic.groupingIds) {
+        const count = await Topic.countDocuments({ groupingIds: groupId });
+        if (count === 0) {
+          await Grouping.findByIdAndUpdate(groupId, { isUsed: false });
+        }
+      }
     }
 
     res.json({
@@ -442,8 +459,8 @@ router.put('/topics/:id/keywords', async (req, res) => {
         keywords: keywords.trim(),
         groupingIds: [], // Clear groupingIds so manual edits take precedence
       },
-      { new: true },
-    ).populate('groupingIds');
+      { new: false },
+    );
 
     if (!topic) {
       return res.status(404).json({
@@ -452,8 +469,18 @@ router.put('/topics/:id/keywords', async (req, res) => {
       });
     }
 
-    const topicObj = topic.toObject();
-    topicObj.keywords = await topic.getKeywordsString();
+    if (topic.groupingIds && topic.groupingIds.length > 0) {
+      for (const groupId of topic.groupingIds) {
+        const count = await Topic.countDocuments({ groupingIds: groupId });
+        if (count === 0) {
+          await Grouping.findByIdAndUpdate(groupId, { isUsed: false });
+        }
+      }
+    }
+
+    const updatedTopic = await Topic.findById(id).populate('groupingIds');
+    const topicObj = updatedTopic.toObject();
+    topicObj.keywords = await updatedTopic.getKeywordsString();
 
     console.log(
       `✏️ Topic keywords updated: "${topic.topicName}" (ID: ${topic._id})`,

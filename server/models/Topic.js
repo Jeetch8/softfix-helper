@@ -137,6 +137,19 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    localVideoPath: {
+      type: String,
+      default: null,
+    },
+    privacyStatus: {
+      type: String,
+      enum: ['private', 'public', 'unlisted'],
+      default: 'private',
+    },
+    youtubeUrl: {
+      type: String,
+      default: null,
+    },
     processedAt: {
       type: Date,
       default: null,

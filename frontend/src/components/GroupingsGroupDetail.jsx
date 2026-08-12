@@ -684,6 +684,11 @@ const GroupingsGroupDetail = () => {
                               </span>
                             )}
                             {group.title}
+                            {group.isUsed && (
+                              <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                                Used
+                              </span>
+                            )}
                           </h3>
                           <button
                             onClick={() => handleStartEditGroup(group)}

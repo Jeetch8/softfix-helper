@@ -14,6 +14,7 @@ import {
   regenerateAudio,
   updateAudioUrl,
   fetchMediaAsBlobUrl,
+  updateUploadInfo,
 } from '../api/client';
 import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
@@ -245,6 +246,10 @@ const TopicPage = () => {
   const [editedInstructions, setEditedInstructions] = useState('');
   const [isSavingInstructions, setIsSavingInstructions] = useState(false);
 
+  const [localVideoPath, setLocalVideoPath] = useState('');
+  const [privacyStatus, setPrivacyStatus] = useState('private');
+  const [isSavingUploadInfo, setIsSavingUploadInfo] = useState(false);
+
   const [keywordSortKey, setKeywordSortKey] = useState('volume');
   const [keywordSortDir, setKeywordSortDir] = useState('desc');
   const [keywordSearch, setKeywordSearch] = useState('');
@@ -277,6 +282,8 @@ const TopicPage = () => {
       setEditedDescription(response.data.data.description || '');
       setEditedKeywords(response.data.data.keywords || '');
       setEditedInstructions(response.data.data.stepByStepInstructions || '');
+      setLocalVideoPath(response.data.data.localVideoPath || '');
+      setPrivacyStatus(response.data.data.privacyStatus || 'private');
     } catch (err) {
       setError('Failed to fetch topic details');
     } finally {
@@ -465,6 +472,20 @@ const TopicPage = () => {
       setError('Failed to save instructions');
     } finally {
       setIsSavingInstructions(false);
+    }
+  };
+
+  const handleSaveUploadInfo = async () => {
+    setIsSavingUploadInfo(true);
+    try {
+      const response = await updateUploadInfo(topicId, localVideoPath, privacyStatus);
+      setTopic(response.data.data);
+      setError(null);
+      alert('Upload settings saved successfully!');
+    } catch (err) {
+      setError('Failed to save upload settings');
+    } finally {
+      setIsSavingUploadInfo(false);
     }
   };
 
@@ -1361,6 +1382,56 @@ const TopicPage = () => {
               }
               onAssetsGenerated={fetchTopic}
             />
+          </div>
+        )}
+
+        {/* Upload Settings Section */}
+        {topic.seoDescription && topic.audioUrl && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              📤 Upload Settings
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Local Video Path</label>
+                <input
+                  type="text"
+                  value={localVideoPath}
+                  onChange={(e) => setLocalVideoPath(e.target.value)}
+                  placeholder="e.g. C:\Users\Jeet\Videos\final_render.mp4"
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Provide the absolute path to the video file on your local machine.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Privacy Status</label>
+                <select
+                  value={privacyStatus}
+                  onChange={(e) => setPrivacyStatus(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="private">Private</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="public">Public</option>
+                </select>
+              </div>
+              <button
+                onClick={handleSaveUploadInfo}
+                disabled={isSavingUploadInfo}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded transition-colors"
+              >
+                {isSavingUploadInfo ? '⏳ Saving...' : '💾 Save Upload Settings'}
+              </button>
+            </div>
+            
+            {topic.youtubeUrl && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded text-green-800">
+                <strong>YouTube URL: </strong> 
+                <a href={topic.youtubeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-800">
+                  {topic.youtubeUrl}
+                </a>
+              </div>
+            )}
           </div>
         )}
 
