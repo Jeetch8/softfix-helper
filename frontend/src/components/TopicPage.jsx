@@ -1302,13 +1302,24 @@ const TopicPage = () => {
               <h2 className="text-2xl font-semibold text-gray-800">
                 🎥 Recording Cues
               </h2>
-              <button
-                onClick={topic.recordingCues ? () => setShowCuesDialog(true) : handleGenerateCues}
-                disabled={isGeneratingCues}
-                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
-              >
-                {isGeneratingCues ? '⏳ Generating...' : topic.recordingCues ? '👁️ View Cues' : '🚀 Generate Cues'}
-              </button>
+              <div className="flex items-center gap-3">
+                {topic.recordingCues && (
+                  <button
+                    onClick={handleGenerateCues}
+                    disabled={isGeneratingCues}
+                    className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-gray-700 text-sm font-medium rounded transition-colors"
+                  >
+                    {isGeneratingCues ? '⏳ Regenerating...' : '🔄 Regenerate'}
+                  </button>
+                )}
+                <button
+                  onClick={topic.recordingCues ? () => setShowCuesDialog(true) : handleGenerateCues}
+                  disabled={isGeneratingCues}
+                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                >
+                  {isGeneratingCues && !topic.recordingCues ? '⏳ Generating...' : topic.recordingCues ? '👁️ View Cues' : '🚀 Generate Cues'}
+                </button>
+              </div>
             </div>
             
             {topic.recordingCues && (
