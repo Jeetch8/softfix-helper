@@ -264,7 +264,7 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
               {topic.narrationScript && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                    🎬 YouTube Titles
+                    🎬 Titles
                   </h4>
                   <TitleSelector
                     topicId={topicId}
@@ -284,7 +284,7 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
               {topic.selectedTitle && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                    🎨 YouTube Thumbnails
+                    🎨 Thumbnails
                   </h4>
                   <ThumbnailSelector
                     topicId={topicId}

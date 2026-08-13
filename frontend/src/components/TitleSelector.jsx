@@ -173,7 +173,7 @@ const TitleSelector = ({
           onClick={handleGenerateTitles}
           className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded transition-colors"
         >
-          🎬 Generate YouTube Titles
+          🎬 Generate Titles
         </button>
       )}
 
@@ -193,7 +193,7 @@ const TitleSelector = ({
         <div className="space-y-3">
           <div className="flex justify-between items-center mb-3">
             <h4 className="font-semibold text-gray-800">
-              Select a YouTube Title (20 options)
+              Select a Title (20 options)
             </h4>
             <button
               onClick={handleGenerateTitles}

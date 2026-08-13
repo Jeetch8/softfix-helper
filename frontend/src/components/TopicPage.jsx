@@ -945,7 +945,7 @@ const TopicPage = () => {
         {topic && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎬 YouTube Titles
+              🎬 Titles
             </h2>
             <TitleSelector
               topicId={topicId}
@@ -961,7 +961,7 @@ const TopicPage = () => {
         {topic.selectedTitle && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎨 YouTube Thumbnail
+              🎨 Thumbnail
             </h2>
             <ThumbnailSelector
               topicId={topicId}
@@ -1439,7 +1439,7 @@ const TopicPage = () => {
             
             {topic.youtubeUrl && (
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded text-green-800">
-                <strong>YouTube URL: </strong> 
+                <strong>URL: </strong> 
                 <a href={topic.youtubeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-800">
                   {topic.youtubeUrl}
                 </a>
