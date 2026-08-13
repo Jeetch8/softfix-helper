@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { generateTitles, selectTitle, updateTitle } from '../api/client';
+import Paginator from './Paginator';
 
 const TitleSelector = ({
   topicId,
@@ -21,11 +22,15 @@ const TitleSelector = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [titlePage, setTitlePage] = useState(1);
+
+  const TITLES_PER_PAGE = 5;
 
   useEffect(() => {
     if (generatedTitles && generatedTitles.length > 0) {
       setTitles(generatedTitles);
       setShowTitles(true);
+      setTitlePage(1);
     }
   }, [generatedTitles]);
 
@@ -193,7 +198,7 @@ const TitleSelector = ({
         <div className="space-y-3">
           <div className="flex justify-between items-center mb-3">
             <h4 className="font-semibold text-gray-800">
-              Select a Title (20 options)
+              Select a Title ({titles.length} option{titles.length > 1 ? 's' : ''})
             </h4>
             <button
               onClick={handleGenerateTitles}
@@ -204,35 +209,52 @@ const TitleSelector = ({
             </button>
           </div>
 
+          <Paginator
+            currentPage={titlePage}
+            totalPages={Math.ceil(titles.length / TITLES_PER_PAGE)}
+            onPageChange={setTitlePage}
+            itemLabel="Page"
+            totalItems={titles.length}
+            colorScheme="purple"
+          />
+
           <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-            {titles.map((title, index) => (
-              <div
-                key={index}
-                className="bg-gray-50 border border-gray-200 rounded p-3 hover:bg-gray-100 transition-colors cursor-pointer"
-                onClick={() => handleSelectTitle(title)}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-800 text-sm break-words">{title}</p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      {title.length} characters
-                    </p>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectTitle(title);
-                    }}
-                    className="flex-shrink-0 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors"
+            {titles
+              .slice(
+                (titlePage - 1) * TITLES_PER_PAGE,
+                titlePage * TITLES_PER_PAGE,
+              )
+              .map((title, index) => {
+                const absoluteIndex = (titlePage - 1) * TITLES_PER_PAGE + index + 1;
+                return (
+                  <div
+                    key={absoluteIndex}
+                    className="bg-gray-50 border border-gray-200 rounded p-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => handleSelectTitle(title)}
                   >
-                    Select
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <div className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        {absoluteIndex}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-800 text-sm break-words">{title}</p>
+                        <p className="text-gray-500 text-xs mt-1">
+                          {title.length} characters
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTitle(title);
+                        }}
+                        className="flex-shrink-0 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        Select
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
 
           <button

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { uploadThumbnail, skipThumbnail, fetchMediaAsBlobUrl } from '../api/client';
+import { uploadThumbnail, skipThumbnail, selectThumbnail, fetchMediaAsBlobUrl } from '../api/client';
+import Paginator from './Paginator';
 
 const ThumbnailSelector = ({
   topicId,
   selectedThumbnail,
+  generatedThumbnails = [],
   onThumbnailSelected,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -12,6 +14,23 @@ const ThumbnailSelector = ({
     selectedThumbnail || null,
   );
   const [blobUrl, setBlobUrl] = useState(null);
+
+  // Normalize generatedThumbnails if nested or flat
+  const batches = Array.isArray(generatedThumbnails) && generatedThumbnails.length > 0
+    ? (Array.isArray(generatedThumbnails[0]) ? generatedThumbnails : [generatedThumbnails])
+    : [];
+
+  const [batchPage, setBatchPage] = useState(batches.length || 1);
+
+  useEffect(() => {
+    if (batches.length > 0) {
+      setBatchPage(batches.length);
+    }
+  }, [batches.length]);
+
+  useEffect(() => {
+    setLocalSelectedThumbnail(selectedThumbnail || null);
+  }, [selectedThumbnail]);
 
   useEffect(() => {
     if (localSelectedThumbnail) {
@@ -71,13 +90,90 @@ const ThumbnailSelector = ({
     }
   };
 
+  const handleSelectGeneratedThumbnail = async (url) => {
+    setIsUploading(true);
+    setError(null);
+    try {
+      await selectThumbnail(topicId, url);
+      setLocalSelectedThumbnail(url);
+      if (onThumbnailSelected) onThumbnailSelected({ url });
+    } catch (err) {
+      setError(
+        'Failed to select thumbnail: ' +
+          (err.response?.data?.message || err.message),
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const currentBatch = batches[batchPage - 1] || [];
+
   return (
     <div className="space-y-4">
+      {batches.length > 0 && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-2xs space-y-3">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-bold text-gray-700">
+              🖼️ Generated Thumbnail Sets ({batches.length} batch{batches.length > 1 ? 'es' : ''})
+            </h3>
+          </div>
+
+          <Paginator
+            currentPage={batchPage}
+            totalPages={batches.length}
+            onPageChange={setBatchPage}
+            itemLabel="Batch"
+            colorScheme="green"
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+            {currentBatch.map((thumb, idx) => {
+              const isSelected = localSelectedThumbnail === thumb.url;
+              return (
+                <div
+                  key={thumb.url || idx}
+                  className={`border rounded-lg p-2.5 transition-all flex flex-col items-center gap-2 ${
+                    isSelected
+                      ? 'border-green-500 bg-green-50 ring-2 ring-green-500'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <img
+                    src={thumb.url}
+                    alt={`Thumbnail option ${idx + 1}`}
+                    className="w-full h-36 object-contain rounded bg-black"
+                  />
+                  <div className="w-full flex justify-between items-center gap-2 mt-1">
+                    <span className="text-xs font-semibold text-gray-600">
+                      Option #{idx + 1}
+                    </span>
+                    {isSelected ? (
+                      <span className="text-xs font-bold text-green-700 bg-green-100 border border-green-300 px-2.5 py-0.5 rounded-full">
+                        ✓ Active
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleSelectGeneratedThumbnail(thumb.url)}
+                        disabled={isUploading}
+                        className="text-xs bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium px-3 py-1 rounded transition-colors"
+                      >
+                        Select
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {localSelectedThumbnail && localSelectedThumbnail !== 'skipped' && (
         <div className="bg-green-50 border border-green-200 rounded p-4">
           <div className="flex justify-between items-center mb-2">
             <p className="text-green-700 text-sm">
-              <strong>✅ Thumbnail Uploaded</strong>
+              <strong>✅ Selected Thumbnail</strong>
             </p>
             <label className="cursor-pointer px-3 py-1 bg-white border border-green-300 text-green-700 text-xs font-medium rounded hover:bg-green-50 transition-colors">
               Change Image

@@ -21,6 +21,7 @@ import TitleSelector from './TitleSelector';
 import ThumbnailSelector from './ThumbnailSelector';
 import ExtraAssetsSelector from './ExtraAssetsSelector';
 import YouTubePreview from './YouTubePreview';
+import Paginator from './Paginator';
 
 const parseKeywords = (keywordsStr) => {
   if (!keywordsStr) return [];
@@ -253,6 +254,21 @@ const TopicPage = () => {
   const [keywordSortKey, setKeywordSortKey] = useState('volume');
   const [keywordSortDir, setKeywordSortDir] = useState('desc');
   const [keywordSearch, setKeywordSearch] = useState('');
+
+  const [scriptVersionPage, setScriptVersionPage] = useState(1);
+  const [audioVersionPage, setAudioVersionPage] = useState(1);
+
+  useEffect(() => {
+    if (topic?.scriptVersions?.length) {
+      setScriptVersionPage(topic.scriptVersions.length);
+    }
+  }, [topic?.scriptVersions?.length]);
+
+  useEffect(() => {
+    if (topic?.audioVersions?.length) {
+      setAudioVersionPage(topic.audioVersions.length);
+    }
+  }, [topic?.audioVersions?.length]);
 
   useEffect(() => {
     if (topicId) {
@@ -966,6 +982,7 @@ const TopicPage = () => {
             <ThumbnailSelector
               topicId={topicId}
               selectedThumbnail={topic.selectedThumbnail}
+              generatedThumbnails={topic.generatedThumbnails}
               onThumbnailSelected={fetchTopic}
               audioUrl={audioBlobUrl || topic.audioUrl}
               timestamps={topic.timestamps}
@@ -1065,70 +1082,110 @@ const TopicPage = () => {
             {/* Script Versions */}
             {topic.scriptVersions &&
               topic.scriptVersions.length > 0 &&
-              !isEditing && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                    Script Versions (Select one to view/use)
-                  </h3>
-                  <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
-                    {topic.scriptVersions.slice().reverse().map((version, idx) => (
+              !isEditing &&
+              (() => {
+                const activeScriptIdx = topic.scriptVersions.findIndex(
+                  (v) => v.script === topic.narrationScript,
+                );
+                const activeScriptVersionNumber =
+                  activeScriptIdx !== -1
+                    ? activeScriptIdx + 1
+                    : topic.scriptVersions.length;
+
+                const selectedVersionIndex = Math.min(
+                  Math.max(0, scriptVersionPage - 1),
+                  topic.scriptVersions.length - 1,
+                );
+                const selectedVersion = topic.scriptVersions[selectedVersionIndex];
+                const isActiveScript =
+                  selectedVersion && topic.narrationScript === selectedVersion.script;
+
+                return (
+                  <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <span>📜</span> Script Version History ({topic.scriptVersions.length} version{topic.scriptVersions.length > 1 ? 's' : ''})
+                      </h3>
+                    </div>
+
+                    <Paginator
+                      currentPage={scriptVersionPage}
+                      totalPages={topic.scriptVersions.length}
+                      onPageChange={setScriptVersionPage}
+                      itemLabel="Version"
+                      colorScheme="blue"
+                      activeBadgeIndex={activeScriptVersionNumber}
+                      className="mb-3"
+                    />
+
+                    {selectedVersion && (
                       <div
-                        key={idx}
-                        className={`border rounded-lg p-3 ${
-                          topic.narrationScript === version.script
-                            ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                            : 'border-gray-200 bg-gray-50'
+                        className={`border rounded-lg p-4 transition-all ${
+                          isActiveScript
+                            ? 'border-blue-500 bg-blue-50/80 ring-1 ring-blue-500'
+                            : 'border-gray-200 bg-white'
                         }`}
                       >
-                        <div className="flex justify-between items-center mb-2">
+                        <div className="flex flex-wrap justify-between items-center gap-2 mb-3 pb-2 border-b border-gray-200">
                           <div className="flex flex-col">
-                            <span className="text-xs font-medium text-gray-500">
-                              {new Date(version.generatedAt).toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-700 italic">
-                              {version.comments}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-mono text-xs font-bold">
+                                Version {scriptVersionPage}
+                              </span>
+                              <span className="text-xs font-medium text-gray-500">
+                                {new Date(selectedVersion.generatedAt).toLocaleString()}
+                              </span>
+                            </div>
+                            {selectedVersion.comments && (
+                              <span className="text-xs text-gray-600 italic mt-1">
+                                💬 Feedback: "{selectedVersion.comments}"
+                              </span>
+                            )}
                           </div>
-                          {topic.narrationScript === version.script ? (
-                            <span className="text-xs font-bold text-blue-600">
-                              ✓ Active
-                            </span>
-                          ) : (
-                            <button
-                              onClick={async () => {
-                                if (
-                                  window.confirm(
-                                    'Restore and use this version as the main script?',
-                                  )
-                                ) {
-                                  try {
-                                    const response = await updateScript(
-                                      topicId,
-                                      version.script,
-                                    );
-                                    setTopic(response.data.data);
-                                    setEditedScript(
-                                      response.data.data.narrationScript,
-                                    );
-                                  } catch (err) {
-                                    setError('Failed to update script');
+
+                          <div>
+                            {isActiveScript ? (
+                              <span className="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-300 px-3 py-1 rounded-full flex items-center gap-1">
+                                ✓ Active Version
+                              </span>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  if (
+                                    window.confirm(
+                                      `Restore and use Version ${scriptVersionPage} as the main script?`,
+                                    )
+                                  ) {
+                                    try {
+                                      const response = await updateScript(
+                                        topicId,
+                                        selectedVersion.script,
+                                      );
+                                      setTopic(response.data.data);
+                                      setEditedScript(
+                                        response.data.data.narrationScript,
+                                      );
+                                    } catch (err) {
+                                      setError('Failed to update script');
+                                    }
                                   }
-                                }
-                              }}
-                              className="text-xs bg-white border border-gray-300 hover:bg-gray-100 px-2 py-1 rounded"
-                            >
-                              Restore
-                            </button>
-                          )}
+                                }}
+                                className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-2xs flex items-center gap-1"
+                              >
+                                🔄 Restore Version {scriptVersionPage}
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto bg-white border border-gray-100 rounded p-2">
-                          {version.script}
+
+                        <div className="text-xs text-gray-800 whitespace-pre-wrap max-h-48 overflow-y-auto bg-gray-50 border border-gray-200 rounded-lg p-3 font-mono leading-relaxed">
+                          {selectedVersion.script}
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
             {isEditing ? (
               <div className="space-y-3">
@@ -1222,41 +1279,111 @@ const TopicPage = () => {
                       </div>
 
                       {/* Audio Versions */}
-                      {topic.audioVersions && topic.audioVersions.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="text-sm font-semibold text-gray-600 mb-3">Audio Versions</h4>
-                          <div className="flex flex-col gap-3 max-h-64 overflow-y-auto pr-2">
-                            {topic.audioVersions.slice().reverse().map((version, idx) => {
-                              // We need to resolve the blob URL comparison carefully
-                              // topic.audioUrl may be a blob URL from the effect, but version.audioUrl is the s3 key/url
-                              const isCurrent = (topic.audioUrl && topic.audioUrl.includes(version.audioUrl.split('?')[0].split('/').pop()));
-                              
-                              return (
+                      {topic.audioVersions &&
+                        topic.audioVersions.length > 0 &&
+                        (() => {
+                          const activeAudioVersionIndex = topic.audioVersions.findIndex(
+                            (v) => {
+                              if (!topic.audioUrl) return false;
+                              const vFile = v.audioUrl.split('?')[0].split('/').pop();
+                              const cFile = topic.audioUrl.split('?')[0].split('/').pop();
+                              return vFile === cFile;
+                            },
+                          );
+                          const activeAudioVersionNumber =
+                            activeAudioVersionIndex !== -1
+                              ? activeAudioVersionIndex + 1
+                              : topic.audioVersions.length;
+
+                          const selectedAudioIndex = Math.min(
+                            Math.max(0, audioVersionPage - 1),
+                            topic.audioVersions.length - 1,
+                          );
+                          const selectedAudioVersion =
+                            topic.audioVersions[selectedAudioIndex];
+
+                          const selectedFileName = selectedAudioVersion?.audioUrl
+                            ?.split('?')[0]
+                            .split('/')
+                            .pop();
+                          const currentFileName = topic.audioUrl
+                            ?.split('?')[0]
+                            .split('/')
+                            .pop();
+                          const isCurrentAudioVersion = Boolean(
+                            selectedFileName &&
+                              currentFileName &&
+                              selectedFileName === currentFileName,
+                          );
+
+                          return (
+                            <div className="mt-6 bg-purple-50/50 border border-purple-200/80 rounded-xl p-4 shadow-2xs">
+                              <div className="flex justify-between items-center mb-3">
+                                <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                  <span>🎙️</span> Audio Version History ({topic.audioVersions.length} version{topic.audioVersions.length > 1 ? 's' : ''})
+                                </h4>
+                              </div>
+
+                              <Paginator
+                                currentPage={audioVersionPage}
+                                totalPages={topic.audioVersions.length}
+                                onPageChange={setAudioVersionPage}
+                                itemLabel="Audio Version"
+                                colorScheme="purple"
+                                activeBadgeIndex={activeAudioVersionNumber}
+                                className="mb-3"
+                              />
+
+                              {selectedAudioVersion && (
                                 <div
-                                  key={idx}
-                                  className={`border rounded-xl p-3 flex flex-col md:flex-row justify-between items-center gap-3 ${
-                                    isCurrent
-                                      ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500'
-                                      : 'border-gray-200 bg-gray-50'
+                                  className={`border rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 transition-all ${
+                                    isCurrentAudioVersion
+                                      ? 'border-purple-500 bg-purple-100/60 ring-1 ring-purple-500'
+                                      : 'border-gray-200 bg-white'
                                   }`}
                                 >
-                                  <div className="flex flex-col gap-1 w-full flex-1">
-                                    <span className="text-xs font-medium text-gray-500">
-                                      Generated At: {new Date(version.generatedAt).toLocaleString()}
-                                    </span>
+                                  <div className="flex flex-col gap-2 w-full flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-mono text-xs font-bold">
+                                        Audio Version {audioVersionPage}
+                                      </span>
+                                      <span className="text-xs font-medium text-gray-500">
+                                        Generated At: {new Date(selectedAudioVersion.generatedAt).toLocaleString()}
+                                      </span>
+                                    </div>
                                     <audio controls className="w-full h-10" preload="none">
-                                      <source src={version.audioUrl} type={version.audioUrl.toLowerCase().endsWith('.wav') ? 'audio/wav' : 'audio/mpeg'} />
+                                      <source
+                                        src={selectedAudioVersion.audioUrl}
+                                        type={
+                                          selectedAudioVersion.audioUrl
+                                            .toLowerCase()
+                                            .endsWith('.wav')
+                                            ? 'audio/wav'
+                                            : 'audio/mpeg'
+                                        }
+                                      />
+                                      Your browser does not support audio element.
                                     </audio>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    {isCurrent ? (
-                                      <span className="text-xs font-bold text-purple-600 px-3">✓ Active</span>
+
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {isCurrentAudioVersion ? (
+                                      <span className="text-xs font-bold text-purple-700 bg-purple-200/80 border border-purple-300 px-3 py-1.5 rounded-full flex items-center gap-1">
+                                        ✓ Currently Active
+                                      </span>
                                     ) : (
                                       <button
                                         onClick={async () => {
-                                          if (window.confirm('Restore this audio version as active?')) {
+                                          if (
+                                            window.confirm(
+                                              `Restore Audio Version ${audioVersionPage} as active?`,
+                                            )
+                                          ) {
                                             try {
-                                              const response = await updateAudioUrl(topicId, version.audioUrl);
+                                              const response = await updateAudioUrl(
+                                                topicId,
+                                                selectedAudioVersion.audioUrl,
+                                              );
                                               setTopic((prev) => ({
                                                 ...prev,
                                                 ...response.data.data,
@@ -1267,18 +1394,17 @@ const TopicPage = () => {
                                             }
                                           }
                                         }}
-                                        className="text-xs bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors font-medium whitespace-nowrap"
+                                        className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition-colors font-semibold whitespace-nowrap shadow-2xs flex items-center gap-1"
                                       >
-                                        Restore Audio
+                                        🔄 Restore Audio Version {audioVersionPage}
                                       </button>
                                     )}
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                              )}
+                            </div>
+                          );
+                        })()}
                       </>
                     ) : (
                       <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 text-center">
