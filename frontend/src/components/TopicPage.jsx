@@ -1226,8 +1226,6 @@ const TopicPage = () => {
                       {topic.narrationScript}
                     </div>
                   </div>
-
-                  </div>
                 </>
               )
             )}
@@ -1427,6 +1425,7 @@ const TopicPage = () => {
                         </p>
                       </div>
                     )}
+                  </div>
           </div>
         )}
 
