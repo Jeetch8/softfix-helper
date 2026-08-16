@@ -1227,7 +1227,18 @@ const TopicPage = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6 border-t border-gray-100 pt-6">
+                  </div>
+                </>
+              )
+            )}
+          </div>
+        )}
+
+
+        {/* Script Audio Generation Section */}
+        {topic.narrationScript && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                  <div className="mt-0">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                         🎙️ Script Audio Generation
@@ -1416,10 +1427,6 @@ const TopicPage = () => {
                         </p>
                       </div>
                     )}
-                  </div>
-                </>
-              )
-            )}
           </div>
         )}
 

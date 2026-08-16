@@ -1037,7 +1037,7 @@ router.post('/topics/:id/select-thumbnail', async (req, res) => {
 
 /**
  * POST /api/topics/:id/generate-extra-assets
- * Generate SEO description, tags, timestamps, and MP3 audio
+ * Generate SEO description and tags
  */
 router.post('/topics/:id/generate-extra-assets', async (req, res) => {
   try {
@@ -1068,7 +1068,7 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
     console.log(`🎯 Generating extra assets for topic "${topic.topicName}"...`);
 
     // Generate all assets simultaneously
-    const [seoDescription, tags, audioUrl] = await Promise.all([
+    const [seoDescription, tags] = await Promise.all([
       generateSEODescription(
         topic.topicName,
         topic.narrationScript,
@@ -1076,14 +1076,11 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
         await topic.getKeywordsString()
       ),
       generateTags(topic.topicName, topic.narrationScript, topic.selectedTitle, await topic.getKeywordsString()),
-      generateWAVAudio(topic.narrationScript, topic._id),
     ]);
 
     // Update topic with generated assets
     topic.seoDescription = seoDescription;
     topic.tags = tags;
-    topic.audioUrl = audioUrl;
-    topic.audioVersions.push({ audioUrl, generatedAt: new Date() });
 
     await topic.save();
 
@@ -1095,7 +1092,6 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
       data: {
         seoDescription,
         tags,
-        audioUrl,
       },
     });
   } catch (error) {
