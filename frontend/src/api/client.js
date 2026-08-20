@@ -231,6 +231,10 @@ export const getGroupingsGroups = () => {
   return apiClient.get('/api/segregator/groupings-groups');
 };
 
+export const createGroupingsGroupEmpty = (title, description = '', userId = 'default-user') => {
+  return apiClient.post('/api/segregator/groupings-groups', { title, description, userId });
+};
+
 export const getGroupingsGroup = (id) => {
   return apiClient.get(`/api/segregator/groupings-groups/${id}`);
 };

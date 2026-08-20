@@ -329,7 +329,37 @@ router.get('/segregator/groups', async (req, res) => {
 });
 
 /**
+ * POST /api/segregator/groupings-groups
+ * Creates a new groupings group with only a title (and optional description)
+ */
+router.post('/segregator/groupings-groups', async (req, res) => {
+    try {
+        const { title, description, userId = 'default-user' } = req.body;
+        if (!title) {
+            return res.status(400).json({ success: false, message: 'Title is required' });
+        }
+
+        const newGroup = await GroupingsGroup.create({
+            title,
+            description: description || '',
+            numberOfGroups: 0,
+            userId
+        });
+
+        res.json({
+            success: true,
+            message: 'Groupings group created successfully',
+            data: newGroup
+        });
+    } catch (error) {
+        console.error('❌ Error creating groupings group:', error.message);
+        res.status(500).json({ success: false, message: 'Error creating groupings group', error: error.message });
+    }
+});
+
+/**
  * GET /api/segregator/groupings-groups
+
  * Returns all groupings groups
  */
 router.get('/segregator/groupings-groups', async (req, res) => {

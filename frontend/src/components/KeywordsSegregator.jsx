@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getGroupingsGroups,
+  createGroupingsGroupEmpty,
   uploadSegregatorFiles,
   updateGroupingsGroup,
   deleteGroupingsGroup,
@@ -13,12 +14,15 @@ const KeywordsSegregator = () => {
 
   const [files, setFiles] = useState([]);
   const [sessionTitle, setSessionTitle] = useState('');
+  const [emptySessionTitle, setEmptySessionTitle] = useState('');
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [creatingEmpty, setCreatingEmpty] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [customGroupsList, setCustomGroupsList] = useState('');
+
 
   // Editing session title inline state
   const [editingSessionId, setEditingSessionId] = useState(null);
@@ -58,6 +62,29 @@ const KeywordsSegregator = () => {
 
   const handleRemoveFile = (index) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+  };
+
+  const handleCreateEmptySession = async () => {
+    if (!emptySessionTitle.trim()) {
+      setError('Please enter a session title.');
+      return;
+    }
+
+    setCreatingEmpty(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await createGroupingsGroupEmpty(emptySessionTitle.trim());
+      setSuccess('Empty session created successfully!');
+      setEmptySessionTitle('');
+      await fetchSessions();
+    } catch (err) {
+      console.error('Error creating empty session:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to create empty session.');
+    } finally {
+      setCreatingEmpty(false);
+    }
   };
 
   const handleProcess = async () => {
@@ -200,10 +227,57 @@ const KeywordsSegregator = () => {
         </div>
       </div>
 
+      {/* Create Empty Grouping Session Card */}
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-12">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <span>📁</span> Create Empty Groupings Session
+        </h2>
+
+        <div className="mb-6 max-w-xl">
+          <label htmlFor="empty-session-title" className="block text-sm font-bold text-gray-700 mb-2">
+            Session Title
+          </label>
+          <input
+            id="empty-session-title"
+            type="text"
+            value={emptySessionTitle}
+            onChange={(e) => setEmptySessionTitle(e.target.value)}
+            placeholder="e.g., Softfix SEO Keyword Expansion - June 2026"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 hover:bg-white focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400 mb-4"
+          />
+        </div>
+
+        <div className="flex justify-start">
+          <button
+            onClick={handleCreateEmptySession}
+            disabled={!emptySessionTitle.trim() || creatingEmpty}
+            className={`px-8 py-4 rounded-xl font-bold text-white transition-all duration-300 flex items-center gap-3 shadow-md ${
+              !emptySessionTitle.trim() || creatingEmpty
+                ? 'bg-gray-300 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 hover:shadow-teal-100 hover:scale-[1.01] active:scale-[0.99]'
+            }`}
+          >
+            {creatingEmpty ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating...
+              </>
+            ) : (
+              <>
+                <span>➕</span> Create Empty Session
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Main Upload Card */}
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-12">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <span>⚡</span> Create New Grouping Session
+          <span>⚡</span> Upload and Generate Groupings Session
         </h2>
 
         {/* Text Input for Group Title */}
