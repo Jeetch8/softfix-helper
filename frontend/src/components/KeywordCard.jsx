@@ -27,58 +27,58 @@ const KeywordCard = ({ keyword, onEdit, onDelete, onAddToTitle, onRemoveFromTitl
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-5 border border-gray-100">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-5 border border-gray-100">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-2 sm:mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-800 mb-1 break-words">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-0.5 sm:mb-1 break-words">
             {keyword.keyword}
           </h3>
-          <span className="text-xs text-gray-500">
+          <span className="text-[11px] sm:text-xs text-gray-500">
             {keyword.numberOfWords} word{keyword.numberOfWords !== 1 ? 's' : ''}
           </span>
         </div>
         {keyword.addedToTitle && (
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-purple-100 text-purple-700 text-[10px] sm:text-xs font-medium rounded-full">
             📋 In Queue
           </span>
         )}
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 text-center">
-          <p className={`text-xl font-bold ${getScoreColor(keyword.overall)}`}>
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-2.5 sm:mb-4">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-2 sm:p-3 text-center">
+          <p className={`text-base sm:text-xl font-bold ${getScoreColor(keyword.overall)}`}>
             {keyword.overall?.toFixed(1)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Overall</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Overall</p>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 text-center">
-          <p className="text-xl font-bold text-blue-600" title={keyword.searchVolume?.toLocaleString() || '0'}>
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-2 sm:p-3 text-center">
+          <p className="text-base sm:text-xl font-bold text-blue-600" title={keyword.searchVolume?.toLocaleString() || '0'}>
             {formatSearchVolume(keyword.searchVolume)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Search Vol</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Search Vol</p>
         </div>
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-3 text-center">
-          <p className={`text-xl font-bold ${getCompetitionColor(keyword.competition)}`}>
+        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-2 sm:p-3 text-center">
+          <p className={`text-base sm:text-xl font-bold ${getCompetitionColor(keyword.competition)}`}>
             {keyword.competition?.toFixed(1)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Competition</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Comp</p>
         </div>
       </div>
 
       {/* 30d ago searches */}
       {keyword.thirtyDayAgoSearches > 0 && (
-        <div className="text-sm text-gray-600 mb-4">
+        <div className="text-xs sm:text-sm text-gray-600 mb-2.5 sm:mb-4">
           <span className="text-gray-400">30d ago:</span>{' '}
           <span className="font-medium">{keyword.thirtyDayAgoSearches.toLocaleString()}</span>
           {keyword.searchVolume > keyword.thirtyDayAgoSearches && (
-            <span className="text-green-600 ml-2">
+            <span className="text-green-600 ml-1.5 sm:ml-2">
               ↑ {((keyword.searchVolume - keyword.thirtyDayAgoSearches) / keyword.thirtyDayAgoSearches * 100).toFixed(0)}%
             </span>
           )}
           {keyword.searchVolume < keyword.thirtyDayAgoSearches && (
-            <span className="text-red-600 ml-2">
+            <span className="text-red-600 ml-1.5 sm:ml-2">
               ↓ {((keyword.thirtyDayAgoSearches - keyword.searchVolume) / keyword.thirtyDayAgoSearches * 100).toFixed(0)}%
             </span>
           )}
@@ -86,31 +86,31 @@ const KeywordCard = ({ keyword, onEdit, onDelete, onAddToTitle, onRemoveFromTitl
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-1.5 sm:gap-2">
         {!keyword.addedToTitle ? (
           <button
             onClick={() => onAddToTitle(keyword._id)}
-            className="flex-1 px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="flex-1 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
           >
             📋 Add to Title
           </button>
         ) : (
           <button
             onClick={() => onRemoveFromTitle(keyword._id)}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex-1 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
           >
-            ✖️ Remove from Queue
+            ✖️ Remove
           </button>
         )}
         <button
           onClick={() => onEdit(keyword)}
-          className="px-3 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors"
+          className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors"
         >
           ✏️
         </button>
         <button
           onClick={() => onDelete(keyword._id)}
-          className="px-3 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors"
+          className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-red-100 text-red-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-red-200 transition-colors"
         >
           🗑️
         </button>

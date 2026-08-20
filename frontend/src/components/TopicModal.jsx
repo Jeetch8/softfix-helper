@@ -130,59 +130,59 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Topic Details</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-xl sm:rounded-lg shadow-xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-3.5 sm:p-6 flex justify-between items-center z-10">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-800">Topic Details</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            className="text-gray-500 hover:text-gray-700 text-xl sm:text-2xl font-bold p-1"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           {loading && (
-            <div className="text-center py-8">
-              <p className="text-gray-600">⏳ Loading...</p>
+            <div className="text-center py-6 sm:py-8">
+              <p className="text-gray-600 text-xs sm:text-base">⏳ Loading...</p>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded p-4 text-red-700 mb-4">
+            <div className="bg-red-50 border border-red-200 rounded p-2.5 sm:p-4 text-red-700 text-xs sm:text-sm mb-3 sm:mb-4">
               {error}
             </div>
           )}
 
           {topic && (
-            <div className="space-y-6">
+            <div className="space-y-3.5 sm:space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                <h3 className="text-base sm:text-xl font-semibold text-gray-800 mb-1 sm:mb-2">
                   {topic.topicName}
                 </h3>
-                <div className="mb-2">
+                <div className="mb-1.5 sm:mb-2">
                   <StatusBadge status={topic.status} />
                 </div>
                 {topic.description && (
-                  <p className="text-gray-600">{topic.description}</p>
+                  <p className="text-gray-600 text-xs sm:text-sm">{topic.description}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-50 rounded p-3">
-                  <p className="text-gray-600 text-xs">User ID</p>
-                  <p className="text-gray-800 font-medium">{topic.userId}</p>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div className="bg-gray-50 rounded p-2 sm:p-3">
+                  <p className="text-gray-600 text-[10px] sm:text-xs">User ID</p>
+                  <p className="text-gray-800 font-medium truncate">{topic.userId}</p>
                 </div>
-                <div className="bg-gray-50 rounded p-3">
-                  <p className="text-gray-600 text-xs">Created</p>
+                <div className="bg-gray-50 rounded p-2 sm:p-3">
+                  <p className="text-gray-600 text-[10px] sm:text-xs">Created</p>
                   <p className="text-gray-800 font-medium">
                     {new Date(topic.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 {topic.processedAt && (
-                  <div className="bg-gray-50 rounded p-3">
-                    <p className="text-gray-600 text-xs">Processed</p>
+                  <div className="bg-gray-50 rounded p-2 sm:p-3 col-span-2 sm:col-span-1">
+                    <p className="text-gray-600 text-[10px] sm:text-xs">Processed</p>
                     <p className="text-gray-800 font-medium">
                       {new Date(topic.processedAt).toLocaleDateString()}
                     </p>
@@ -192,31 +192,31 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
 
               {topic.narrationScript && (
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-lg font-semibold text-gray-800">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-1.5 sm:mb-2">
+                    <h4 className="text-sm sm:text-lg font-semibold text-gray-800">
                       📖 Narration Script
                     </h4>
                     {!isEditing && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                         <button
                           onClick={handleCopyToClipboard}
-                          className={`px-3 py-1 ${copySuccess
+                          className={`px-2.5 py-1 sm:px-3 sm:py-1 ${copySuccess
                             ? 'bg-green-500'
                             : 'bg-gray-500 hover:bg-gray-600'
-                            } text-white text-sm font-medium rounded transition-colors`}
+                            } text-white text-xs sm:text-sm font-medium rounded transition-colors`}
                         >
                           {copySuccess ? '✓ Copied!' : '📋 Copy'}
                         </button>
                         <button
                           onClick={() => setIsEditing(true)}
-                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors"
+                          className="px-2.5 py-1 sm:px-3 sm:py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded transition-colors"
                         >
                           ✏️ Edit
                         </button>
                         <button
                           onClick={handleRegenerate}
                           disabled={isRegenerating}
-                          className="px-3 py-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white text-sm font-medium rounded transition-colors"
+                          className="px-2.5 py-1 sm:px-3 sm:py-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white text-xs sm:text-sm font-medium rounded transition-colors"
                         >
                           {isRegenerating
                             ? '⏳ Regenerating...'
@@ -227,18 +227,18 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                   </div>
 
                   {isEditing ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       <textarea
                         value={editedScript}
                         onChange={(e) => setEditedScript(e.target.value)}
-                        className="w-full h-64 p-4 border border-gray-300 rounded text-gray-700 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full h-48 sm:h-64 p-2.5 sm:p-4 border border-gray-300 rounded text-gray-700 text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Enter narration script..."
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveScript}
                           disabled={isSaving}
-                          className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium rounded transition-colors"
+                          className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-xs sm:text-sm font-medium rounded transition-colors"
                         >
                           {isSaving ? '💾 Saving...' : '💾 Save Script'}
                         </button>
@@ -247,14 +247,14 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                             setIsEditing(false);
                             setEditedScript(topic.narrationScript);
                           }}
-                          className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded transition-colors"
+                          className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-500 hover:bg-gray-600 text-white text-xs sm:text-sm font-medium rounded transition-colors"
                         >
                           ✕ Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 border border-gray-200 rounded p-4 text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                    <div className="bg-gray-50 border border-gray-200 rounded p-2.5 sm:p-4 text-gray-700 whitespace-pre-wrap text-xs sm:text-sm leading-relaxed max-h-56 sm:max-h-72 overflow-y-auto">
                       {topic.narrationScript}
                     </div>
                   )}
@@ -263,7 +263,7 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
 
               {topic.narrationScript && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                  <h4 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1.5 sm:mb-2">
                     🎬 Titles
                   </h4>
                   <TitleSelector
@@ -283,7 +283,7 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
 
               {topic.selectedTitle && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                  <h4 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1.5 sm:mb-2">
                     🎨 Thumbnails
                   </h4>
                   <ThumbnailSelector
@@ -303,7 +303,7 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
 
               {topic.selectedThumbnail && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                  <h4 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1.5 sm:mb-2">
                     ⭐ Extra Assets
                   </h4>
                   <ExtraAssetsSelector
@@ -329,15 +329,15 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
 
               {/* Mark as Editing Button - visible only if extra assets exist and not yet in editing or uploaded */}
               {topic.seoDescription && topic.audioUrl && topic.level !== 'editing' && topic.level !== 'uploaded' && (
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-3 sm:pt-4 border-t border-gray-200">
                   <button
                     onClick={handleMarkAsEditing}
                     disabled={isMarkingEditing}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 disabled:from-gray-400 disabled:to-gray-500 text-white text-xs sm:text-base font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01]"
                   >
                     {isMarkingEditing ? '⏳ Marking as Editing...' : '✏️ Mark as Editing'}
                   </button>
-                  <p className="text-xs text-gray-500 text-center mt-2">
+                  <p className="text-[10px] sm:text-xs text-gray-500 text-center mt-1.5 sm:mt-2">
                     Click this when you are ready to review and edit the content
                   </p>
                 </div>
@@ -345,23 +345,23 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
 
               {/* Mark as Uploaded Button - visible only if in editing level and not yet uploaded */}
               {topic.seoDescription && topic.audioUrl && topic.level === 'editing' && (
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-3 sm:pt-4 border-t border-gray-200">
                   <button
                     onClick={handleMarkAsUploaded}
                     disabled={isMarkingUploaded}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white text-xs sm:text-base font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01]"
                   >
                     {isMarkingUploaded ? '⏳ Marking as Uploaded...' : '📤 Mark as Uploaded'}
                   </button>
-                  <p className="text-xs text-gray-500 text-center mt-2">
+                  <p className="text-[10px] sm:text-xs text-gray-500 text-center mt-1.5 sm:mt-2">
                     Click this after you have uploaded all assets to YouTube
                   </p>
                 </div>
               )}
 
               {topic.errorMessage && (
-                <div className="bg-red-50 border border-red-200 rounded p-4">
-                  <p className="text-red-700 text-sm">
+                <div className="bg-red-50 border border-red-200 rounded p-2.5 sm:p-4">
+                  <p className="text-red-700 text-xs sm:text-sm">
                     <strong>Error:</strong> {topic.errorMessage}
                   </p>
                 </div>

@@ -722,22 +722,10 @@ router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20)
             return res.status(400).json({ success: false, message: 'No valid keywords found after initial filtering' });
         }
 
-        const keywordStrings = allParsedKeywords.map(k => k.keyword);
-        const englishKeywordsList = await filterNonEnglishKeywords(keywordStrings);
-        const englishKeywordSet = new Set(englishKeywordsList.map(k => k.toLowerCase()));
-        
-        const finalFilteredKeywordsData = allParsedKeywords.filter(k => 
-            englishKeywordSet.has(k.keyword.toLowerCase())
-        );
-
-        if (finalFilteredKeywordsData.length === 0) {
-            return res.status(400).json({ success: false, message: 'No English keywords found after language filtering' });
-        }
-
         const populatedKeywords = [];
         let highestSearchVolume = 0;
         
-        for (const kData of finalFilteredKeywordsData) {
+        for (const kData of allParsedKeywords) {
             let savedKeyword;
             const existing = await QuestionKeyword.findOne({ 
                 keyword: { $regex: new RegExp('^' + kData.keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') }, 

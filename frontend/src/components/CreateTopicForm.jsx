@@ -99,26 +99,26 @@ const CreateTopicForm = ({ onSuccess }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">
+    <div className="bg-white rounded-lg shadow-md p-3.5 sm:p-6 border border-gray-200 mb-4 sm:mb-6">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
         📝 Create New Topic
       </h2>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded p-4 mb-4 text-red-700 text-sm">
+        <div className="bg-red-50 border border-red-200 rounded p-3 sm:p-4 mb-3 sm:mb-4 text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded p-4 mb-4 text-green-700 text-sm">
+        <div className="bg-green-50 border border-green-200 rounded p-3 sm:p-4 mb-3 sm:mb-4 text-green-700 text-sm">
           ✅ Topic created successfully!
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
             Topic Name *
           </label>
           <input
@@ -128,12 +128,12 @@ const CreateTopicForm = ({ onSuccess }) => {
             onChange={handleChange}
             placeholder="e.g., Future of Artificial Intelligence"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-1.5 sm:px-4 sm:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
             Step-by-Step Instruction Flow
           </label>
           <textarea
@@ -141,13 +141,13 @@ const CreateTopicForm = ({ onSuccess }) => {
             value={formData.stepByStepInstructions}
             onChange={handleChange}
             placeholder="Provide the step-by-step instruction flow of the solution..."
-            rows="5"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            rows="4"
+            className="w-full px-3 py-1.5 sm:px-4 sm:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
             Instruction Box (Prioritize above all)
           </label>
           <textarea
@@ -155,13 +155,13 @@ const CreateTopicForm = ({ onSuccess }) => {
             value={formData.description}
             onChange={handleChange}
             placeholder="Where to elaborate or what and where to say..."
-            rows="3"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            rows="2"
+            className="w-full px-3 py-1.5 sm:px-4 sm:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
             Keyword Grouping
           </label>
           <Select
@@ -183,7 +183,7 @@ const CreateTopicForm = ({ onSuccess }) => {
                 '&:hover': { borderColor: '#3b82f6' },
                 borderRadius: '0.5rem',
                 fontSize: '0.875rem',
-                minHeight: '42px',
+                minHeight: '38px',
                 backgroundColor: 'white',
               }),
               singleValue: (base) => ({
@@ -208,23 +208,23 @@ const CreateTopicForm = ({ onSuccess }) => {
           />
 
           {keywordsList.length > 0 && (
-            <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <div className="mt-2.5 max-h-44 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                 <thead className="bg-gray-50 text-left sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-medium text-gray-500">Keyword</th>
-                    <th className="px-3 py-2 font-medium text-gray-500">Overall</th>
-                    <th className="px-3 py-2 font-medium text-gray-500">Volume</th>
-                    <th className="px-3 py-2 font-medium text-gray-500">Comp.</th>
+                    <th className="px-2 py-1.5 sm:px-3 sm:py-2 font-medium text-gray-500">Keyword</th>
+                    <th className="px-2 py-1.5 sm:px-3 sm:py-2 font-medium text-gray-500">Overall</th>
+                    <th className="px-2 py-1.5 sm:px-3 sm:py-2 font-medium text-gray-500">Volume</th>
+                    <th className="px-2 py-1.5 sm:px-3 sm:py-2 font-medium text-gray-500">Comp.</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {keywordsList.map((kw, i) => (
                     <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-900 font-medium">{kw.keyword}</td>
-                      <td className="px-3 py-2 text-gray-600">{kw.overall}</td>
-                      <td className="px-3 py-2 text-gray-600">{kw.search_volume}</td>
-                      <td className="px-3 py-2 text-gray-600">{kw.competition}</td>
+                      <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-gray-900 font-medium">{kw.keyword}</td>
+                      <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-gray-600">{kw.overall}</td>
+                      <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-gray-600">{kw.search_volume}</td>
+                      <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-gray-600">{kw.competition}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -234,7 +234,7 @@ const CreateTopicForm = ({ onSuccess }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
             User ID
           </label>
           <input
@@ -242,14 +242,14 @@ const CreateTopicForm = ({ onSuccess }) => {
             name="userId"
             value={formData.userId}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-1.5 sm:px-4 sm:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
+          className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors text-sm sm:text-base"
         >
           {loading ? '⏳ Creating...' : '✨ Create Topic'}
         </button>

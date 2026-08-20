@@ -20,15 +20,15 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation Tabs */}
       <div className="bg-white shadow-md sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex gap-1 py-2">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4">
+          <div className="flex gap-1 py-1.5 sm:py-2 overflow-x-auto">
             <button
               onClick={() => {
                 setActiveTab('topics');
                 window.location.href = '/';
               }}
-              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${activeTab === 'topics'
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+              className={`px-2.5 sm:px-6 py-1.5 sm:py-3 rounded-md sm:rounded-t-lg font-semibold text-xs sm:text-base whitespace-nowrap transition-all ${activeTab === 'topics'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md sm:shadow-lg'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
@@ -39,8 +39,8 @@ function App() {
                 setActiveTab('keywords');
                 window.location.href = '/keywords';
               }}
-              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${activeTab === 'keywords'
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+              className={`px-2.5 sm:px-6 py-1.5 sm:py-3 rounded-md sm:rounded-t-lg font-semibold text-xs sm:text-base whitespace-nowrap transition-all ${activeTab === 'keywords'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md sm:shadow-lg'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
@@ -64,8 +64,8 @@ function App() {
                 setActiveTab('segregator');
                 window.location.href = '/segregator';
               }}
-              className={`px-6 py-3 rounded-t-lg font-semibold transition-all ${activeTab === 'segregator'
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+              className={`px-2.5 sm:px-6 py-1.5 sm:py-3 rounded-md sm:rounded-t-lg font-semibold text-xs sm:text-base whitespace-nowrap transition-all ${activeTab === 'segregator'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md sm:shadow-lg'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >

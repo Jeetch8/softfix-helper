@@ -17,7 +17,7 @@ const StatusBadge = ({ status }) => {
 
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColors[status] || 'bg-gray-100'}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${statusColors[status] || 'bg-gray-100'}`}
     >
       {statusEmojis[status]} {status}
     </span>

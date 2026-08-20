@@ -169,51 +169,51 @@ const KeywordsList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">
             🔑 Question Keywords Manager
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-xs sm:text-base">
             Import, filter, and manage SEO keywords from Excel files
           </p>
         </div>
 
         {/* Stats Dashboard */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-indigo-600">{stats.totalKeywords}</p>
-              <p className="text-gray-600 text-xs">Total Keywords</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white rounded-lg shadow p-2 sm:p-4 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-indigo-600">{stats.totalKeywords}</p>
+              <p className="text-gray-600 text-[10px] sm:text-xs">Total Keywords</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">{stats.avgOverall}</p>
-              <p className="text-gray-600 text-xs">Avg Score</p>
+            <div className="bg-white rounded-lg shadow p-2 sm:p-4 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.avgOverall}</p>
+              <p className="text-gray-600 text-[10px] sm:text-xs">Avg Score</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-orange-600">{stats.avgCompetition}</p>
-              <p className="text-gray-600 text-xs">Avg Competition</p>
+            <div className="bg-white rounded-lg shadow p-2 sm:p-4 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-orange-600">{stats.avgCompetition}</p>
+              <p className="text-gray-600 text-[10px] sm:text-xs">Avg Competition</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">{stats.avgSearchVolume?.toLocaleString()}</p>
-              <p className="text-gray-600 text-xs">Avg Search Vol</p>
+            <div className="bg-white rounded-lg shadow p-2 sm:p-4 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-blue-600">{stats.avgSearchVolume?.toLocaleString()}</p>
+              <p className="text-gray-600 text-[10px] sm:text-xs">Avg Search Vol</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-emerald-600">{stats.highScoreCount}</p>
-              <p className="text-gray-600 text-xs">High Score (70+)</p>
+            <div className="bg-white rounded-lg shadow p-2 sm:p-4 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-emerald-600">{stats.highScoreCount}</p>
+              <p className="text-gray-600 text-[10px] sm:text-xs">High Score (70+)</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-cyan-600">{stats.lowCompetitionCount}</p>
-              <p className="text-gray-600 text-xs">Low Competition</p>
+            <div className="bg-white rounded-lg shadow p-2 sm:p-4 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-cyan-600">{stats.lowCompetitionCount}</p>
+              <p className="text-gray-600 text-[10px] sm:text-xs">Low Competition</p>
             </div>
           </div>
         )}
 
         {/* Upload Section */}
-        <div className="bg-white rounded-xl shadow-md p-5 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="bg-white rounded-xl shadow-md p-3 sm:p-5 mb-4 sm:mb-6">
+          <div className="flex flex-col md:flex-row gap-2 sm:gap-4 items-center">
             <input
               type="file"
               ref={fileInputRef}
@@ -225,29 +225,31 @@ const KeywordsList = () => {
             />
             <label
               htmlFor="excel-upload"
-              className={`flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-medium rounded-lg cursor-pointer hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg text-center ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full md:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs sm:text-base font-medium rounded-lg cursor-pointer hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg text-center ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {uploading ? '📤 Uploading...' : '📁 Upload Excel Files'}
             </label>
-            <button
-              onClick={() => fetchKeywords()}
-              className="px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
-            >
-              🔄 Refresh
-            </button>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 font-medium rounded-lg transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              🔍 {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
+            <div className="flex gap-2 w-full md:w-auto">
+              <button
+                onClick={() => fetchKeywords()}
+                className="flex-1 md:flex-none px-3 py-2 sm:px-4 sm:py-3 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-base font-medium rounded-lg transition-colors"
+              >
+                🔄 Refresh
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex-1 md:flex-none px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-base font-medium rounded-lg transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                🔍 {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </button>
+            </div>
           </div>
 
           {/* Upload Result */}
           {uploadResult && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-700 font-medium mb-2">✅ Upload Complete!</p>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm text-gray-600">
+            <div className="mt-3 sm:mt-4 p-2.5 sm:p-4 bg-green-50 border border-green-200 rounded-lg text-xs sm:text-sm">
+              <p className="text-green-700 font-medium mb-1.5 sm:mb-2">✅ Upload Complete!</p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-1.5 sm:gap-2 text-gray-600">
                 <span>Files: {uploadResult.filesProcessed}</span>
                 <span>Total: {uploadResult.totalKeywords}</span>
                 <span className="text-green-600">Added: {uploadResult.storedKeywords}</span>
@@ -260,91 +262,91 @@ const KeywordsList = () => {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white rounded-xl shadow-md p-5 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl shadow-md p-3 sm:p-5 mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
               {/* Search */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search Keyword</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Keyword</label>
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   placeholder="Enter keyword..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
 
               {/* Overall Score Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Overall Score</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Overall Score</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     value={minOverall}
                     onChange={(e) => setMinOverall(e.target.value)}
                     placeholder="Min"
-                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-1/2 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                   <input
                     type="number"
                     value={maxOverall}
                     onChange={(e) => setMaxOverall(e.target.value)}
                     placeholder="Max"
-                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-1/2 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Search Volume Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search Volume</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Volume</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     value={minSearchVolume}
                     onChange={(e) => setMinSearchVolume(e.target.value)}
                     placeholder="Min"
-                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-1/2 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                   <input
                     type="number"
                     value={maxSearchVolume}
                     onChange={(e) => setMaxSearchVolume(e.target.value)}
                     placeholder="Max"
-                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-1/2 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Competition Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Competition</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Competition</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     value={minCompetition}
                     onChange={(e) => setMinCompetition(e.target.value)}
                     placeholder="Min"
-                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-1/2 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                   <input
                     type="number"
                     value={maxCompetition}
                     onChange={(e) => setMaxCompetition(e.target.value)}
                     placeholder="Max"
-                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-1/2 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Sort By */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Sort By</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
                   <option value="overall">Overall Score</option>
                   <option value="searchVolume">Search Volume</option>
@@ -356,11 +358,11 @@ const KeywordsList = () => {
 
               {/* Sort Order */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Sort Order</label>
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
                   <option value="desc">Descending</option>
                   <option value="asc">Ascending</option>
@@ -371,13 +373,13 @@ const KeywordsList = () => {
               <div className="flex items-end gap-2">
                 <button
                   onClick={handleSearch}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   Apply Filters
                 </button>
                 <button
                   onClick={handleClearFilters}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Clear
                 </button>
@@ -388,19 +390,19 @@ const KeywordsList = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 sm:p-4 mb-4 sm:mb-6 text-red-700 text-xs sm:text-sm">
             {error}
           </div>
         )}
 
         {/* Keywords List/Table */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">⏳ Loading keywords...</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-gray-600 text-sm sm:text-lg">⏳ Loading keywords...</p>
           </div>
         ) : keywords.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <p className="text-gray-600 text-lg">
+          <div className="text-center py-8 sm:py-12 bg-white rounded-lg">
+            <p className="text-gray-600 text-sm sm:text-lg">
               No keywords found. Upload Excel files to get started! 📁
             </p>
           </div>
@@ -411,14 +413,14 @@ const KeywordsList = () => {
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold">Keyword</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Overall</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Search Vol</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Competition</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Actions</th>
+                      <th className="px-2.5 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold">Keyword</th>
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-xs sm:text-sm font-semibold">Overall</th>
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-xs sm:text-sm font-semibold">Search Vol</th>
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-xs sm:text-sm font-semibold">Competition</th>
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-xs sm:text-sm font-semibold">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 text-xs sm:text-sm">
                     {keywords.map((keyword, index) => (
                       <tr 
                         key={keyword._id}
@@ -426,12 +428,12 @@ const KeywordsList = () => {
                           index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                         }`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-2.5 py-2 sm:px-4 sm:py-3">
                           <span className="text-gray-800 font-medium">{keyword.keyword}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-center">
                           <span
-                            className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${
+                            className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-bold ${
                               keyword.overall >= 70
                                 ? 'bg-green-100 text-green-700'
                                 : keyword.overall >= 60
@@ -442,12 +444,12 @@ const KeywordsList = () => {
                             {roundDecimal(keyword.overall)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center text-gray-700 font-medium">
+                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-center text-gray-700 font-medium">
                           {formatSearchVolume(keyword.searchVolume)}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-center">
                           <span
-                            className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                            className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
                               keyword.competition <= 30
                                 ? 'bg-green-100 text-green-700'
                                 : keyword.competition <= 60
@@ -458,18 +460,11 @@ const KeywordsList = () => {
                             {roundDecimal(keyword.competition)}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            {/* <button
-                              onClick={() => handleAddToIdeas(keyword._id)}
-                              className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-colors"
-                              title="Add to Ideas"
-                            >
-                              💡 Add
-                            </button> */}
+                        <td className="px-2 py-2 sm:px-4 sm:py-3">
+                          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                             <button
                               onClick={() => handleDelete(keyword._id)}
-                              className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors"
+                              className="px-2 py-1 sm:px-3 sm:py-1 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm rounded-lg transition-colors"
                               title="Delete"
                             >
                               🗑️
@@ -485,11 +480,11 @@ const KeywordsList = () => {
 
             {/* Pagination */}
             {pagination && pagination.pages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-8">
+              <div className="flex justify-center items-center gap-2 sm:gap-4 mt-4 sm:mt-8 text-xs sm:text-base">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-white rounded-lg shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   ← Previous
                 </button>
@@ -499,7 +494,7 @@ const KeywordsList = () => {
                 <button
                   onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
                   disabled={page === pagination.pages}
-                  className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-white rounded-lg shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   Next →
                 </button>

@@ -85,11 +85,11 @@ const Paginator = ({
 
   return (
     <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-gray-50/90 border border-gray-200 rounded-xl shadow-sm ${className}`}
+      className={`flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-3 p-1.5 sm:p-3 bg-gray-50/90 border border-gray-200 rounded-xl shadow-sm ${className}`}
     >
       {/* Left info label */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-gray-700">
-        <span className="px-2 py-1 bg-white border border-gray-200 rounded-lg shadow-2xs font-mono">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-gray-700">
+        <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-white border border-gray-200 rounded-lg shadow-2xs font-mono">
           {itemLabel} {currentPage} of {totalPages}
         </span>
         {totalItems !== undefined && (
@@ -101,13 +101,13 @@ const Paginator = ({
 
       {/* Center pills / Page number buttons */}
       {showPills && (
-        <div className="flex items-center gap-1 overflow-x-auto max-w-full py-1">
+        <div className="flex items-center gap-1 overflow-x-auto max-w-full py-0.5 sm:py-1">
           {getPageNumbers().map((page, idx) => {
             if (page === '...') {
               return (
                 <span
                   key={`ellipsis-${idx}`}
-                  className="px-1.5 py-0.5 text-xs text-gray-400 select-none"
+                  className="px-1 py-0.5 text-xs text-gray-400 select-none"
                 >
                   ...
                 </span>
@@ -121,7 +121,7 @@ const Paginator = ({
               <button
                 key={page}
                 onClick={() => onPageChange(page)}
-                className={`relative px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all duration-150 flex items-center gap-1 ${
+                className={`relative px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold rounded-lg border transition-all duration-150 flex items-center gap-1 ${
                   isCurrent
                     ? `${colorStyles.activeBg} shadow-xs font-bold scale-105`
                     : `bg-white border-gray-300 text-gray-700 ${colorStyles.hoverBg}`
@@ -146,11 +146,11 @@ const Paginator = ({
       )}
 
       {/* Right navigation buttons */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="px-2.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
+          className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
           title="Previous Page"
         >
           <span>←</span>
@@ -159,7 +159,7 @@ const Paginator = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="px-2.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
+          className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
           title="Next Page"
         >
           <span className="hidden sm:inline">Next</span>

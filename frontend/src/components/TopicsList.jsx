@@ -94,42 +94,42 @@ const TopicsList = () => {
         );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">
             🎬 Narration Generator
           </h1>
-          <p className="text-gray-600">
+          <p className="text-xs sm:text-base text-gray-600">
             Create AI-powered narration scripts for your videos
           </p>
         </div>
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-yellow-600">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-6">
+            <div className="bg-white rounded-lg shadow p-2.5 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-yellow-600">
                 {stats.pending}
               </p>
-              <p className="text-gray-600 text-sm">⏳ Pending</p>
+              <p className="text-gray-600 text-xs sm:text-sm">⏳ Pending</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="bg-white rounded-lg shadow p-2.5 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-blue-600">
                 {stats.processing}
               </p>
-              <p className="text-gray-600 text-sm">⚙️ Processing</p>
+              <p className="text-gray-600 text-xs sm:text-sm">⚙️ Processing</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">
+            <div className="bg-white rounded-lg shadow p-2.5 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {stats.completed}
               </p>
-              <p className="text-gray-600 text-sm">✅ Completed</p>
+              <p className="text-gray-600 text-xs sm:text-sm">✅ Completed</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-              <p className="text-gray-600 text-sm">❌ Failed</p>
+            <div className="bg-white rounded-lg shadow p-2.5 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-red-600">{stats.failed}</p>
+              <p className="text-gray-600 text-xs sm:text-sm">❌ Failed</p>
             </div>
           </div>
         )}
@@ -138,7 +138,7 @@ const TopicsList = () => {
         <CreateTopicForm onSuccess={fetchTopics} />
 
         {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-2.5 sm:p-4 mb-3 sm:mb-6">
           <div className="flex gap-2 items-center">
             <div className="relative flex-1">
               <input
@@ -146,12 +146,12 @@ const TopicsList = () => {
                 placeholder="🔍 Search topics by title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 pr-8 sm:pr-10 border border-gray-300 rounded-lg text-xs sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xs sm:text-base"
                   title="Clear search"
                 >
                   ✕
@@ -160,7 +160,7 @@ const TopicsList = () => {
             </div>
           </div>
           {searchQuery && (
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2">
               Found {filteredTopics.length} topic
               {filteredTopics.length !== 1 ? 's' : ''} matching "{searchQuery}"
             </p>
@@ -169,30 +169,30 @@ const TopicsList = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 sm:p-4 mb-3 sm:mb-6 text-red-700 text-xs sm:text-sm">
             {error}
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-3 sm:mb-6">
           <button
             onClick={handleProcessNow}
             disabled={processingLoading}
-            className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
+            className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white text-xs sm:text-base font-medium rounded-lg transition-colors"
           >
             {processingLoading ? '⏳ Processing...' : '🚀 Process Now'}
           </button>
           <button
             onClick={fetchTopics}
-            className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+            className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-base font-medium rounded-lg transition-colors"
           >
             🔄 Refresh
           </button>
         </div>
 
         {/* Level Tabs */}
-        <div className="bg-white rounded-lg shadow-md p-1 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-1 mb-3 sm:mb-6">
           <div className="flex gap-1 overflow-x-auto">
             {[
               { value: 'all', label: '📋 All', emoji: '📋' },
@@ -206,9 +206,9 @@ const TopicsList = () => {
               <button
                 key={level.value}
                 onClick={() => setFilterLevel(level.value)}
-                className={`flex-1 px-4 py-3 rounded-md font-medium whitespace-nowrap transition-all duration-200 ${
+                className={`flex-1 px-2.5 py-1.5 sm:px-4 sm:py-3 rounded-md font-medium whitespace-nowrap text-xs sm:text-sm transition-all duration-200 ${
                   filterLevel === level.value
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md transform scale-105'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md transform scale-[1.02] sm:scale-105'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -221,19 +221,19 @@ const TopicsList = () => {
 
         {/* Topics List */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">⏳ Loading topics...</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-gray-600 text-base sm:text-lg">⏳ Loading topics...</p>
           </div>
         ) : filteredTopics.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <p className="text-gray-600 text-lg">
+          <div className="text-center py-8 sm:py-12 bg-white rounded-lg p-4">
+            <p className="text-gray-600 text-sm sm:text-lg">
               {filterLevel === 'all'
                 ? 'No topics yet. Create one to get started! 📝'
                 : `No topics in ${filterLevel} stage found.`}
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3 sm:gap-6">
             {filteredTopics.map((topic) => (
               <TopicCard
                 key={topic._id}

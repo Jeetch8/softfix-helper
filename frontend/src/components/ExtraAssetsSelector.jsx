@@ -116,23 +116,23 @@ const ExtraAssetsSelector = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {!isGenerating && !showAssets && !assets && (
         <button
           onClick={handleGenerateAssets}
-          className="w-full px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded transition-colors"
+          className="w-full px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors"
         >
           ⭐ Generate Extra Assets (SEO, Tags, Timestamps, Audio)
         </button>
       )}
 
       {isGenerating && (
-        <div className="text-center py-6">
-          <p className="text-gray-600 flex items-center justify-center gap-2">
+        <div className="text-center py-4 sm:py-6">
+          <p className="text-gray-600 flex items-center justify-center gap-2 text-sm sm:text-base">
             <span className="animate-spin">⏳</span>
             Generating extra assets...
           </p>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 mt-1 sm:mt-2">
             This may take a minute (generating description, tags, timestamps,
             and MP3 audio)
           </p>
@@ -140,25 +140,25 @@ const ExtraAssetsSelector = ({
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded p-4">
-          <p className="text-red-700 text-sm">❌ Error: {error}</p>
+        <div className="bg-red-50 border border-red-200 rounded p-2.5 sm:p-4">
+          <p className="text-red-700 text-xs sm:text-sm">❌ Error: {error}</p>
         </div>
       )}
 
       {assets && showAssets && (
-        <div className="space-y-4">
+        <div className="space-y-2.5 sm:space-y-4">
           {/* SEO Description */}
-          <div className="bg-blue-50 border border-blue-200 rounded p-4">
-            <div className="flex justify-between items-start gap-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 sm:p-4">
+            <div className="flex justify-between items-start gap-2 sm:gap-3">
               <div className="flex-1">
                 <p className="text-blue-700 text-xs font-semibold mb-1">
                   📝 SEO Description
                 </p>
-                <p className="text-blue-900 text-sm">{assets.seoDescription}</p>
+                <p className="text-blue-900 text-xs sm:text-sm">{assets.seoDescription}</p>
               </div>
               <button
                 onClick={() => handleCopy(assets.seoDescription, 0)}
-                className={`flex-shrink-0 px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`flex-shrink-0 px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
                   copiedIndex === 0
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -170,17 +170,17 @@ const ExtraAssetsSelector = ({
           </div>
 
           {/* Tags */}
-          <div className="bg-green-50 border border-green-200 rounded p-4">
-            <div className="flex justify-between items-start gap-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 sm:p-4">
+            <div className="flex justify-between items-start gap-2 sm:gap-3">
               <div className="flex-1">
-                <p className="text-green-700 text-xs font-semibold mb-2">
+                <p className="text-green-700 text-xs font-semibold mb-1.5 sm:mb-2">
                   🏷️ Tags
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {assets.tags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded"
+                      className="bg-green-200 text-green-800 text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded"
                     >
                       #{tag}
                     </span>
@@ -189,7 +189,7 @@ const ExtraAssetsSelector = ({
               </div>
               <button
                 onClick={() => handleCopy(assets.tags.join(', '), 1)}
-                className={`flex-shrink-0 px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`flex-shrink-0 px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
                   copiedIndex === 1
                     ? 'bg-green-500 text-white'
                     : 'bg-green-600 hover:bg-green-700 text-white'
@@ -204,7 +204,7 @@ const ExtraAssetsSelector = ({
           <button
             onClick={handleGenerateAssets}
             disabled={isGenerating}
-            className="w-full px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded transition-colors disabled:opacity-50"
+            className="w-full px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
           >
             🔄 Regenerate Extra Assets
           </button>

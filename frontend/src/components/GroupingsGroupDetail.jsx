@@ -462,9 +462,9 @@ const GroupingsGroupDetail = () => {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-16 text-center">
+      <div className="max-w-6xl mx-auto px-2 py-8 sm:px-4 sm:py-16 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-        <p className="text-gray-500 mt-4 font-medium text-lg">
+        <p className="text-gray-500 mt-4 font-medium text-base sm:text-lg">
           Loading session groupings...
         </p>
       </div>
@@ -472,13 +472,13 @@ const GroupingsGroupDetail = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-2 py-4 sm:px-4 sm:py-8">
       {/* Back Navigation & Header */}
-      <div className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-4 w-full md:w-auto">
+      <div className="mb-4 sm:mb-8 bg-white p-3.5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 w-full md:w-auto">
           <button
             onClick={() => navigate('/segregator')}
-            className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-indigo-600 rounded-xl transition-all border border-gray-100 font-bold shadow-sm flex items-center justify-center"
+            className="p-2 sm:p-3 bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-indigo-600 rounded-xl transition-all border border-gray-100 font-bold shadow-sm flex items-center justify-center text-xs sm:text-base"
             title="Back to Sessions"
           >
             ⬅️ Back
@@ -491,7 +491,7 @@ const GroupingsGroupDetail = () => {
                   type="text"
                   value={parentTitleText}
                   onChange={(e) => setParentTitleText(e.target.value)}
-                  className="px-3 py-1.5 border border-indigo-300 rounded-xl text-2xl font-extrabold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 border border-indigo-300 rounded-xl text-xl sm:text-2xl font-extrabold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveParentTitle();
@@ -504,7 +504,7 @@ const GroupingsGroupDetail = () => {
                 <button
                   onClick={handleSaveParentTitle}
                   disabled={processing}
-                  className="bg-green-100 hover:bg-green-200 text-green-700 p-2.5 rounded-xl font-bold transition-all flex items-center justify-center shadow-sm"
+                  className="bg-green-100 hover:bg-green-200 text-green-700 p-2 sm:p-2.5 rounded-xl font-bold transition-all flex items-center justify-center shadow-sm"
                   title="Save Title"
                 >
                   💾
@@ -514,37 +514,37 @@ const GroupingsGroupDetail = () => {
                     setIsEditingParentTitle(false);
                     setParentTitleText(parentGroup?.title || '');
                   }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl font-bold transition-all flex items-center justify-center shadow-sm"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 sm:p-2.5 rounded-xl font-bold transition-all flex items-center justify-center shadow-sm"
                   title="Cancel"
                 >
                   ✕
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <h1 className="text-xl sm:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-1.5 sm:gap-2">
                   📂 {parentGroup?.title || 'Untitled Session'}
                 </h1>
                 <button
                   onClick={() => setIsEditingParentTitle(true)}
                   disabled={processing}
-                  className="text-gray-400 hover:text-indigo-600 transition-colors p-2 rounded-xl hover:bg-indigo-50"
+                  className="text-gray-400 hover:text-indigo-600 transition-colors p-1 sm:p-2 rounded-xl hover:bg-indigo-50 text-sm sm:text-base"
                   title="Edit Session Title"
                 >
                   ✏️
                 </button>
               </div>
             )}
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
               Session created on{' '}
               {new Date(parentGroup?.createdAt).toLocaleString()} •{' '}
               {groupings.length} subgroups
             </p>
             {groupings.length > 0 && (
-              <div className="mt-3">
+              <div className="mt-2 sm:mt-3">
                 <button
                   onClick={handleToggleAllAccordions}
-                  className="px-4 py-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100/50 flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100/50 flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>{allOpen ? '👐' : '📖'}</span> {allOpen ? 'Collapse All' : 'Expand All'}
                 </button>
@@ -553,27 +553,27 @@ const GroupingsGroupDetail = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
           <button
             onClick={() => setShowOnlyPriority(!showOnlyPriority)}
-            className={`px-5 py-3 rounded-xl font-bold transition-all shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
+            className={`px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98] ${
               showOnlyPriority
                 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-100'
                 : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm'
             }`}
           >
-            <span>{showOnlyPriority ? '★' : '☆'}</span> Priority Groups Only ({priorityCount})
+            <span>{showOnlyPriority ? '★' : '☆'}</span> Priority ({priorityCount})
           </button>
 
           <button
             onClick={handleCreateGroup}
             disabled={processing || uploading}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>➕</span> Add New Group
+            <span>➕</span> Add Group
           </button>
         </div>
-        <div className="flex w-full justify-end mt-4">
+        <div className="flex w-full justify-end mt-2 sm:mt-4">
           <input
             type="file"
             multiple
@@ -585,7 +585,7 @@ const GroupingsGroupDetail = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-md hover:shadow-green-100 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            className="bg-green-600 hover:bg-green-700 text-white px-3.5 py-2 sm:px-5 sm:py-2 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md hover:shadow-green-100 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>📤</span> {uploading ? 'Uploading...' : 'Upload Keywords (Excel/CSV)'}
           </button>
@@ -595,54 +595,54 @@ const GroupingsGroupDetail = () => {
 
       {/* Notifications */}
       {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl flex items-center gap-3 animate-fade-in">
-          <span className="text-xl">🎉</span>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl flex items-center gap-2 sm:gap-3 animate-fade-in text-sm sm:text-base">
+          <span className="text-lg sm:text-xl">🎉</span>
           <p className="font-semibold">{success}</p>
         </div>
       )}
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center gap-3 animate-fade-in">
-          <span className="text-xl">⚠️</span>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center gap-2 sm:gap-3 animate-fade-in text-sm sm:text-base">
+          <span className="text-lg sm:text-xl">⚠️</span>
           <p className="font-semibold">{error}</p>
         </div>
       )}
 
       {/* Main Grid / Layout */}
       {groupings.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-          <span className="text-5xl block mb-4">🗂️</span>
-          <h3 className="text-lg font-bold text-gray-700">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-12 text-center shadow-sm">
+          <span className="text-4xl sm:text-5xl block mb-3 sm:mb-4">🗂️</span>
+          <h3 className="text-base sm:text-lg font-bold text-gray-700">
             No subgroups found in this session
           </h3>
-          <p className="text-gray-400 mt-1 mb-6">
+          <p className="text-gray-400 text-xs sm:text-sm mt-1 mb-4 sm:mb-6">
             Create a group to start categorizing your keywords!
           </p>
           <button
             onClick={handleCreateGroup}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold transition-all shadow-md text-xs sm:text-sm"
           >
             Create Subgroup
           </button>
         </div>
       ) : showOnlyPriority && displayedGroupings.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm animate-fade-in">
-          <span className="text-5xl block mb-4">⭐</span>
-          <h3 className="text-lg font-bold text-gray-700">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-12 text-center shadow-sm animate-fade-in">
+          <span className="text-4xl sm:text-5xl block mb-3 sm:mb-4">⭐</span>
+          <h3 className="text-base sm:text-lg font-bold text-gray-700">
             No priority groups found
           </h3>
-          <p className="text-gray-400 mt-1 mb-6">
+          <p className="text-gray-400 text-xs sm:text-sm mt-1 mb-4 sm:mb-6">
             Use the group options menu to mark subgroups as priority!
           </p>
           <button
             onClick={() => setShowOnlyPriority(false)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold transition-all shadow-md text-xs sm:text-sm"
           >
             Show All Groups
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4 sm:gap-8">
           {displayedGroupings.map((group) => {
             const flatKeywords = group.keywords ? group.keywords.flat() : [];
             const sortedKeywords = getSortedKeywords(flatKeywords, group._id);
@@ -680,13 +680,13 @@ const GroupingsGroupDetail = () => {
                     }
                     toggleGroupOpen(group._id);
                   }}
-                  className={`bg-gray-50 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer select-none hover:bg-gray-100/70 transition-colors ${
+                  className={`bg-gray-50 p-2.5 sm:p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2.5 sm:gap-4 cursor-pointer select-none hover:bg-gray-100/70 transition-colors ${
                     isOpen ? 'border-b border-gray-200' : ''
                   }`}
                 >
-                  <div className="flex items-start gap-3 w-full md:w-auto">
+                  <div className="flex items-start gap-2 sm:gap-3 w-full md:w-auto">
                     <span
-                      className="text-gray-400 transition-transform duration-200 text-xs mr-1 mt-2.5"
+                      className="text-gray-400 transition-transform duration-200 text-xs mr-1 mt-2 sm:mt-2.5"
                       style={{
                         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
                         display: 'inline-block',
@@ -694,7 +694,7 @@ const GroupingsGroupDetail = () => {
                     >
                       ▶
                     </span>
-                    <span className="text-indigo-500 text-xl mt-1">📁</span>
+                    <span className="text-indigo-500 text-lg sm:text-xl mt-0.5 sm:mt-1">📁</span>
                     <div className="flex flex-col flex-grow">
                       {editingGroupId === group._id ? (
                         <div className="flex items-center gap-2">
@@ -702,7 +702,7 @@ const GroupingsGroupDetail = () => {
                              type="text"
                              value={editTitleText}
                              onChange={(e) => setEditTitleText(e.target.value)}
-                             className="px-2.5 py-1 border border-indigo-300 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                             className="px-2 py-1 border border-indigo-300 rounded-lg text-base sm:text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                              autoFocus
                              onKeyDown={(e) => {
                                if (e.key === 'Enter')
@@ -713,30 +713,30 @@ const GroupingsGroupDetail = () => {
                           <button
                             onClick={() => handleSaveGroupTitle(group._id)}
                             disabled={processing}
-                            className="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center shadow-sm"
+                            className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 sm:p-2 rounded-lg font-bold text-xs sm:text-sm transition-colors flex items-center justify-center shadow-sm"
                             title="Save Title"
                           >
                             💾
                           </button>
                           <button
                             onClick={handleCancelEditGroup}
-                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center shadow-sm"
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 sm:p-2 rounded-lg font-bold text-xs sm:text-sm transition-colors flex items-center justify-center shadow-sm"
                             title="Cancel"
                           >
                             ✕
                           </button>
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                          <h3 className="text-xl font-bold text-gray-800 tracking-tight flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
+                          <h3 className="text-base sm:text-xl font-bold text-gray-800 tracking-tight flex items-center gap-1 sm:gap-1.5">
                             {group.priority && (
-                              <span className="text-amber-500 text-lg animate-pulse" title="Priority Group">
+                              <span className="text-amber-500 text-base sm:text-lg animate-pulse" title="Priority Group">
                                 ⭐
                               </span>
                             )}
                             {group.title}
                             {group.isUsed && (
-                              <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                              <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-green-100 text-green-700 text-[10px] sm:text-xs font-bold rounded-full">
                                 Used
                               </span>
                             )}
@@ -744,7 +744,7 @@ const GroupingsGroupDetail = () => {
                           <button
                             onClick={() => handleStartEditGroup(group)}
                             disabled={processing}
-                            className="text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-lg hover:bg-indigo-50"
+                            className="text-gray-400 hover:text-indigo-600 transition-colors p-1 sm:p-1.5 rounded-lg hover:bg-indigo-50 text-xs sm:text-sm"
                             title="Edit Group Title"
                           >
                             ✏️
@@ -758,19 +758,19 @@ const GroupingsGroupDetail = () => {
                                 )
                               }
                               disabled={processing}
-                              className="text-gray-500 hover:text-indigo-600 font-bold bg-white border border-gray-200 hover:border-indigo-100 hover:bg-indigo-50 px-3 py-1.5 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-sm"
+                              className="text-gray-500 hover:text-indigo-600 font-bold bg-white border border-gray-200 hover:border-indigo-100 hover:bg-indigo-50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm transition-all flex items-center gap-1 sm:gap-1.5 shadow-sm"
                               title="Group Options"
                             >
                               ⚙️ Options
                             </button>
                             {activeGroupDropdownId === group._id && (
-                              <div className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 p-2 text-left animate-fade-in">
+                              <div className="absolute left-0 mt-2 w-52 sm:w-56 bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl z-50 p-1.5 sm:p-2 text-left animate-fade-in">
                                 <button
                                   onClick={() => {
                                     setActiveGroupDropdownId(null);
                                     handleTogglePriority(group._id, group.priority);
                                   }}
-                                  className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors flex items-center gap-2 font-semibold"
+                                  className="w-full text-left px-2.5 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg sm:rounded-xl transition-colors flex items-center gap-2 font-semibold"
                                 >
                                   <span>{group.priority ? '☆ Remove Priority' : '⭐ Mark as Priority'}</span>
                                 </button>
@@ -779,7 +779,7 @@ const GroupingsGroupDetail = () => {
                                     setActiveGroupDropdownId(null);
                                     handleDeleteGroup(group._id, group.title);
                                   }}
-                                  className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-semibold border-t border-gray-50 mt-1"
+                                  className="w-full text-left px-2.5 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 rounded-lg sm:rounded-xl transition-colors flex items-center gap-2 font-semibold border-t border-gray-50 mt-1"
                                 >
                                   <span>🗑️ Delete Group</span>
                                 </button>
@@ -798,7 +798,7 @@ const GroupingsGroupDetail = () => {
                                value={editDescText}
                                onChange={(e) => setEditDescText(e.target.value)}
                                placeholder="Add a group description..."
-                               className="px-2.5 py-1 border border-indigo-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-64 md:w-80"
+                               className="px-2 py-0.5 sm:px-2.5 sm:py-1 border border-indigo-300 rounded-lg text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-52 sm:w-80"
                                autoFocus
                                onKeyDown={(e) => {
                                  if (e.key === 'Enter')
@@ -809,28 +809,28 @@ const GroupingsGroupDetail = () => {
                             <button
                               onClick={() => handleSaveGroupDescription(group._id)}
                               disabled={processing}
-                              className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
+                              className="bg-green-100 hover:bg-green-200 text-green-700 p-1 sm:p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
                               title="Save Description"
                             >
                               💾
                             </button>
                             <button
                               onClick={handleCancelEditDesc}
-                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1 sm:p-1.5 rounded-lg font-bold text-xs transition-colors flex items-center justify-center shadow-sm"
                               title="Cancel"
                             >
                               ✕
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 mt-1.5 min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
-                            <span className="text-sm text-gray-500 font-medium">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-1.5 min-h-[1.25rem] sm:min-h-[1.5rem]" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-xs sm:text-sm text-gray-500 font-medium">
                               {group.description || ''}
                             </span>
                             <button
                               onClick={() => handleStartEditDesc(group)}
                               disabled={processing}
-                              className="text-gray-400 hover:text-indigo-600 transition-colors p-1 rounded-lg hover:bg-indigo-50 flex items-center"
+                              className="text-gray-400 hover:text-indigo-600 transition-colors p-0.5 sm:p-1 rounded-lg hover:bg-indigo-50 flex items-center text-xs"
                               title="Edit Description"
                             >
                               ✏️
@@ -841,15 +841,15 @@ const GroupingsGroupDetail = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <span className="bg-indigo-50 text-indigo-700 text-sm font-semibold px-3 py-1.5 rounded-lg border border-indigo-100 flex items-center gap-1">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-3">
+                    <span className="bg-indigo-50 text-indigo-700 text-xs sm:text-sm font-semibold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-indigo-100 flex items-center gap-1">
                       Total Vol:{' '}
                       <span className="font-bold">
                         {totalSearchVolume.toLocaleString()}
                       </span>
                     </span>
                     {flatKeywords.length > 0 && (
-                      <span className="bg-blue-50 text-blue-700 text-sm font-semibold px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1">
+                      <span className="bg-blue-50 text-blue-700 text-xs sm:text-sm font-semibold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-blue-100 flex items-center gap-1">
                         Avg Score:{' '}
                         <span className="font-bold">{avgOverall}</span>
                       </span>
@@ -862,19 +862,19 @@ const GroupingsGroupDetail = () => {
                   <div className="p-0">
                     <div className="max-h-96 overflow-y-auto custom-scrollbar">
                       {flatKeywords.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400 italic">
+                        <div className="p-4 sm:p-8 text-center text-gray-400 text-xs sm:text-sm italic">
                           No keywords in this subgroup
                         </div>
                       ) : (
                         <table className="w-full text-left border-collapse">
                           <thead className="bg-white sticky top-0 z-10 shadow-sm border-b border-gray-200">
                             <tr>
-                              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-12 text-center">
+                              <th className="px-2 py-2 sm:px-4 sm:py-3 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider w-8 sm:w-12 text-center">
                                 Add
                               </th>
                               <th
                                 onClick={() => handleSort(group._id, 'keyword')}
-                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                                className="px-2.5 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center gap-1">
                                   Keyword {getSortIcon(group._id, 'keyword')}
@@ -884,7 +884,7 @@ const GroupingsGroupDetail = () => {
                                 onClick={() =>
                                   handleSort(group._id, 'search_volume')
                                 }
-                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                                className="px-2 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center justify-end gap-1">
                                   Search Vol{' '}
@@ -895,24 +895,24 @@ const GroupingsGroupDetail = () => {
                                 onClick={() =>
                                   handleSort(group._id, 'competition')
                                 }
-                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                                className="px-2 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center justify-end gap-1">
-                                  Competition{' '}
+                                  Comp{' '}
                                   {getSortIcon(group._id, 'competition')}
                                 </div>
                               </th>
                               <th
                                 onClick={() => handleSort(group._id, 'overall')}
-                                className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                                className="px-2 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider text-right cursor-pointer select-none hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center justify-end gap-1">
-                                  Overall {getSortIcon(group._id, 'overall')}
+                                  Score {getSortIcon(group._id, 'overall')}
                                 </div>
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-100 bg-white">
+                          <tbody className="divide-y divide-gray-100 bg-white text-xs sm:text-sm">
                             {sortedKeywords.map((kw, i) => {
                               const kwId = kw.id || kw._id;
                               return (
@@ -920,23 +920,23 @@ const GroupingsGroupDetail = () => {
                                   key={i}
                                   className="hover:bg-gray-50 transition-colors"
                                 >
-                                  <td className="px-4 py-3 text-center relative">
+                                  <td className="px-2 py-1.5 sm:px-4 sm:py-3 text-center relative">
                                     <button
                                       onClick={() => handleToggleDropdown(kw)}
-                                      className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center font-bold text-sm transition-colors mx-auto"
+                                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center font-bold text-xs sm:text-sm transition-colors mx-auto"
                                     >
                                       +
                                     </button>
                                     {activeDropdownKeywordId === kwId && (
-                                      <div className="absolute left-4 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 text-left animate-fade-in">
-                                        <h4 className="text-sm font-bold text-gray-800 mb-3">
+                                      <div className="absolute left-2 sm:left-4 mt-2 w-56 sm:w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-3 sm:p-4 text-left animate-fade-in">
+                                        <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-2 sm:mb-3">
                                           Manage Subgroups
                                         </h4>
-                                        <div className="max-h-48 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
+                                        <div className="max-h-48 overflow-y-auto space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 custom-scrollbar">
                                           {groupings.map((g) => (
                                             <label
                                               key={g._id}
-                                              className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:bg-gray-50 p-1.5 rounded transition-colors"
+                                              className="flex items-center gap-2 cursor-pointer text-xs sm:text-sm text-gray-700 hover:bg-gray-50 p-1 sm:p-1.5 rounded transition-colors"
                                             >
                                               <input
                                                 type="checkbox"
@@ -960,7 +960,7 @@ const GroupingsGroupDetail = () => {
                                             </label>
                                           ))}
                                         </div>
-                                        <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
+                                        <div className="flex justify-end gap-2 border-t border-gray-100 pt-2 sm:pt-3">
                                           <button
                                             onClick={() =>
                                               setActiveDropdownKeywordId(null)
@@ -972,7 +972,7 @@ const GroupingsGroupDetail = () => {
                                           <button
                                             onClick={() => handleSaveGroups(kw)}
                                             disabled={processing}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
                                           >
                                             Save
                                           </button>
@@ -980,17 +980,17 @@ const GroupingsGroupDetail = () => {
                                       </div>
                                     )}
                                   </td>
-                                  <td className="px-6 py-3">
+                                  <td className="px-2.5 py-1.5 sm:px-6 sm:py-3">
                                     <span
-                                      className="text-gray-800 font-medium"
+                                      className="text-gray-800 font-medium text-xs sm:text-sm"
                                       title={kw.keyword}
                                     >
                                       {kw.keyword}
                                     </span>
                                   </td>
-                                  <td className="px-6 py-3 text-right">
+                                  <td className="px-2 py-1.5 sm:px-6 sm:py-3 text-right">
                                     <span
-                                      className="text-sm text-gray-600 font-medium"
+                                      className="text-xs sm:text-sm text-gray-600 font-medium"
                                       title={
                                         kw.search_volume?.toLocaleString() || '0'
                                       }
@@ -998,11 +998,11 @@ const GroupingsGroupDetail = () => {
                                       {formatSearchVolume(kw.search_volume)}
                                     </span>
                                   </td>
-                                  <td className="px-6 py-3 text-right">
+                                  <td className="px-2 py-1.5 sm:px-6 sm:py-3 text-right">
                                     {kw.competition !== undefined &&
                                     kw.competition !== null ? (
                                       <span
-                                        className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-md ${
+                                        className={`inline-block text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md ${
                                           kw.competition <= 30
                                             ? 'bg-green-100 text-green-700'
                                             : kw.competition <= 60
@@ -1016,10 +1016,10 @@ const GroupingsGroupDetail = () => {
                                       <span className="text-gray-400">-</span>
                                     )}
                                   </td>
-                                  <td className="px-6 py-3 text-right">
+                                  <td className="px-2 py-1.5 sm:px-6 sm:py-3 text-right">
                                     {kw.overall !== undefined ? (
                                       <span
-                                        className={`inline-block text-xs font-bold px-2.5 py-1 rounded-md ${
+                                        className={`inline-block text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md ${
                                           kw.overall >= 70
                                             ? 'bg-green-100 text-green-700'
                                             : kw.overall >= 60
@@ -1045,7 +1045,7 @@ const GroupingsGroupDetail = () => {
 
                 {/* Footer of Subgroup Card */}
                 {isOpen && (
-                  <div className="bg-gray-50 text-xs text-gray-400 border-t border-gray-200 p-3 px-6 flex justify-between items-center">
+                  <div className="bg-gray-50 text-[11px] sm:text-xs text-gray-400 border-t border-gray-200 p-2 sm:p-3 px-3 sm:px-6 flex justify-between items-center">
                     <span className="font-semibold text-gray-500">
                       {flatKeywords.length} Keywords
                     </span>
