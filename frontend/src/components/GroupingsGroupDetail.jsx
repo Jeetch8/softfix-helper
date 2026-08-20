@@ -10,6 +10,7 @@ import {
   updateSegregatorGroupPriority,
   updateSegregatorKeywordGroups,
   updateGroupingsGroup,
+  uploadToGroupingsGroup,
 } from '../api/client';
 
 const GroupingsGroupDetail = () => {
@@ -35,8 +36,13 @@ const GroupingsGroupDetail = () => {
   // Dropdown states for individual group actions
   const [activeGroupDropdownId, setActiveGroupDropdownId] = useState(null);
 
+
   // Filter state for priority groups
   const [showOnlyPriority, setShowOnlyPriority] = useState(true);
+  
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
+
 
   // Accordion state for groupings
   const [openGroupIds, setOpenGroupIds] = useState({});
@@ -421,6 +427,33 @@ const GroupingsGroupDetail = () => {
     }
   };
 
+  const handleUploadFiles = async (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+
+    try {
+      setUploading(true);
+      setError(null);
+      setSuccess(null);
+      
+      const res = await uploadToGroupingsGroup(groupingsGroupId, files);
+      setSuccess(res.data.message || 'Keywords uploaded successfully');
+      
+      // Refresh the groups list
+      const childrenResponse = await getSegregatorGroups(groupingsGroupId);
+      setGroupings(childrenResponse.data.data || []);
+    } catch (err) {
+      console.error('Error uploading keywords:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to upload keywords.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+
   const priorityCount = groupings.filter((group) => group.priority).length;
 
   const displayedGroupings = showOnlyPriority
@@ -534,12 +567,30 @@ const GroupingsGroupDetail = () => {
 
           <button
             onClick={handleCreateGroup}
-            disabled={processing}
+            disabled={processing || uploading}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>➕</span> Add New Group
           </button>
         </div>
+        <div className="flex w-full justify-end mt-4">
+          <input
+            type="file"
+            multiple
+            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleUploadFiles}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-md hover:shadow-green-100 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>📤</span> {uploading ? 'Uploading...' : 'Upload Keywords (Excel/CSV)'}
+          </button>
+        </div>
+
       </div>
 
       {/* Notifications */}

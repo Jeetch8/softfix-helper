@@ -250,6 +250,17 @@ export const deleteGroupingsGroup = (id) => {
   return apiClient.delete(`/api/segregator/groupings-groups/${id}`);
 };
 
+export const uploadToGroupingsGroup = (id, files, userId = 'default-user') => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append('userId', userId);
+  return apiClient.post(`/api/segregator/groupings-groups/${id}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
 export const flushGroupingsGroups = () => {
   return apiClient.delete('/api/segregator/groupings-groups');
 };

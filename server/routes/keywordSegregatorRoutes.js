@@ -657,4 +657,157 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
     }
 });
 
+/**
+ * POST /api/segregator/groupings-groups/:id/upload
+ * Upload files and append valid keywords to an 'uploaded' group in this session
+ */
+router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, message: 'No files uploaded' });
+        }
+
+        const { id } = req.params; // groupingsGroupId
+        const { userId = 'default-user' } = req.body;
+
+        const parentGroup = await GroupingsGroup.findById(id);
+        if (!parentGroup) {
+            return res.status(404).json({ success: false, message: 'Groupings group not found' });
+        }
+
+        const uniqueKeywordsMap = new Map();
+
+        for (const file of req.files) {
+            const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const data = XLSX.utils.sheet_to_json(worksheet);
+
+            for (const row of data) {
+                let rawKeyword = row['Keyword'] || row['keyword'];
+                if (!rawKeyword) continue;
+
+                if (typeof rawKeyword !== 'string') {
+                    if (typeof rawKeyword.toString === 'function') {
+                        rawKeyword = rawKeyword.toString();
+                    } else {
+                        continue;
+                    }
+                }
+
+                const keyword = rawKeyword.trim().replace(/\s+/g, ' ');
+                const searchVolume = parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0;
+                const overall = parseFloat(row['Overall'] || row['overall']) || 0;
+                
+                if (!keyword || searchVolume < 6000) continue;
+
+                const normalizedKeyword = keyword.toLowerCase();
+                if (!uniqueKeywordsMap.has(normalizedKeyword)) {
+                    uniqueKeywordsMap.set(normalizedKeyword, {
+                        keyword,
+                        competition: roundDownToOneDecimal(row['Competition'] || row['competition']),
+                        overall: roundDownToOneDecimal(overall),
+                        searchVolume,
+                        thirtyDayAgoSearches: parseInt(row['30d ago searches'] || row['thirtyDayAgoSearches']) || 0,
+                        timestamp: parseInt(row['Timestamp'] || row['timestamp']) || null,
+                        numberOfWords: parseInt(row['Number of words'] || row['numberOfWords'] || row['number_of_words']) || 1,
+                        userId
+                    });
+                }
+            }
+        }
+
+        const allParsedKeywords = Array.from(uniqueKeywordsMap.values());
+        if (allParsedKeywords.length === 0) {
+            return res.status(400).json({ success: false, message: 'No valid keywords found after initial filtering' });
+        }
+
+        const keywordStrings = allParsedKeywords.map(k => k.keyword);
+        const englishKeywordsList = await filterNonEnglishKeywords(keywordStrings);
+        const englishKeywordSet = new Set(englishKeywordsList.map(k => k.toLowerCase()));
+        
+        const finalFilteredKeywordsData = allParsedKeywords.filter(k => 
+            englishKeywordSet.has(k.keyword.toLowerCase())
+        );
+
+        if (finalFilteredKeywordsData.length === 0) {
+            return res.status(400).json({ success: false, message: 'No English keywords found after language filtering' });
+        }
+
+        const populatedKeywords = [];
+        let highestSearchVolume = 0;
+        
+        for (const kData of finalFilteredKeywordsData) {
+            let savedKeyword;
+            const existing = await QuestionKeyword.findOne({ 
+                keyword: { $regex: new RegExp('^' + kData.keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') }, 
+                userId: kData.userId 
+            });
+            if (existing) {
+                savedKeyword = await QuestionKeyword.findByIdAndUpdate(existing._id, kData, { new: true });
+            } else {
+                savedKeyword = await QuestionKeyword.create(kData);
+            }
+            
+            populatedKeywords.push({
+                id: savedKeyword._id.toString(),
+                keyword: savedKeyword.keyword,
+                search_volume: savedKeyword.searchVolume,
+                overall: savedKeyword.overall,
+                competition: savedKeyword.competition
+            });
+
+            if (savedKeyword.searchVolume > highestSearchVolume) {
+                highestSearchVolume = savedKeyword.searchVolume;
+            }
+        }
+
+        let uploadedGroup = await Grouping.findOne({ groupingsGroupId: id, title: { $regex: /^uploaded$/i } });
+
+        if (!uploadedGroup) {
+            const priority = highestSearchVolume >= 20000;
+            uploadedGroup = await Grouping.create({
+                title: 'uploaded',
+                description: 'Keywords directly uploaded to this session',
+                keywords: [],
+                total_average_volume: 0,
+                userId,
+                groupingsGroupId: id,
+                priority
+            });
+            
+            await GroupingsGroup.findByIdAndUpdate(id, {
+                $inc: { numberOfGroups: 1 }
+            });
+        }
+
+        const existingFlat = uploadedGroup.keywords ? uploadedGroup.keywords.flat() : [];
+        const existingIds = new Set(existingFlat.map(k => k.id));
+        
+        const newKeywordsToPush = populatedKeywords.filter(k => !existingIds.has(k.id));
+        
+        if (newKeywordsToPush.length > 0) {
+            const mergedKeywords = [...existingFlat, ...newKeywordsToPush];
+            uploadedGroup.keywords = [mergedKeywords];
+            uploadedGroup.total_average_volume = mergedKeywords.reduce((sum, kw) => sum + (Number(kw.search_volume) || 0), 0);
+            
+            if (highestSearchVolume >= 20000) {
+                uploadedGroup.priority = true;
+            }
+            
+            await uploadedGroup.save();
+        }
+
+        res.json({
+            success: true,
+            message: `Successfully uploaded and added ${newKeywordsToPush.length} new keywords to 'uploaded' group`,
+            data: uploadedGroup
+        });
+
+    } catch (error) {
+        console.error('❌ Error processing upload for groupings group:', error.message);
+        res.status(500).json({ success: false, message: 'Error processing upload', error: error.message });
+    }
+});
+
 export default router;
