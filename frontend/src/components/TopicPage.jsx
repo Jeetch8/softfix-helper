@@ -20,6 +20,7 @@ import StatusBadge from './StatusBadge';
 import TitleSelector from './TitleSelector';
 import ThumbnailSelector from './ThumbnailSelector';
 import ExtraAssetsSelector from './ExtraAssetsSelector';
+import VideoChaptersSelector from './VideoChaptersSelector';
 import YouTubePreview from './YouTubePreview';
 import Paginator from './Paginator';
 
@@ -1526,6 +1527,21 @@ const TopicPage = () => {
                   : null
               }
               onAssetsGenerated={fetchTopic}
+            />
+          </div>
+        )}
+
+        {/* Video Chapters Section */}
+        {topic.narrationScript && (
+          <div className="bg-white rounded-xl sm:rounded-lg shadow-md p-3.5 sm:p-6 mb-3 sm:mb-6">
+            <h2 className="text-lg sm:text-2xl font-semibold text-gray-800 mb-2 sm:mb-4">
+              📑 Video Chapters
+            </h2>
+            <VideoChaptersSelector
+              topicId={topicId}
+              videoTranscript={topic.videoTranscript}
+              timestamps={topic.timestamps}
+              onChaptersGenerated={fetchTopic}
             />
           </div>
         )}

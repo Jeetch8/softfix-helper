@@ -129,6 +129,10 @@ export const generateExtraAssets = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-extra-assets`);
 };
 
+export const generateVideoChapters = (id, transcript) => {
+  return apiClient.post(`/api/topics/${id}/generate-chapters`, { transcript });
+};
+
 export const regenerateAudio = (id) => {
   return apiClient.post(`/api/topics/${id}/regenerate-audio`);
 };

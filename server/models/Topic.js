@@ -123,6 +123,10 @@ const topicSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    videoTranscript: {
+      type: String,
+      default: null,
+    },
     timestamps: [
       {
         time: String,

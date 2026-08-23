@@ -788,6 +788,89 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
   }
 }
 
+/**
+ * Generate YouTube video chapters from a timestamped transcript.
+ * @param {string} transcript - User-provided timestamped transcript
+ * @param {string} topic - Topic name
+ * @param {string} title - Selected video title
+ * @returns {Promise<Array<{time: string, description: string}>>}
+ */
+export async function generateVideoChapters(transcript, topic = '', title = '') {
+  try {
+    const contextParts = [];
+    if (title) contextParts.push(`Video Title: "${title}"`);
+    if (topic) contextParts.push(`Topic: "${topic}"`);
+    const contextText = contextParts.length
+      ? `\n${contextParts.join('\n')}\n`
+      : '';
+
+    const prompt = `You are a YouTube chapter editor for "Softfix Central," a tech tutorial channel. Create video chapters from this timestamped transcript.
+${contextText}
+Transcript:
+${transcript}
+
+CHAPTER RULES:
+- Produce 5-12 chapters covering distinct sections of the video (intro, major steps, closing). Do not create a chapter for every tiny action.
+- The FIRST chapter MUST start at 0:00 (or 00:00). If the transcript starts later, still use 0:00 for the opening chapter.
+- Use the transcript timestamps as the source of truth. Chapter start times must correspond to real moments in the transcript, rounded to the nearest sensible second.
+- Format times as M:SS or H:MM:SS (no leading hour unless the video is 1 hour+). Examples: 0:00, 0:45, 12:08, 1:02:15.
+- Chapter titles should be short (3-8 words), specific, and useful in the YouTube description. Name the actual step or topic, not vague labels like "Part 2".
+- Do not invent content that is not in the transcript.
+- Chapters must be in chronological order with strictly increasing times.
+- Return ONLY valid JSON: an array of objects with "time" and "description" keys.
+
+Example:
+[
+  { "time": "0:00", "description": "Intro" },
+  { "time": "0:38", "description": "Open Settings" }
+]`;
+
+    console.log('⏳ Generating video chapters with Flash model...');
+    const responseText = await generateText(
+      FLASH_MODEL,
+      prompt,
+      null,
+      true,
+      false,
+    );
+    console.log('✅ Generated video chapters');
+
+    let cleanedText = (responseText || '').trim();
+    if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/, '')
+        .replace(/```$/, '')
+        .trim();
+    }
+
+    const parsed = JSON.parse(cleanedText);
+    if (!Array.isArray(parsed)) {
+      throw new Error('Chapter generator did not return an array');
+    }
+
+    const chapters = parsed
+      .map((item) => ({
+        time: String(item.time || item.timestamp || '').trim(),
+        description: String(item.description || item.title || item.name || '').trim(),
+      }))
+      .filter((item) => item.time && item.description);
+
+    if (chapters.length === 0) {
+      throw new Error('No valid chapters were generated');
+    }
+
+    if (chapters[0].time !== '0:00' && chapters[0].time !== '00:00') {
+      chapters[0] = { ...chapters[0], time: '0:00' };
+    }
+
+    return chapters;
+  } catch (error) {
+    console.error('❌ Error generating video chapters:', error.message);
+    throw new Error(`Failed to generate video chapters: ${error.message}`);
+  }
+}
+
 export async function generateSEODescription(
   topic,
   script,

@@ -9,6 +9,7 @@ import {
   generateSEODescription,
   generateTags,
   generateRecordingCues,
+  generateVideoChapters,
 } from '../services/geminiService.js';
 import { generateWAVAudio } from '../services/audioService.js';
 import { deleteImageFromS3, uploadImageToS3, resolveMediaUrl } from '../services/s3Service.js';
@@ -1099,6 +1100,64 @@ router.post('/topics/:id/generate-extra-assets', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error generating extra assets',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/topics/:id/generate-chapters
+ * Generate YouTube chapters from a user-provided timestamped transcript
+ */
+router.post('/topics/:id/generate-chapters', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { transcript } = req.body;
+
+    if (!transcript || transcript.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'A timestamped video transcript is required',
+      });
+    }
+
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found',
+      });
+    }
+
+    console.log(`📑 Generating video chapters for topic "${topic.topicName}"...`);
+
+    const chapters = await generateVideoChapters(
+      transcript.trim(),
+      topic.topicName,
+      topic.selectedTitle || '',
+    );
+
+    topic.videoTranscript = transcript.trim();
+    topic.timestamps = chapters;
+    await topic.save();
+
+    console.log(
+      `✅ Generated ${chapters.length} video chapters for topic "${topic.topicName}"`,
+    );
+
+    res.json({
+      success: true,
+      message: 'Video chapters generated successfully',
+      data: {
+        videoTranscript: topic.videoTranscript,
+        timestamps: topic.timestamps,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error generating video chapters:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating video chapters',
       error: error.message,
     });
   }
