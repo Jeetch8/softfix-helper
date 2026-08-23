@@ -41,6 +41,16 @@ async function resolveTopicMediaUrls(topicObj) {
       topicObj.thumbnailPromptResults[i].url = await resolveMediaUrl(topicObj.thumbnailPromptResults[i].url);
     }
   }
+  if (topicObj.audioVersions) {
+    for (let i = 0; i < topicObj.audioVersions.length; i++) {
+      if (topicObj.audioVersions[i].audioUrl) {
+        topicObj.audioVersions[i].audioUrl = await resolveMediaUrl(topicObj.audioVersions[i].audioUrl);
+      }
+      if (topicObj.audioVersions[i].audioUrls && topicObj.audioVersions[i].audioUrls.length > 0) {
+        topicObj.audioVersions[i].audioUrls = await Promise.all(topicObj.audioVersions[i].audioUrls.map(url => resolveMediaUrl(url)));
+      }
+    }
+  }
   return topicObj;
 }
 
@@ -877,14 +887,12 @@ router.post('/topics/:id/generate-thumbnails', async (req, res) => {
       `✅ Generated ${thumbnails.length} thumbnails for topic: "${topic.topicName}"`,
     );
 
+    const topicObj = await resolveTopicMediaUrls(topic.toObject());
+
     res.json({
       success: true,
       message: 'YouTube thumbnails generated successfully',
-      data: {
-        _id: topic._id,
-        topicName: topic.topicName,
-        generatedThumbnails: topic.generatedThumbnails,
-      },
+      data: topicObj,
     });
   } catch (error) {
     console.error('❌ Error generating thumbnails:', error.message);
@@ -934,10 +942,12 @@ router.post('/topics/:id/upload-thumbnail', upload.single('thumbnail'), async (r
 
     console.log(`✅ Manual thumbnail uploaded and selected for topic "${topic.topicName}"`);
 
+    const topicObj = await resolveTopicMediaUrls(topic.toObject());
+
     res.json({
       success: true,
       message: 'Thumbnail uploaded and selected successfully',
-      data: topic,
+      data: topicObj,
     });
   } catch (error) {
     console.error('❌ Error uploading thumbnail:', error.message);
@@ -1024,10 +1034,12 @@ router.post('/topics/:id/select-thumbnail', async (req, res) => {
 
     console.log(`✅ Thumbnail selected for topic "${topic.topicName}"`);
 
+    const topicObj = await resolveTopicMediaUrls(topic.toObject());
+
     res.json({
       success: true,
       message: 'Thumbnail selected successfully',
-      data: topic,
+      data: topicObj,
     });
   } catch (error) {
     console.error('❌ Error selecting thumbnail:', error.message);
@@ -1339,12 +1351,12 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
 
     console.log(`✅ Audio regenerated for topic "${topic.topicName}"`);
 
+    const topicObj = await resolveTopicMediaUrls(topic.toObject());
+
     res.json({
       success: true,
       message: 'Audio regenerated successfully',
-      data: {
-        audioUrls,
-      },
+      data: topicObj,
     });
   } catch (error) {
     console.error('❌ Error regenerating audio:', error.message);

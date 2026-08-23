@@ -49,11 +49,40 @@ router.post('/keywords/upload', upload.array('files', 20), async (req, res) => {
             });
         }
 
-        const { userId = 'default-user' } = req.body;
+        const { userId = 'default-user', rowNumbers = '' } = req.body;
         let totalKeywords = 0;
         let storedKeywords = 0;
         let skippedKeywords = 0;
         let duplicateKeywords = 0;
+
+        // Helper to parse row numbers (e.g. "2, 4-6")
+        const parseRowNumbers = (str) => {
+            if (!str || !str.trim()) return null;
+            const indices = new Set();
+            const parts = str.split(',');
+            for (const part of parts) {
+                const trimmed = part.trim();
+                if (!trimmed) continue;
+                if (trimmed.includes('-')) {
+                    const [start, end] = trimmed.split('-');
+                    const s = parseInt(start.trim(), 10);
+                    const e = parseInt(end.trim(), 10);
+                    if (!isNaN(s) && !isNaN(e)) {
+                        for (let i = s; i <= e; i++) {
+                            indices.add(i);
+                        }
+                    }
+                } else {
+                    const val = parseInt(trimmed, 10);
+                    if (!isNaN(val)) {
+                        indices.add(val);
+                    }
+                }
+            }
+            return indices.size > 0 ? indices : null;
+        };
+
+        const targetRows = parseRowNumbers(rowNumbers);
 
         for (const file of req.files) {
             // Skip duplicate files (files ending with "(1)" etc.)
@@ -67,7 +96,14 @@ router.post('/keywords/upload', upload.array('files', 20), async (req, res) => {
             const worksheet = workbook.Sheets[sheetName];
             const data = XLSX.utils.sheet_to_json(worksheet);
 
-            for (const row of data) {
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                const excelRowNumber = i + 2; // Assuming header is row 1
+                
+                if (targetRows && !targetRows.has(excelRowNumber)) {
+                    continue;
+                }
+
                 totalKeywords++;
 
                 // Map Excel columns to our schema

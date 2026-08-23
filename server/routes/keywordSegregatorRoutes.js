@@ -668,7 +668,7 @@ router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20)
         }
 
         const { id } = req.params; // groupingsGroupId
-        const { userId = 'default-user' } = req.body;
+        const { userId = 'default-user', rowNumbers = '' } = req.body;
 
         const parentGroup = await GroupingsGroup.findById(id);
         if (!parentGroup) {
@@ -677,13 +677,49 @@ router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20)
 
         const uniqueKeywordsMap = new Map();
 
+        // Helper to parse row numbers (e.g. "2, 4-6")
+        const parseRowNumbers = (str) => {
+            if (!str || !str.trim()) return null;
+            const indices = new Set();
+            const parts = str.split(',');
+            for (const part of parts) {
+                const trimmed = part.trim();
+                if (!trimmed) continue;
+                if (trimmed.includes('-')) {
+                    const [start, end] = trimmed.split('-');
+                    const s = parseInt(start.trim(), 10);
+                    const e = parseInt(end.trim(), 10);
+                    if (!isNaN(s) && !isNaN(e)) {
+                        for (let i = s; i <= e; i++) {
+                            indices.add(i);
+                        }
+                    }
+                } else {
+                    const val = parseInt(trimmed, 10);
+                    if (!isNaN(val)) {
+                        indices.add(val);
+                    }
+                }
+            }
+            return indices.size > 0 ? indices : null;
+        };
+
+        const targetRows = parseRowNumbers(rowNumbers);
+
         for (const file of req.files) {
             const workbook = XLSX.read(file.buffer, { type: 'buffer' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const data = XLSX.utils.sheet_to_json(worksheet);
 
-            for (const row of data) {
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                const excelRowNumber = i + 2; // Assuming header is row 1
+                
+                if (targetRows && !targetRows.has(excelRowNumber)) {
+                    continue;
+                }
+
                 let rawKeyword = row['Keyword'] || row['keyword'];
                 if (!rawKeyword) continue;
 

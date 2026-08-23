@@ -254,12 +254,15 @@ export const deleteGroupingsGroup = (id) => {
   return apiClient.delete(`/api/segregator/groupings-groups/${id}`);
 };
 
-export const uploadToGroupingsGroup = (id, files, userId = 'default-user') => {
+export const uploadToGroupingsGroup = (id, files, userId = 'default-user', rowNumbers = '') => {
   const formData = new FormData();
   files.forEach((file) => {
     formData.append('files', file);
   });
   formData.append('userId', userId);
+  if (rowNumbers) {
+    formData.append('rowNumbers', rowNumbers);
+  }
   return apiClient.post(`/api/segregator/groupings-groups/${id}/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });

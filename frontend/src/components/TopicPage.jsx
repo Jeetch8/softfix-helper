@@ -373,7 +373,7 @@ const TopicPage = () => {
       const response = await regenerateAudio(topicId);
       setTopic((prev) => ({
         ...prev,
-        audioUrl: response.data.data.audioUrl,
+        ...response.data.data,
       }));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to regenerate audio');

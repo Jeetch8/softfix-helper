@@ -42,8 +42,10 @@ const GroupingsGroupDetail = () => {
   
   const [uploading, setUploading] = useState(false);
   const fileInputRef = React.useRef(null);
-
-
+  
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadRowNumbers, setUploadRowNumbers] = useState('');
+  const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   // Accordion state for groupings
   const [openGroupIds, setOpenGroupIds] = useState({});
 
@@ -427,26 +429,42 @@ const GroupingsGroupDetail = () => {
     }
   };
 
-  const handleUploadFiles = async (event) => {
-    const files = Array.from(event.target.files);
-    if (files.length === 0) return;
+  const handleOpenUploadModal = () => {
+    setShowUploadModal(true);
+    setUploadRowNumbers('');
+    setSelectedUploadFiles([]);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleModalFileSelect = (event) => {
+    setSelectedUploadFiles(Array.from(event.target.files));
+  };
+
+  const executeUpload = async () => {
+    if (selectedUploadFiles.length === 0) {
+      setError('Please select at least one file.');
+      return;
+    }
 
     try {
       setUploading(true);
       setError(null);
-      setSuccess(null);
       
-      const res = await uploadToGroupingsGroup(groupingsGroupId, files);
+      const res = await uploadToGroupingsGroup(groupingsGroupId, selectedUploadFiles, 'default-user', uploadRowNumbers);
       setSuccess(res.data.message || 'Keywords uploaded successfully');
       
       // Refresh the groups list
       const childrenResponse = await getSegregatorGroups(groupingsGroupId);
       setGroupings(childrenResponse.data.data || []);
+      
+      setShowUploadModal(false);
     } catch (err) {
       console.error('Error uploading keywords:', err);
       setError(err.response?.data?.message || err.message || 'Failed to upload keywords.');
     } finally {
       setUploading(false);
+      setSelectedUploadFiles([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -553,42 +571,36 @@ const GroupingsGroupDetail = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
-          <button
-            onClick={() => setShowOnlyPriority(!showOnlyPriority)}
-            className={`px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98] ${
-              showOnlyPriority
-                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-100'
-                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm'
-            }`}
-          >
-            <span>{showOnlyPriority ? '★' : '☆'}</span> Priority ({priorityCount})
-          </button>
+        <div className="flex flex-col items-end gap-2 sm:gap-3 w-full md:w-auto mt-2 md:mt-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
+            <button
+              onClick={() => setShowOnlyPriority(!showOnlyPriority)}
+              className={`px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98] ${
+                showOnlyPriority
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-100'
+                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm'
+              }`}
+            >
+              <span>{showOnlyPriority ? '★' : '☆'}</span> Priority ({priorityCount})
+            </button>
 
-          <button
-            onClick={handleCreateGroup}
-            disabled={processing || uploading}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span>➕</span> Add Group
-          </button>
-        </div>
-        <div className="flex w-full justify-end mt-2 sm:mt-4">
-          <input
-            type="file"
-            multiple
-            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleUploadFiles}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="bg-green-600 hover:bg-green-700 text-white px-3.5 py-2 sm:px-5 sm:py-2 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md hover:shadow-green-100 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span>📤</span> {uploading ? 'Uploading...' : 'Upload Keywords (Excel/CSV)'}
-          </button>
+            <button
+              onClick={handleCreateGroup}
+              disabled={processing || uploading}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md hover:shadow-indigo-100 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>➕</span> Add Group
+            </button>
+          </div>
+          <div className="flex w-full justify-end mt-1 sm:mt-0">
+            <button
+              onClick={handleOpenUploadModal}
+              disabled={uploading}
+              className="bg-green-600 hover:bg-green-700 text-white px-3.5 py-2 sm:px-5 sm:py-2 text-xs sm:text-base rounded-xl font-bold transition-all shadow-md hover:shadow-green-100 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>📤</span> {uploading ? 'Uploading...' : 'Upload Keywords (Excel/CSV)'}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -1057,6 +1069,85 @@ const GroupingsGroupDetail = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in flex flex-col">
+            <div className="flex justify-between items-center p-4 sm:p-5 border-b border-gray-100 bg-gray-50">
+              <h3 className="font-bold text-gray-800 text-lg">📤 Upload Keywords</h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={uploading}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Select Excel/CSV File(s)
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-gray-200 rounded-xl cursor-pointer"
+                  onChange={handleModalFileSelect}
+                  disabled={uploading}
+                />
+                {selectedUploadFiles.length > 0 && (
+                  <p className="text-xs text-green-600 mt-2 font-medium">
+                    {selectedUploadFiles.length} file(s) selected
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Target Row Numbers (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2, 5, 10-15"
+                  value={uploadRowNumbers}
+                  onChange={(e) => setUploadRowNumbers(e.target.value)}
+                  disabled={uploading}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                />
+                <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                  Leave empty to upload all rows. Specifying row numbers will only upload those specific rows into the 'uploaded' group.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowUploadModal(false)}
+                disabled={uploading}
+                className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeUpload}
+                disabled={uploading || selectedUploadFiles.length === 0}
+                className="px-5 py-2 text-sm font-bold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md hover:shadow-green-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <span className="animate-spin">⏳</span> Uploading...
+                  </>
+                ) : (
+                  'Confirm Upload'
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
