@@ -808,7 +808,23 @@ router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20)
         const existingFlat = uploadedGroup.keywords ? uploadedGroup.keywords.flat() : [];
         const existingIds = new Set(existingFlat.map(k => k.id));
         
-        const newKeywordsToPush = populatedKeywords.filter(k => !existingIds.has(k.id));
+        // Fetch all other groups in the same session to check for duplicates
+        const allSessionGroups = await Grouping.find({ groupingsGroupId: id, _id: { $ne: uploadedGroup._id } });
+        const allOtherSessionKeywordIds = new Set();
+        for (const group of allSessionGroups) {
+            const groupKeywords = group.keywords ? group.keywords.flat() : [];
+            for (const k of groupKeywords) {
+                if (k.id) {
+                    allOtherSessionKeywordIds.add(k.id.toString());
+                } else if (k._id) {
+                    allOtherSessionKeywordIds.add(k._id.toString());
+                }
+            }
+        }
+        
+        const newKeywordsToPush = populatedKeywords.filter(k => 
+            !existingIds.has(k.id) && !allOtherSessionKeywordIds.has(k.id)
+        );
         
         if (newKeywordsToPush.length > 0) {
             const mergedKeywords = [...existingFlat, ...newKeywordsToPush];

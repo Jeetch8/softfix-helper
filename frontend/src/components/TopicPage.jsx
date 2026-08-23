@@ -1259,164 +1259,156 @@ const TopicPage = () => {
                       </button>
                     </div>
 
-                    {(topic.audioUrls && topic.audioUrls.length > 0) || topic.audioUrl ? (
+                    {topic.audioUrl ? (
                       <>
-                      {topic.audioUrls && topic.audioUrls.length > 0 ? (
-                        <div className="bg-purple-50 border border-purple-100 rounded-xl p-2.5 sm:p-4 shadow-inner flex flex-col gap-2.5 sm:gap-4">
-                          {topic.audioUrls.map((url, idx) => (
-                            <div key={idx} className="flex flex-col md:flex-row items-center gap-2.5 sm:gap-4 border-b border-purple-100 pb-2 last:border-0 last:pb-0">
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-500 hover:text-blue-700 underline text-sm sm:text-base font-medium"
-                              >
-                                Download Audio Chunk {idx + 1}
-                              </a>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
                         <div className="bg-purple-50 border border-purple-100 rounded-xl p-2.5 sm:p-4 shadow-inner flex flex-col md:flex-row items-center gap-2.5 sm:gap-4">
+                          <audio
+                            controls
+                            className="w-full h-10 sm:h-14 outline-none filter drop-shadow-sm"
+                            src={audioBlobUrl || topic.audioUrl}
+                          >
+                            Your browser does not support the audio element.
+                          </audio>
                           <a
                             href={audioBlobUrl || topic.audioUrl}
+                            download={`audio_${topic._id}.wav`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-500 hover:text-blue-700 underline text-sm sm:text-base font-medium"
+                            className="w-full md:w-auto text-center px-3 sm:px-4 py-2 sm:py-2.5 bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 hover:border-purple-300 font-bold text-[11px] sm:text-sm rounded-lg sm:rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
                           >
-                            Download Audio
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Download
                           </a>
                         </div>
-                      )}
 
-                      {/* Audio Versions */}
-                      {topic.audioVersions &&
-                        topic.audioVersions.length > 0 &&
-                        (() => {
-                          const activeAudioVersionIndex = topic.audioVersions.findIndex(
-                            (v) => {
-                              if (!topic.audioUrl) return false;
-                              const vFile = v.audioUrl.split('?')[0].split('/').pop();
-                              const cFile = topic.audioUrl.split('?')[0].split('/').pop();
-                              return vFile === cFile;
-                            },
-                          );
-                          const activeAudioVersionNumber =
-                            activeAudioVersionIndex !== -1
-                              ? activeAudioVersionIndex + 1
-                              : topic.audioVersions.length;
+                        {/* Audio Versions */}
+                        {topic.audioVersions &&
+                          topic.audioVersions.length > 0 &&
+                          (() => {
+                            const activeAudioVersionIndex = topic.audioVersions.findIndex(
+                              (v) => {
+                                if (!topic.audioUrl) return false;
+                                const vFile = v.audioUrl.split('?')[0].split('/').pop();
+                                const cFile = topic.audioUrl.split('?')[0].split('/').pop();
+                                return vFile === cFile;
+                              },
+                            );
+                            const activeAudioVersionNumber =
+                              activeAudioVersionIndex !== -1
+                                ? activeAudioVersionIndex + 1
+                                : topic.audioVersions.length;
 
-                          const selectedAudioIndex = Math.min(
-                            Math.max(0, audioVersionPage - 1),
-                            topic.audioVersions.length - 1,
-                          );
-                          const selectedAudioVersion =
-                            topic.audioVersions[selectedAudioIndex];
+                            const selectedAudioIndex = Math.min(
+                              Math.max(0, audioVersionPage - 1),
+                              topic.audioVersions.length - 1,
+                            );
+                            const selectedAudioVersion =
+                              topic.audioVersions[selectedAudioIndex];
 
-                          const selectedFileName = selectedAudioVersion?.audioUrl
-                            ?.split('?')[0]
-                            .split('/')
-                            .pop();
-                          const currentFileName = topic.audioUrl
-                            ?.split('?')[0]
-                            .split('/')
-                            .pop();
-                          const isCurrentAudioVersion = Boolean(
-                            selectedFileName &&
-                              currentFileName &&
-                              selectedFileName === currentFileName,
-                          );
+                            const selectedFileName = selectedAudioVersion?.audioUrl
+                              ?.split('?')[0]
+                              .split('/')
+                              .pop();
+                            const currentFileName = topic.audioUrl
+                              ?.split('?')[0]
+                              .split('/')
+                              .pop();
+                            const isCurrentAudioVersion = Boolean(
+                              selectedFileName &&
+                                currentFileName &&
+                                selectedFileName === currentFileName,
+                            );
 
-                          return (
-                            <div className="mt-3 sm:mt-6 bg-purple-50/50 border border-purple-200/80 rounded-xl p-2.5 sm:p-4 shadow-2xs">
-                              <div className="flex justify-between items-center mb-2 sm:mb-3">
-                                <h4 className="text-xs sm:text-sm font-bold text-gray-700 flex items-center gap-1.5 sm:gap-2">
-                                  <span>🎙️</span> Audio Version History ({topic.audioVersions.length} version{topic.audioVersions.length > 1 ? 's' : ''})
-                                </h4>
-                              </div>
-
-                              <Paginator
-                                currentPage={audioVersionPage}
-                                totalPages={topic.audioVersions.length}
-                                onPageChange={setAudioVersionPage}
-                                itemLabel="Audio Version"
-                                colorScheme="purple"
-                                activeBadgeIndex={activeAudioVersionNumber}
-                                className="mb-2 sm:mb-3"
-                              />
-
-                              {selectedAudioVersion && (
-                                <div
-                                  className={`border rounded-xl p-2.5 sm:p-4 flex flex-col md:flex-row justify-between items-center gap-2.5 sm:gap-4 transition-all ${
-                                    isCurrentAudioVersion
-                                      ? 'border-purple-500 bg-purple-100/60 ring-1 ring-purple-500'
-                                      : 'border-gray-200 bg-white'
-                                  }`}
-                                >
-                                  <div className="flex flex-col gap-1.5 sm:gap-2 w-full flex-1">
-                                    <div className="flex items-center gap-1.5 sm:gap-2">
-                                      <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded font-mono text-[10px] sm:text-xs font-bold">
-                                        Audio Version {audioVersionPage}
-                                      </span>
-                                      <span className="text-[10px] sm:text-xs font-medium text-gray-500">
-                                        {new Date(selectedAudioVersion.generatedAt).toLocaleString()}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-col gap-1 mt-1">
-                                      {(selectedAudioVersion.audioUrls || (selectedAudioVersion.audioUrl ? [selectedAudioVersion.audioUrl] : [])).map((url, index) => (
-                                        <a
-                                          key={index}
-                                          href={url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-500 hover:text-blue-700 underline text-xs sm:text-sm"
-                                        >
-                                          Download Audio Chunk {index + 1}
-                                        </a>
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    {isCurrentAudioVersion ? (
-                                      <span className="text-[10px] sm:text-xs font-bold text-purple-700 bg-purple-200/80 border border-purple-300 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1">
-                                        ✓ Currently Active
-                                      </span>
-                                    ) : (
-                                      <button
-                                        onClick={async () => {
-                                          if (
-                                            window.confirm(
-                                              `Restore Audio Version ${audioVersionPage} as active?`,
-                                            )
-                                          ) {
-                                            try {
-                                              const response = await updateAudioUrl(
-                                                topicId,
-                                                selectedAudioVersion.audioUrl,
-                                                selectedAudioVersion.audioUrls
-                                              );
-                                              setTopic((prev) => ({
-                                                ...prev,
-                                                ...response.data.data,
-                                              }));
-                                            } catch (err) {
-                                              console.error(err);
-                                              setError('Failed to restore audio version');
-                                            }
-                                          }
-                                        }}
-                                        className="text-[10px] sm:text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors font-semibold whitespace-nowrap shadow-2xs flex items-center gap-1"
-                                      >
-                                        🔄 Restore Audio Version {audioVersionPage}
-                                      </button>
-                                    )}
-                                  </div>
+                            return (
+                              <div className="mt-3 sm:mt-6 bg-purple-50/50 border border-purple-200/80 rounded-xl p-2.5 sm:p-4 shadow-2xs">
+                                <div className="flex justify-between items-center mb-2 sm:mb-3">
+                                  <h4 className="text-xs sm:text-sm font-bold text-gray-700 flex items-center gap-1.5 sm:gap-2">
+                                    <span>🎙️</span> Audio Version History ({topic.audioVersions.length} version{topic.audioVersions.length > 1 ? 's' : ''})
+                                  </h4>
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })()}
+
+                                <Paginator
+                                  currentPage={audioVersionPage}
+                                  totalPages={topic.audioVersions.length}
+                                  onPageChange={setAudioVersionPage}
+                                  itemLabel="Audio Version"
+                                  colorScheme="purple"
+                                  activeBadgeIndex={activeAudioVersionNumber}
+                                  className="mb-2 sm:mb-3"
+                                />
+
+                                {selectedAudioVersion && (
+                                  <div
+                                    className={`border rounded-xl p-2.5 sm:p-4 flex flex-col md:flex-row justify-between items-center gap-2.5 sm:gap-4 transition-all ${
+                                      isCurrentAudioVersion
+                                        ? 'border-purple-500 bg-purple-100/60 ring-1 ring-purple-500'
+                                        : 'border-gray-200 bg-white'
+                                    }`}
+                                  >
+                                    <div className="flex flex-col gap-1.5 sm:gap-2 w-full flex-1">
+                                      <div className="flex items-center gap-1.5 sm:gap-2">
+                                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded font-mono text-[10px] sm:text-xs font-bold">
+                                          Audio Version {audioVersionPage}
+                                        </span>
+                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500">
+                                          {new Date(selectedAudioVersion.generatedAt).toLocaleString()}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col md:flex-row gap-2.5 sm:gap-4 mt-1 items-center">
+                                        {selectedAudioVersion.audioUrl && (
+                                          <audio
+                                            controls
+                                            className="w-full h-8 sm:h-10 outline-none filter drop-shadow-sm flex-1"
+                                            src={selectedAudioVersion.audioUrl}
+                                          >
+                                            Your browser does not support the audio element.
+                                          </audio>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {isCurrentAudioVersion ? (
+                                        <span className="text-[10px] sm:text-xs font-bold text-purple-700 bg-purple-200/80 border border-purple-300 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1">
+                                          ✓ Currently Active
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={async () => {
+                                            if (
+                                              window.confirm(
+                                                `Restore Audio Version ${audioVersionPage} as active?`,
+                                              )
+                                            ) {
+                                              try {
+                                                const response = await updateAudioUrl(
+                                                  topicId,
+                                                  selectedAudioVersion.audioUrl,
+                                                  selectedAudioVersion.audioUrls
+                                                );
+                                                setTopic((prev) => ({
+                                                  ...prev,
+                                                  ...response.data.data,
+                                                }));
+                                              } catch (err) {
+                                                console.error(err);
+                                                setError('Failed to restore audio version');
+                                              }
+                                            }
+                                          }}
+                                          className="text-[10px] sm:text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors font-semibold whitespace-nowrap shadow-2xs flex items-center gap-1"
+                                        >
+                                          🔄 Restore Audio Version {audioVersionPage}
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                       </>
                     ) : (
                       <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-3 sm:p-4 text-center">

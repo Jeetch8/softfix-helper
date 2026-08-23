@@ -1338,13 +1338,13 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
 
     console.log(`🎯 Regenerating WAV audio for topic "${topic.topicName}"...`);
 
-    const audioUrls = await generateWAVAudio(topic.narrationScript, topic._id);
+    const audioUrl = await generateWAVAudio(topic.narrationScript, topic._id);
 
-    topic.audioUrls = audioUrls;
-    topic.audioUrl = audioUrls.length > 0 ? audioUrls[0] : null; // Keep first url for backwards compatibility if needed
+    topic.audioUrls = [];
+    topic.audioUrl = audioUrl; 
     topic.audioVersions.push({ 
-      audioUrls, 
-      audioUrl: audioUrls.length > 0 ? audioUrls[0] : null,
+      audioUrls: [], 
+      audioUrl: audioUrl,
       generatedAt: new Date() 
     });
     await topic.save();
