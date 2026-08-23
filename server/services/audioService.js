@@ -79,66 +79,75 @@ export async function generateWAVAudio(script, topicId) {
     fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  const tempWavPath = path.join(tempDir, `audio_${Date.now()}.wav`);
-
   try {
-    console.log(
-      '🎵 Generating audio using Gemini TTS via Vertex AI...',
-    );
-
-    const result = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-tts-preview',
-    //  contents: script,
- contents: [
-    { text: "Director's Notes: Deliver this script with crisp, distinct enunciation and professional clarity. Speak at a confident, natural pace. Ensure every consonant is clean and easily comprehensible, maintaining a bright and engaging tone."  },
-    { text: script }
-  ],
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-//	speed: 0.9,
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Alnilam' },
-          },
-        },
-      },
-    });
-
-    const audioData =
-      result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-    if (!audioData) {
-      throw new Error('Could not extract audio data from Gemini response');
+    const words = script.split(/\s+/).filter(w => w.trim() !== '');
+    const chunks = [];
+    for (let i = 0; i < words.length; i += 200) {
+      chunks.push(words.slice(i, i + 200).join(' '));
     }
 
-    // Convert to WAV buffer
-    const rawBuffer = Buffer.from(audioData, 'base64');
-    const wavBuffer = convertLinear16ToWav(rawBuffer, 24000, 1, 16);
+    const s3Urls = [];
 
-    // Save the binary data stream into a local WAV file
-    console.log('💾 Saving temporary WAV file...');
-    fs.writeFileSync(tempWavPath, wavBuffer);
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkScript = chunks[i];
+      const tempWavPath = path.join(tempDir, `audio_${Date.now()}_${i}.wav`);
 
-    // Read WAV file and upload to S3
-    console.log('☁️  Uploading WAV to S3...');
-    const fileBufferToUpload = fs.readFileSync(tempWavPath);
+      console.log(`🎵 Generating audio for chunk ${i + 1}/${chunks.length}...`);
 
-    const s3Url = await uploadImageToS3(
-      fileBufferToUpload,
-      `audio_${topicId}_${Date.now()}.wav`,
-      'audio/wav',
-    );
+      const result = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-tts-preview',
+        contents: [
+          { text: "Director's Notes: Deliver this script with crisp, distinct enunciation and professional clarity. Speak at a confident, natural pace. Ensure every consonant is clean and easily comprehensible, maintaining a bright and engaging tone."  },
+          { text: chunkScript }
+        ],
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Alnilam' },
+            },
+          },
+        },
+      });
 
-    console.log('✅ Audio file generated and uploaded successfully');
+      const audioData =
+        result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
-    return s3Url;
+      if (!audioData) {
+        throw new Error(`Could not extract audio data from Gemini response for chunk ${i + 1}`);
+      }
+
+      // Convert to WAV buffer
+      const rawBuffer = Buffer.from(audioData, 'base64');
+      const wavBuffer = convertLinear16ToWav(rawBuffer, 24000, 1, 16);
+
+      // Save the binary data stream into a local WAV file
+      console.log(`💾 Saving temporary WAV file for chunk ${i + 1}...`);
+      fs.writeFileSync(tempWavPath, wavBuffer);
+
+      // Read WAV file and upload to S3
+      console.log(`☁️  Uploading WAV to S3 for chunk ${i + 1}...`);
+      const fileBufferToUpload = fs.readFileSync(tempWavPath);
+
+      const s3Url = await uploadImageToS3(
+        fileBufferToUpload,
+        `audio_${topicId}_${Date.now()}_${i}.wav`,
+        'audio/wav',
+      );
+
+      s3Urls.push(s3Url);
+
+      // Clean up temporary file
+      if (fs.existsSync(tempWavPath)) {
+        fs.unlinkSync(tempWavPath);
+      }
+    }
+
+    console.log('✅ All audio files generated and uploaded successfully');
+
+    return s3Urls;
   } catch (error) {
     console.error('❌ Error generating audio:', error.message);
     throw new Error(`Failed to generate audio: ${error.message}`);
-  } finally {
-    // Clean up temporary file
-    // if (fs.existsSync(tempWavPath)) {
-    //   fs.unlinkSync(tempWavPath);
-    // }
   }
 }

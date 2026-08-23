@@ -1259,34 +1259,35 @@ const TopicPage = () => {
                       </button>
                     </div>
 
-                    {topic.audioUrl ? (
+                    {(topic.audioUrls && topic.audioUrls.length > 0) || topic.audioUrl ? (
                       <>
-                      <div className="bg-purple-50 border border-purple-100 rounded-xl p-2.5 sm:p-4 shadow-inner flex flex-col md:flex-row items-center gap-2.5 sm:gap-4">
-                        <div className="flex-1 w-full">
-                          <audio key={audioBlobUrl || topic.audioUrl} controls className="w-full h-9 sm:h-10">
-                            <source
-                              src={audioBlobUrl || topic.audioUrl}
-                              type={
-                                topic.audioUrl.toLowerCase().endsWith('.wav')
-                                  ? 'audio/wav'
-                                  : 'audio/mpeg'
-                              }
-                            />
-                            Your browser does not support the audio element.
-                          </audio>
+                      {topic.audioUrls && topic.audioUrls.length > 0 ? (
+                        <div className="bg-purple-50 border border-purple-100 rounded-xl p-2.5 sm:p-4 shadow-inner flex flex-col gap-2.5 sm:gap-4">
+                          {topic.audioUrls.map((url, idx) => (
+                            <div key={idx} className="flex flex-col md:flex-row items-center gap-2.5 sm:gap-4 border-b border-purple-100 pb-2 last:border-0 last:pb-0">
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:text-blue-700 underline text-sm sm:text-base font-medium"
+                              >
+                                Download Audio Chunk {idx + 1}
+                              </a>
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
+                      ) : (
+                        <div className="bg-purple-50 border border-purple-100 rounded-xl p-2.5 sm:p-4 shadow-inner flex flex-col md:flex-row items-center gap-2.5 sm:gap-4">
                           <a
                             href={audioBlobUrl || topic.audioUrl}
-                            download={audioBlobUrl ? 'audio.wav' : undefined}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-white border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+                            className="text-blue-500 hover:text-blue-700 underline text-sm sm:text-base font-medium"
                           >
-                            <span>🔗</span> Open Link
+                            Download Audio
                           </a>
                         </div>
-                      </div>
+                      )}
 
                       {/* Audio Versions */}
                       {topic.audioVersions &&
@@ -1361,19 +1362,19 @@ const TopicPage = () => {
                                         {new Date(selectedAudioVersion.generatedAt).toLocaleString()}
                                       </span>
                                     </div>
-                                    <audio controls className="w-full h-8 sm:h-10" preload="none">
-                                      <source
-                                        src={selectedAudioVersion.audioUrl}
-                                        type={
-                                          selectedAudioVersion.audioUrl
-                                            .toLowerCase()
-                                            .endsWith('.wav')
-                                            ? 'audio/wav'
-                                            : 'audio/mpeg'
-                                        }
-                                      />
-                                      Your browser does not support audio element.
-                                    </audio>
+                                    <div className="flex flex-col gap-1 mt-1">
+                                      {(selectedAudioVersion.audioUrls || (selectedAudioVersion.audioUrl ? [selectedAudioVersion.audioUrl] : [])).map((url, index) => (
+                                        <a
+                                          key={index}
+                                          href={url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-500 hover:text-blue-700 underline text-xs sm:text-sm"
+                                        >
+                                          Download Audio Chunk {index + 1}
+                                        </a>
+                                      ))}
+                                    </div>
                                   </div>
 
                                   <div className="flex items-center gap-2 shrink-0">
@@ -1393,6 +1394,7 @@ const TopicPage = () => {
                                               const response = await updateAudioUrl(
                                                 topicId,
                                                 selectedAudioVersion.audioUrl,
+                                                selectedAudioVersion.audioUrls
                                               );
                                               setTopic((prev) => ({
                                                 ...prev,

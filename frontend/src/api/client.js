@@ -137,8 +137,8 @@ export const regenerateAudio = (id) => {
   return apiClient.post(`/api/topics/${id}/regenerate-audio`);
 };
 
-export const updateAudioUrl = (id, audioUrl) => {
-  return apiClient.put(`/api/topics/${id}/audio`, { audioUrl });
+export const updateAudioUrl = (id, audioUrl, audioUrls = null) => {
+  return apiClient.put(`/api/topics/${id}/audio`, { audioUrl, audioUrls });
 };
 
 export const markAsEditing = (id) => {

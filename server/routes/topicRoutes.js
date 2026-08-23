@@ -26,6 +26,9 @@ async function resolveTopicMediaUrls(topicObj) {
   if (topicObj.audioUrl) {
     topicObj.audioUrl = await resolveMediaUrl(topicObj.audioUrl);
   }
+  if (topicObj.audioUrls && topicObj.audioUrls.length > 0) {
+    topicObj.audioUrls = await Promise.all(topicObj.audioUrls.map(url => resolveMediaUrl(url)));
+  }
   if (topicObj.generatedThumbnails) {
     for (let i = 0; i < topicObj.generatedThumbnails.length; i++) {
       for (let j = 0; j < topicObj.generatedThumbnails[i].length; j++) {
@@ -1323,10 +1326,15 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
 
     console.log(`🎯 Regenerating WAV audio for topic "${topic.topicName}"...`);
 
-    const audioUrl = await generateWAVAudio(topic.narrationScript, topic._id);
+    const audioUrls = await generateWAVAudio(topic.narrationScript, topic._id);
 
-    topic.audioUrl = audioUrl;
-    topic.audioVersions.push({ audioUrl, generatedAt: new Date() });
+    topic.audioUrls = audioUrls;
+    topic.audioUrl = audioUrls.length > 0 ? audioUrls[0] : null; // Keep first url for backwards compatibility if needed
+    topic.audioVersions.push({ 
+      audioUrls, 
+      audioUrl: audioUrls.length > 0 ? audioUrls[0] : null,
+      generatedAt: new Date() 
+    });
     await topic.save();
 
     console.log(`✅ Audio regenerated for topic "${topic.topicName}"`);
@@ -1335,7 +1343,7 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
       success: true,
       message: 'Audio regenerated successfully',
       data: {
-        audioUrl,
+        audioUrls,
       },
     });
   } catch (error) {
@@ -1355,18 +1363,25 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
 router.put('/topics/:id/audio', async (req, res) => {
   try {
     const { id } = req.params;
-    const { audioUrl } = req.body;
+    const { audioUrl, audioUrls } = req.body;
 
-    if (!audioUrl) {
+    if (!audioUrl && (!audioUrls || audioUrls.length === 0)) {
       return res.status(400).json({
         success: false,
-        message: 'Audio URL is required',
+        message: 'Audio URL or URLs are required',
       });
+    }
+
+    const updateData = {};
+    if (audioUrl) updateData.audioUrl = audioUrl.trim();
+    if (audioUrls && Array.isArray(audioUrls)) updateData.audioUrls = audioUrls;
+    if (!audioUrl && audioUrls && audioUrls.length > 0) {
+      updateData.audioUrl = audioUrls[0];
     }
 
     const topic = await Topic.findByIdAndUpdate(
       id,
-      { audioUrl: audioUrl.trim() },
+      updateData,
       { new: true }
     ).populate('groupingIds');
 

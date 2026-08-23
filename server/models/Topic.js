@@ -45,6 +45,7 @@ const topicSchema = new mongoose.Schema(
     audioVersions: [
       {
         audioUrl: String,
+        audioUrls: [String],
         generatedAt: {
           type: Date,
           default: Date.now,
@@ -136,6 +137,10 @@ const topicSchema = new mongoose.Schema(
     audioUrl: {
       type: String,
       default: null,
+    },
+    audioUrls: {
+      type: [String],
+      default: [],
     },
     errorMessage: {
       type: String,
