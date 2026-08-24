@@ -95,10 +95,6 @@ export const generateTitles = (id) => {
   return apiClient.post(`/api/topics/${id}/generate-titles`);
 };
 
-export const selectTitle = (id, title) => {
-  return apiClient.post(`/api/topics/${id}/select-title`, { title });
-};
-
 export const updateTitle = (id, title) => {
   return apiClient.put(`/api/topics/${id}/update-title`, { title });
 };

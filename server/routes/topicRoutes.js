@@ -711,22 +711,22 @@ router.post('/topics/:id/generate-titles', async (req, res) => {
 
     const titles = [titleStr];
 
-    // Update topic with generated titles
-    topic.generatedTitles = titles;
-    topic.level = 'title';
+    // Update topic with generated title
+    topic.selectedTitle = titleStr;
+    topic.level = 'thumbnail';
     await topic.save();
 
     console.log(
-      `✅ Generated ${titles.length} titles for topic: "${topic.topicName}"`,
+      `✅ Generated title for topic: "${topic.topicName}"`,
     );
 
     res.json({
       success: true,
-      message: 'YouTube titles generated successfully',
+      message: 'YouTube title generated successfully',
       data: {
         _id: topic._id,
         topicName: topic.topicName,
-        generatedTitles: titles,
+        selectedTitle: titleStr,
       },
     });
   } catch (error) {
@@ -734,55 +734,6 @@ router.post('/topics/:id/generate-titles', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error generating titles',
-      error: error.message,
-    });
-  }
-});
-
-/**
- * POST /api/topics/:id/select-title
- * Select one of the generated titles
- */
-router.post('/topics/:id/select-title', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title } = req.body;
-
-    if (!title || title.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: 'Title is required',
-      });
-    }
-
-    const topic = await Topic.findByIdAndUpdate(
-      id,
-      {
-        selectedTitle: title.trim(),
-        level: 'thumbnail',
-      },
-      { new: true },
-    ).populate('groupingIds');
-
-    if (!topic) {
-      return res.status(404).json({
-        success: false,
-        message: 'Topic not found',
-      });
-    }
-
-    console.log(`✅ Title selected for topic "${topic.topicName}": "${title}"`);
-
-    res.json({
-      success: true,
-      message: 'Title selected successfully',
-      data: topic,
-    });
-  } catch (error) {
-    console.error('❌ Error selecting title:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'Error selecting title',
       error: error.message,
     });
   }

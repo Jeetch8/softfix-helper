@@ -967,7 +967,6 @@ const TopicPage = () => {
             <TitleSelector
               topicId={topicId}
               selectedTitle={topic.selectedTitle}
-              generatedTitles={topic.generatedTitles || []}
               onTitleSelected={fetchTopic}
               onGenerateComplete={fetchTopic}
             />

@@ -269,7 +269,6 @@ const TopicModal = ({ topicId, isOpen, onClose, onUpdate }) => {
                   <TitleSelector
                     topicId={topicId}
                     selectedTitle={topic.selectedTitle}
-                    generatedTitles={topic.generatedTitles || []}
                     onTitleSelected={() => {
                       fetchTopic();
                       if (onUpdate) onUpdate();
