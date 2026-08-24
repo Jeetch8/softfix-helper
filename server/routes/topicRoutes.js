@@ -10,6 +10,7 @@ import {
   generateTags,
   generateRecordingCues,
   generateVideoChapters,
+  annotateScriptChunks,
 } from '../services/geminiService.js';
 import { generateWAVAudio } from '../services/audioService.js';
 import { deleteImageFromS3, uploadImageToS3, resolveMediaUrl } from '../services/s3Service.js';
@@ -1338,7 +1339,8 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
 
     console.log(`🎯 Regenerating WAV audio for topic "${topic.topicName}"...`);
 
-    const audioUrl = await generateWAVAudio(topic.narrationScript, topic._id);
+    const scriptChunks = await annotateScriptChunks(topic.narrationScript);
+    const audioUrl = await generateWAVAudio(scriptChunks, topic._id);
 
     topic.audioUrls = [];
     topic.audioUrl = audioUrl; 

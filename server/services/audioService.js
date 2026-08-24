@@ -71,7 +71,7 @@ function convertLinear16ToWav(
 /**
  * Generate WAV from text using Google Cloud Text-to-Speech and upload to S3
  */
-export async function generateWAVAudio(script, topicId) {
+export async function generateWAVAudio(chunks, topicId) {
   const tempDir = path.join(__dirname, '../temp');
 
   // Create temp directory if it doesn't exist
@@ -82,34 +82,71 @@ export async function generateWAVAudio(script, topicId) {
   try {
     const tempWavPath = path.join(tempDir, `audio_${Date.now()}.wav`);
 
-    console.log(`🎵 Generating audio for the entire script using gemini-2.5-pro-preview-tts...`);
-
-    const result = await ai.models.generateContent({
-      model: 'gemini-2.5-pro-preview-tts',
-      contents: [
-        { text: "Director's Notes: Deliver this script with crisp, distinct enunciation and professional clarity. Speak at a confident, natural pace. Ensure every consonant is clean and easily comprehensible, maintaining a bright and engaging tone."  },
-        { text: script }
-      ],
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Alnilam' },
-          },
-        },
-      },
-    });
-
-    const audioData =
-      result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-    if (!audioData) {
-      throw new Error(`Could not extract audio data from Gemini response`);
+    // Ensure chunks is an array of objects
+    let scriptChunks = chunks;
+    if (typeof chunks === 'string') {
+      scriptChunks = [{ text: chunks, modifier: "This is an instructional section — stay clear, patient, and measured. Give exact click targets a beat of emphasis." }];
     }
 
-    // Convert to WAV buffer
-    const rawBuffer = Buffer.from(audioData, 'base64');
-    const wavBuffer = convertLinear16ToWav(rawBuffer, 24000, 1, 16);
+    const fixedPersonaBlock = `AUDIO PROFILE: A calm, knowledgeable tech-support narrator for the SoftFix YouTube channel.
+Think: the coworker who actually knows how to fix your laptop, explaining it to you in person —
+not a call-center script reader, not a hype announcer.
+
+DIRECTOR'S NOTES:
+- Tone: warm, unhurried, quietly confident. Sound like you already know this works.
+- Pace: natural conversational speed — not rushed, not overly deliberate. Slightly slower
+  and clearer right before naming a button, menu, or exact click target.
+- Energy: understated. No excitement spikes, no salesy enthusiasm. Think "helpful," not "hyped."
+- Delivery: let your pitch fall slightly at the end of completed steps, and rise very slightly
+  when introducing something new — the way people naturally do when walking through instructions.
+`;
+
+    console.log(`🎵 Generating audio for ${scriptChunks.length} chunks using gemini-2.5-pro-preview-tts...`);
+
+    const rawBuffers = [];
+
+    for (let i = 0; i < scriptChunks.length; i++) {
+      const chunk = scriptChunks[i];
+      const chunkPrompt = fixedPersonaBlock + "\n" + chunk.modifier;
+
+      console.log(`⏳ Processing audio chunk ${i + 1}/${scriptChunks.length}...`);
+
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-pro-preview-tts',
+        contents: [
+          { text: chunkPrompt },
+          { text: chunk.text }
+        ],
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Alnilam' },
+            },
+          },
+        },
+      });
+
+      const audioData =
+        result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+      if (!audioData) {
+        throw new Error(`Could not extract audio data from Gemini response for chunk ${i + 1}`);
+      }
+
+      rawBuffers.push(Buffer.from(audioData, 'base64'));
+
+      // Add a slight delay between chunk requests to avoid rate limits
+      if (i < scriptChunks.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
+
+    // Combine all raw PCM buffers
+    const combinedRawBuffer = Buffer.concat(rawBuffers);
+
+    // Convert the combined buffer to a single WAV file
+    const wavBuffer = convertLinear16ToWav(combinedRawBuffer, 24000, 1, 16);
 
     // Save the binary data stream into a local WAV file
     console.log(`💾 Saving temporary WAV file...`);
@@ -138,3 +175,4 @@ export async function generateWAVAudio(script, topicId) {
     throw new Error(`Failed to generate audio: ${error.message}`);
   }
 }
+

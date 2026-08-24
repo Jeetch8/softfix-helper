@@ -298,6 +298,12 @@ CRITICAL RULES:
 - Output ONLY the script—no meta-commentary, no explanations, no formatting markers
 - If "Additional Instructions" are provided above, they override any rule in this prompt they conflict with — follow them exactly. If none are provided, follow the default structure and tone above.
 
+VOICE & TONE (TTS OPTIMIZATION):
+Write this as spoken narration for a calm, knowledgeable tech-support voice — not documentation.
+Use contractions. Vary sentence length. Use natural connector phrases ("Alright,", "Now,", "Once that's done,") between steps instead of always starting a new sentence cold.
+Insert [short pause] before naming a specific button, menu, or click target, and after confirming a step is complete.
+Insert [long pause] between major sections (setup vs. install vs. usage).
+Keep tone understated — no hype, no exclamation-heavy enthusiasm.
 The script should sound like a knowledgeable friend sitting beside the viewer, narrating their own screen back to them as they work through it — direct, clear, and efficient.`;
 
     console.log(`⏳ Generating narration script using PRO model...`);
@@ -314,6 +320,38 @@ The script should sound like a knowledgeable friend sitting beside the viewer, n
   } catch (error) {
     console.error('❌ Error generating narration script:', error.message);
     throw new Error(`Failed to generate narration script: ${error.message}`);
+  }
+}
+
+/**
+ * Annotates the narration script with section-specific director's notes for TTS.
+ */
+export async function annotateScriptChunks(script) {
+  const paragraphs = script.split(/\n\n+/).filter(p => p.trim());
+  const prompt = `Here is a tutorial narration script split into ${paragraphs.length} paragraphs.
+For each paragraph, assign the best fitting section modifier from the following list:
+
+- "This is the opening — sound a touch more upbeat and welcoming, like you're glad to help." (Intro/hook)
+- "This is an instructional section — stay clear, patient, and measured. Give exact click targets a beat of emphasis." (Step-by-step)
+- "This part matters for accuracy — sound slightly more careful and deliberate here." (Troubleshooting/warning)
+- "This is the payoff moment — let a little quiet satisfaction come through, nothing showy." (Feature reveal / payoff)
+- "This is the closing — sound relaxed and genuinely friendly, not scripted." (Outro/CTA)
+
+Return ONLY a JSON array of strings, where each string is the exact modifier (without the parentheses type label) for the corresponding paragraph in order. There must be exactly ${paragraphs.length} strings in the array.
+
+Paragraphs:
+${paragraphs.map((p, i) => `[Paragraph ${i + 1}]:\n${p}`).join('\n\n')}
+`;
+
+  try {
+    const responseText = await generateText(FLASH_MODEL, prompt, null, true, false);
+    const modifiers = JSON.parse(responseText);
+    return paragraphs.map((text, i) => ({ text, modifier: modifiers[i] || "This is an instructional section — stay clear, patient, and measured. Give exact click targets a beat of emphasis." }));
+  } catch (e) {
+    console.error("❌ Error generating script chunk annotations:", e.message);
+    // Fallback to instructional modifier for all chunks if it fails
+    const fallbackModifier = "This is an instructional section — stay clear, patient, and measured. Give exact click targets a beat of emphasis.";
+    return paragraphs.map(text => ({ text, modifier: fallbackModifier }));
   }
 }
 
