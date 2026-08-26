@@ -297,6 +297,7 @@ CRITICAL RULES:
 - Smooth transition directly from the opening into the first step of main content
 - Output ONLY the script—no meta-commentary, no explanations, no formatting markers
 - If "Additional Instructions" are provided above, they override any rule in this prompt they conflict with — follow them exactly. If none are provided, follow the default structure and tone above.
+- If the provided instructions or context include any web links or URLs, DO NOT include the raw URL in the narration script. Instead, simply say "the link will be in the description of this video" at the appropriate moment.
 
 VOICE & TONE (TTS OPTIMIZATION):
 Write this as spoken narration for a calm, knowledgeable tech-support voice — not documentation.
@@ -926,6 +927,11 @@ Title: "${title}"
 Script: ${script}${keywordsText}
 
 DESCRIPTION STRUCTURE (300-500 words total):
+
+LINKS (if applicable):
+- If the topic or script mentions any web links (e.g., login pages, download links) that should be in the description, place them at the VERY TOP of the description (before the hook).
+- Extract the link and create a clear label for it based on context. 
+- Format: [Label] - [Link] (e.g., "vidIQ Login Page - https://app.vidiq.com/auth/login")
 
 HOOK - First 150 Characters (appears before "Show more"):
 - Open with the main keyword and core benefit/solution

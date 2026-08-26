@@ -370,7 +370,8 @@ const TopicPage = () => {
     setIsRegeneratingAudio(true);
     setError(null);
     try {
-      const response = await regenerateAudio(topicId);
+      const scriptToUse = isEditing ? editedScript : topic.narrationScript;
+      const response = await regenerateAudio(topicId, scriptToUse);
       setTopic((prev) => ({
         ...prev,
         ...response.data.data,

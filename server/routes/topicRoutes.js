@@ -1272,6 +1272,7 @@ router.post('/topics/:id/generate-cues', async (req, res) => {
 router.post('/topics/:id/regenerate-audio', async (req, res) => {
   try {
     const { id } = req.params;
+    const { script } = req.body;
 
     const topic = await Topic.findById(id);
     if (!topic) {
@@ -1281,7 +1282,9 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
       });
     }
 
-    if (!topic.narrationScript) {
+    const scriptToUse = script || topic.narrationScript;
+
+    if (!scriptToUse) {
       return res.status(400).json({
         success: false,
         message: 'Narration script not generated yet',
@@ -1290,7 +1293,7 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
 
     console.log(`🎯 Regenerating WAV audio for topic "${topic.topicName}"...`);
 
-    const scriptChunks = await annotateScriptChunks(topic.narrationScript);
+    const scriptChunks = await annotateScriptChunks(scriptToUse);
     const audioUrl = await generateWAVAudio(scriptChunks, topic._id);
 
     topic.audioUrls = [];
@@ -1300,6 +1303,8 @@ router.post('/topics/:id/regenerate-audio', async (req, res) => {
       audioUrl: audioUrl,
       generatedAt: new Date() 
     });
+    // Optional: if script was provided and it differs from topic.narrationScript, 
+    // we could update topic.narrationScript here. But we'll let the user explicitly save it if they want.
     await topic.save();
 
     console.log(`✅ Audio regenerated for topic "${topic.topicName}"`);

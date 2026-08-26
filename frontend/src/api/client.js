@@ -129,8 +129,8 @@ export const generateVideoChapters = (id, transcript) => {
   return apiClient.post(`/api/topics/${id}/generate-chapters`, { transcript });
 };
 
-export const regenerateAudio = (id) => {
-  return apiClient.post(`/api/topics/${id}/regenerate-audio`);
+export const regenerateAudio = (id, script = null) => {
+  return apiClient.post(`/api/topics/${id}/regenerate-audio`, { script });
 };
 
 export const updateAudioUrl = (id, audioUrl, audioUrls = null) => {
