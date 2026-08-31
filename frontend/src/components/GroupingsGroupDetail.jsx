@@ -762,6 +762,21 @@ const GroupingsGroupDetail = () => {
                             ✏️
                           </button>
 
+                          <label
+                            className={`cursor-pointer text-gray-500 hover:text-green-600 font-bold bg-white border border-gray-200 hover:border-green-100 hover:bg-green-50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm transition-all flex items-center gap-1 sm:gap-1.5 shadow-sm ${processing ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                            title="Upload to Group"
+                          >
+                            <span>📤</span> Upload
+                            <input
+                              type="file"
+                              accept=".csv,.xlsx,.xls,text/csv"
+                              className="hidden"
+                              multiple
+                              onChange={(e) => handleDirectGroupUpload(e, group._id)}
+                              disabled={processing}
+                            />
+                          </label>
+
                           <div className="relative">
                             <button
                               onClick={() =>
