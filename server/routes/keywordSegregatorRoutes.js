@@ -14,10 +14,48 @@ const roundDownToOneDecimal = (val) => {
     return Math.floor(num * 10) / 10;
 };
 
+/**
+ * Parses search volume from numbers, strings, and '<750' formats.
+ * Returns { isLessThan: boolean, value: number }
+ */
+const parseSearchVolume = (val) => {
+    if (val === null || val === undefined) return { isLessThan: false, value: 0 };
+    if (typeof val === 'number') {
+        return { isLessThan: false, value: isNaN(val) ? 0 : Math.round(val) };
+    }
+    const str = String(val).trim();
+    if (!str) return { isLessThan: false, value: 0 };
+
+    const isLessThan = str.startsWith('<');
+    const cleanNumStr = str.replace(/[<>, "']/g, '');
+    const num = parseInt(cleanNumStr, 10);
+
+    return {
+        isLessThan,
+        value: isNaN(num) ? 0 : num,
+    };
+};
+
 const router = express.Router();
 
+import fs from 'fs';
+import path from 'path';
+
+// Ensure temp directory exists
+const tempDir = path.join(process.cwd(), 'temp');
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+}
+
 const upload = multer({
-    storage: multer.memoryStorage(),
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, tempDir);
+        },
+        filename: (req, file, cb) => {
+            cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
+        }
+    }),
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -484,48 +522,82 @@ router.post('/segregator/upload', upload.array('files', 20), async (req, res) =>
         const { userId = 'default-user', groupingsGroupTitle = 'Untitled Groupings Group', customGroupsList = '' } = req.body;
         const uniqueKeywordsMap = new Map();
 
-        // 1. Read files and load into array
+        // 1. Read files and load into array, combining all sheets and files
         for (const file of req.files) {
-            const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const data = XLSX.utils.sheet_to_json(worksheet);
+            const fileBuffer = fs.readFileSync(file.path);
+            const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
 
-            for (const row of data) {
-                let rawKeyword = row['Keyword'] || row['keyword'];
-                if (!rawKeyword) continue;
+            for (const sheetName of workbook.SheetNames) {
+                const worksheet = workbook.Sheets[sheetName];
+                if (!worksheet) continue;
+                const data = XLSX.utils.sheet_to_json(worksheet);
 
-                if (typeof rawKeyword !== 'string') {
-                    if (typeof rawKeyword.toString === 'function') {
-                        rawKeyword = rawKeyword.toString();
-                    } else {
-                        continue;
+                for (const row of data) {
+                    let rawKeyword = row['Keyword'] || row['keyword'] || row['KEYWORD'];
+                    if (!rawKeyword) continue;
+
+                    if (typeof rawKeyword !== 'string') {
+                        if (typeof rawKeyword.toString === 'function') {
+                            rawKeyword = rawKeyword.toString();
+                        } else {
+                            continue;
+                        }
                     }
-                }
 
-                const keyword = rawKeyword.trim().replace(/\s+/g, ' ');
-                const searchVolume = parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0;
-                const overall = parseFloat(row['Overall'] || row['overall']) || 0;
-                
-                // 2. Filter out keywords with search volume < 6000 (do not filter by overall score)
-                if (!keyword || searchVolume < 6000) continue;
+                    const keyword = rawKeyword.trim().replace(/\s+/g, ' ');
+                    if (!keyword) continue;
 
-                // 3. Remove duplicates across files (normalized case-insensitively)
-                const normalizedKeyword = keyword.toLowerCase();
-                if (!uniqueKeywordsMap.has(normalizedKeyword)) {
-                    uniqueKeywordsMap.set(normalizedKeyword, {
-                        keyword,
-                        competition: roundDownToOneDecimal(row['Competition'] || row['competition']),
-                        overall: roundDownToOneDecimal(overall),
-                        searchVolume,
-                        thirtyDayAgoSearches: parseInt(row['30d ago searches'] || row['thirtyDayAgoSearches']) || 0,
-                        timestamp: parseInt(row['Timestamp'] || row['timestamp']) || null,
-                        numberOfWords: parseInt(row['Number of words'] || row['numberOfWords'] || row['number_of_words']) || 1,
-                        userId
-                    });
+                    const { isLessThan, value: searchVolume } = parseSearchVolume(
+                        row['Search volume'] ||
+                        row['Search Volume'] ||
+                        row['searchVolume'] ||
+                        row['search_volume'] ||
+                        row['Search vol'] ||
+                        row['Volume']
+                    );
+
+                    // 2. Filter out keywords with search volume < 750 (including '<750' or '< 750')
+                    if (isLessThan || searchVolume < 750) continue;
+
+                    const overall = parseFloat(String(row['Overall'] || row['overall'] || 0).replace(/[^0-9.-]/g, '')) || 0;
+                    const competition = roundDownToOneDecimal(row['Competition'] || row['competition']);
+                    const thirtyDayAgoSearches = parseInt(String(row['30d ago searches'] || row['thirtyDayAgoSearches'] || 0).replace(/[^0-9]/g, ''), 10) || 0;
+                    const timestamp = parseInt(row['Timestamp'] || row['timestamp'], 10) || null;
+                    const numberOfWords = parseInt(row['Number of words'] || row['numberOfWords'] || row['number_of_words'], 10) || keyword.split(/\s+/).length;
+
+                    // 3. Remove duplicates across files and sheets (normalized case-insensitively)
+                    const normalizedKeyword = keyword.toLowerCase();
+                    if (!uniqueKeywordsMap.has(normalizedKeyword)) {
+                        uniqueKeywordsMap.set(normalizedKeyword, {
+                            keyword,
+                            competition,
+                            overall: roundDownToOneDecimal(overall),
+                            searchVolume,
+                            thirtyDayAgoSearches,
+                            timestamp,
+                            numberOfWords,
+                            userId
+                        });
+                    } else {
+                        // If duplicate keyword exists in the file(s), retain the entry with higher search volume
+                        const existing = uniqueKeywordsMap.get(normalizedKeyword);
+                        if (searchVolume > existing.searchVolume) {
+                            uniqueKeywordsMap.set(normalizedKeyword, {
+                                ...existing,
+                                keyword,
+                                searchVolume,
+                                competition,
+                                overall: roundDownToOneDecimal(overall),
+                            });
+                        }
+                    }
                 }
             }
 
+            // Clean up the temporary uploaded file
+            fs.unlink(file.path, (err) => {
+                if (err) console.error("Error deleting temp file:", err);
+            });
         }
 
         const allParsedKeywords = Array.from(uniqueKeywordsMap.values());
@@ -707,10 +779,16 @@ router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20)
         const targetRows = parseRowNumbers(rowNumbers);
 
         for (const file of req.files) {
-            const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+            const fileBuffer = fs.readFileSync(file.path);
+            const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const data = XLSX.utils.sheet_to_json(worksheet);
+            
+            // Clean up the temporary uploaded file
+            fs.unlink(file.path, (err) => {
+                if (err) console.error("Error deleting temp file:", err);
+            });
 
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
@@ -732,10 +810,19 @@ router.post('/segregator/groupings-groups/:id/upload', upload.array('files', 20)
                 }
 
                 const keyword = rawKeyword.trim().replace(/\s+/g, ' ');
-                const searchVolume = parseInt(row['Search volume'] || row['searchVolume'] || row['search_volume']) || 0;
-                const overall = parseFloat(row['Overall'] || row['overall']) || 0;
+                if (!keyword) continue;
+
+                const { isLessThan, value: searchVolume } = parseSearchVolume(
+                    row['Search volume'] ||
+                    row['Search Volume'] ||
+                    row['searchVolume'] ||
+                    row['search_volume'] ||
+                    row['Search vol'] ||
+                    row['Volume']
+                );
+                const overall = parseFloat(String(row['Overall'] || row['overall'] || 0).replace(/[^0-9.-]/g, '')) || 0;
                 
-                if (!keyword || searchVolume < 6000) continue;
+                if (isLessThan || searchVolume < 750) continue;
 
                 const normalizedKeyword = keyword.toLowerCase();
                 if (!uniqueKeywordsMap.has(normalizedKeyword)) {

@@ -15,6 +15,7 @@ import keywordRoutes from './routes/keywordRoutes.js';
 // import ideaRoutes from './routes/ideaRoutes.js';
 import keywordSegregatorRoutes from './routes/keywordSegregatorRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
+import ngrok from '@ngrok/ngrok';
 import dns from 'node:dns/promises';
 dns.setServers(['1.1.1.1']);
 
@@ -131,11 +132,18 @@ async function startServer() {
     await connectDB();
 
     // Start the Express server
-    app.listen(PORT, () => {
+    app.listen(PORT, async () => {
       console.log(`\n🚀 Server running on http://localhost:${PORT}`);
       console.log(
         `📊 API Documentation available at http://localhost:${PORT}\n`,
       );
+      
+      try {
+        const listener = await ngrok.forward({ addr: PORT, authtoken_from_env: true });
+        console.log(`\n🌐 Ngrok tunnel available at: ${listener.url()}`);
+      } catch (ngrokErr) {
+        console.error('❌ Failed to start ngrok tunnel:', ngrokErr.message);
+      }
     });
 
 

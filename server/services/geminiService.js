@@ -6,35 +6,12 @@ let PRO_MODEL;
 let FLASH_MODEL;
 let IMAGE_MODEL;
 
-// Force Vertex AI by default as requested by user constraints to avoid 403 API Key service blocked errors.
-const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+// Google AI Studio is used by default with an API Key to utilize free tier usage.
+// Set USE_VERTEX_AI=true in your environment if you wish to fall back to GCP Vertex AI with ADC.
+const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+const useVertexAI = process.env.USE_VERTEX_AI === 'true';
 
 if (useVertexAI) {
-  const location = 'global';
-  // const location = process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || "global";
-  ai = new GoogleGenAI({
-    vertexai: true,
-    project:
-      process.env.GCP_PROJECT ||
-      process.env.GOOGLE_CLOUD_PROJECT ||
-      'softfix-498215',
-    location: location,
-  });
-  PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
-  FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
-  IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
-  console.log(
-    `🎯 Vertex AI Service Initialized (using @google/genai in ${location})`,
-  );
-} else if (process.env.GEMINI_API_KEY) {
-  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-2.5-pro';
-  FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-2.5-flash';
-  IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-002';
-  console.log(
-    `🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)`,
-  );
-} else {
   const location =
     process.env.GCP_LOCATION ||
     process.env.GOOGLE_CLOUD_LOCATION ||
@@ -48,12 +25,45 @@ if (useVertexAI) {
       'softfix-498215',
     location: location,
   });
-  PRO_MODEL = process.env.VERTEX_PRO_MODEL || 'gemini-3.1-pro-preview';
-  FLASH_MODEL = process.env.VERTEX_FLASH_MODEL || 'gemini-3.5-flash';
-  IMAGE_MODEL = process.env.VERTEX_IMAGE_MODEL || 'imagen-3.0-generate-001';
+  PRO_MODEL =
+    process.env.VERTEX_PRO_MODEL ||
+    process.env.GEMINI_PRO_MODEL ||
+    'gemini-3.1-pro-preview';
+  FLASH_MODEL =
+    process.env.VERTEX_FLASH_MODEL ||
+    process.env.GEMINI_FLASH_MODEL ||
+    'gemini-3.5-flash';
+  IMAGE_MODEL =
+    process.env.VERTEX_IMAGE_MODEL ||
+    process.env.GEMINI_IMAGE_MODEL ||
+    'imagen-3.0-generate-001';
   console.log(
-    `🎯 Vertex AI Service Initialized as Fallback (using @google/genai in ${location})`,
+    `🎯 Vertex AI Service Initialized (using @google/genai in ${location})`,
   );
+} else {
+  ai = new GoogleGenAI({ apiKey: apiKey || '' });
+  PRO_MODEL =
+    process.env.GEMINI_PRO_MODEL ||
+    process.env.VERTEX_PRO_MODEL ||
+    'gemini-2.5-pro';
+  FLASH_MODEL =
+    process.env.GEMINI_FLASH_MODEL ||
+    process.env.VERTEX_FLASH_MODEL ||
+    'gemini-2.5-flash';
+  IMAGE_MODEL =
+    process.env.GEMINI_IMAGE_MODEL ||
+    process.env.VERTEX_IMAGE_MODEL ||
+    'imagen-3.0-generate-002';
+
+  if (!apiKey) {
+    console.warn(
+      '⚠️ Warning: Neither GEMINI_API_KEY nor GOOGLE_API_KEY was found in environment variables. Please add GEMINI_API_KEY to your .env to use Google AI Studio free tier.',
+    );
+  } else {
+    console.log(
+      '🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)',
+    );
+  }
 }
 
 /**
@@ -80,7 +90,7 @@ function getImagePartFromResponse(result) {
 }
 
 /**
- * Helper to call Vertex AI for text generation with optional features
+ * Helper to call Gemini for text generation with optional features
  */
 async function generateText(
   modelName,
@@ -120,7 +130,7 @@ async function generateText(
             : typeof error.response === 'string'
               ? error.response
               : JSON.stringify(error.response);
-        console.error('📄 Raw GCP Error Response:', rawBody);
+        console.error('📄 Raw API Error Response:', rawBody);
         const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
         const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
         const title = titleMatch ? titleMatch[1].trim() : '';
@@ -128,11 +138,11 @@ async function generateText(
           ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ')
           : '';
         throw new Error(
-          `GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`,
+          `Gemini API Error: ${title || 'Error'} - ${body.substring(0, 300) || error.message}`,
         );
       } catch (e) {
         throw new Error(
-          `GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`,
+          `Gemini API Error: ${error.message}. Additional context: ${e.message}`,
         );
       }
     }
@@ -141,10 +151,36 @@ async function generateText(
 }
 
 /**
- * Helper to call Vertex AI for image generation
+ * Helper to call Gemini / Imagen for image generation
  */
 async function generateImage(modelName, prompt, temperature = 0.9) {
   try {
+    // Try generateImages if available (standard Imagen 3 method in @google/genai for AI Studio)
+    if (ai?.models && typeof ai.models.generateImages === 'function') {
+      try {
+        const imgResult = await ai.models.generateImages({
+          model: modelName,
+          prompt: prompt,
+          config: {
+            numberOfImages: 1,
+            outputMimeType: 'image/png',
+            aspectRatio: '16:9',
+          },
+        });
+        const base64Data =
+          imgResult?.generatedImages?.[0]?.image?.imageBytes;
+        if (base64Data) {
+          return { inlineData: { data: base64Data, mimeType: 'image/png' } };
+        }
+      } catch (genImagesError) {
+        console.warn(
+          '⚠️ generateImages attempt returned:',
+          genImagesError.message,
+          '- falling back to generateContent.',
+        );
+      }
+    }
+
     const result = await ai.models.generateContent({
       model: modelName,
       contents: prompt,
@@ -164,7 +200,7 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
             : typeof error.response === 'string'
               ? error.response
               : JSON.stringify(error.response);
-        console.error('📄 Raw GCP Error Response:', rawBody);
+        console.error('📄 Raw API Error Response:', rawBody);
         const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
         const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
         const title = titleMatch ? titleMatch[1].trim() : '';
@@ -172,11 +208,11 @@ async function generateImage(modelName, prompt, temperature = 0.9) {
           ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ')
           : '';
         throw new Error(
-          `GCP Vertex AI API Error: ${title || 'Forbidden/Error'} - ${body.substring(0, 300) || 'Check GCP console configuration.'}`,
+          `Gemini API Error: ${title || 'Error'} - ${body.substring(0, 300) || error.message}`,
         );
       } catch (e) {
         throw new Error(
-          `GCP Vertex AI API Error: ${error.message}. Additional context: ${e.message}`,
+          `Gemini API Error: ${error.message}. Additional context: ${e.message}`,
         );
       }
     }
@@ -1120,9 +1156,19 @@ Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbe
 export async function filterNonEnglishKeywords(keywordsArray) {
   try {
     console.log(
-      `🔍 Filtering non-English keywords from ${keywordsArray.length} items using small model...`,
+      `🔍 Filtering non-English keywords from ${keywordsArray.length} items using Flash model...`,
     );
-    const prompt = `You are a language detection assistant. Given the following list of keywords, return ONLY a JSON array containing the keywords that are in English. Exclude any keywords that are primarily in another language.
+
+    if (!keywordsArray || keywordsArray.length === 0) {
+      return [];
+    }
+
+    const CHUNK_SIZE = 250;
+    const allEnglishKeywords = [];
+
+    for (let i = 0; i < keywordsArray.length; i += CHUNK_SIZE) {
+      const chunk = keywordsArray.slice(i, i + CHUNK_SIZE);
+      const prompt = `You are a language detection assistant. Given the following list of keywords, return ONLY a JSON array containing the keywords that are in English. Exclude any keywords that are primarily in another language.
 
 CRITICAL RULES:
 1. Do NOT deduplicate, merge, or filter out similar or closely-related keywords.
@@ -1130,23 +1176,39 @@ CRITICAL RULES:
 3. Do NOT add markdown formatting around the output, just return the raw JSON array of strings.
 
 Keywords to filter:
-${JSON.stringify(keywordsArray)}
+${JSON.stringify(chunk)}
 `;
 
-    const responseText = await generateText(FLASH_MODEL, prompt, null, true);
+      const responseText = await generateText(FLASH_MODEL, prompt, null, true);
 
-    let cleanedText = responseText.trim();
-    if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText
-        .replace(/^```json\s*/i, '')
-        .replace(/```$/, '')
-        .trim();
+      let cleanedText = (responseText || '').trim();
+      if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/```$/, '')
+          .trim();
+      }
+
+      try {
+        const englishKeywords = JSON.parse(cleanedText);
+        if (Array.isArray(englishKeywords)) {
+          allEnglishKeywords.push(...englishKeywords);
+        }
+      } catch (parseErr) {
+        console.warn('⚠️ Could not parse language detection response for chunk, keeping all items:', parseErr.message);
+        allEnglishKeywords.push(...chunk);
+      }
+
+      if (i + CHUNK_SIZE < keywordsArray.length) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
     }
-    const englishKeywords = JSON.parse(cleanedText);
+
     console.log(
-      `✅ Filtered down to ${englishKeywords.length} English keywords.`,
+      `✅ Filtered down to ${allEnglishKeywords.length} English keywords.`,
     );
-    return englishKeywords;
+    return allEnglishKeywords;
   } catch (error) {
     console.error('❌ Error filtering keywords:', error.message);
     throw new Error(`Failed to filter non-English keywords: ${error.message}`);
@@ -1155,10 +1217,13 @@ ${JSON.stringify(keywordsArray)}
 
 export async function segregateKeywordsIntoGroups(keywordsWithData, customGroupsList = '') {
   try {
-//    console.log(keywordsWithData);
     console.log(
-      `🧠 Segregating ${keywordsWithData.length} keywords into groups using reasoning model...`,
+      `🧠 Segregating ${keywordsWithData.length} keywords into groups using Gemini 2.5 Flash model...`,
     );
+
+    if (!keywordsWithData || keywordsWithData.length === 0) {
+      return [];
+    }
 
     let providedGroupsInstruction = '';
     if (customGroupsList && customGroupsList.trim()) {
@@ -1172,7 +1237,29 @@ ${customGroupsList.trim()}
 `;
     }
 
-    const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, competition scores, and ids. 
+    // Chunk keywords to ensure Flash model can comfortably process and return complete JSON without hitting token limits
+    const CHUNK_SIZE = 100;
+    const chunks = [];
+    for (let i = 0; i < keywordsWithData.length; i += CHUNK_SIZE) {
+      chunks.push(keywordsWithData.slice(i, i + CHUNK_SIZE));
+    }
+
+    console.log(
+      `📦 Split ${keywordsWithData.length} keywords into ${chunks.length} chunk(s) (max ${CHUNK_SIZE} keywords per chunk).`,
+    );
+
+    // Map of groupTitle (lowercase) -> { title: string, keywords: Array<{ id: string }> }
+    const mergedGroupsMap = new Map();
+    // Track keyword IDs already assigned to each group to prevent duplicates
+    const groupKeywordIdSets = new Map();
+
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+      const currentChunk = chunks[chunkIndex];
+      console.log(
+        `⏳ Processing chunk ${chunkIndex + 1}/${chunks.length} (${currentChunk.length} keywords)...`,
+      );
+
+      const prompt = `You are an SEO grouping assistant. I have a list of keywords with their search volume, overall scores, competition scores, and ids. 
 Segregate these keywords into logical groups based on matching interest in the solution of the keyword or question.
 A keyword can be placed into multiple groups if it is appropriate.
 ${providedGroupsInstruction}
@@ -1200,21 +1287,109 @@ Example Output Format:
 ]
 
 Keywords to segregate:
-${JSON.stringify(keywordsWithData)}
+${JSON.stringify(currentChunk)}
 `;
 
-    const responseText = await generateText(PRO_MODEL, prompt, null, true);
+      const responseText = await generateText(FLASH_MODEL, prompt, null, true);
 
-    let cleanedText = responseText.trim();
-    if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText
-        .replace(/^```json\s*/i, '')
-        .replace(/```$/, '')
-        .trim();
+      let cleanedText = (responseText || '').trim();
+      if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/```$/, '')
+          .trim();
+      }
+
+      let chunkGroupings = [];
+      try {
+        chunkGroupings = JSON.parse(cleanedText);
+        if (!Array.isArray(chunkGroupings)) {
+          console.warn(`⚠️ Chunk ${chunkIndex + 1} did not return an array, fallback to default group.`);
+          chunkGroupings = [];
+        }
+      } catch (parseErr) {
+        console.error(`❌ Failed to parse JSON response for chunk ${chunkIndex + 1}:`, parseErr.message);
+        chunkGroupings = [
+          {
+            title: "General",
+            keywords: currentChunk.map((k) => ({ id: k.id })),
+          },
+        ];
+      }
+
+      // Track which IDs from the current chunk were assigned to at least one group
+      const assignedChunkIds = new Set();
+
+      for (const group of chunkGroupings) {
+        if (!group || !group.title) continue;
+        const cleanTitle = group.title.trim();
+        const titleKey = cleanTitle.toLowerCase();
+
+        if (!mergedGroupsMap.has(titleKey)) {
+          mergedGroupsMap.set(titleKey, {
+            title: cleanTitle,
+            keywords: [],
+          });
+          groupKeywordIdSets.set(titleKey, new Set());
+        }
+
+        const targetGroup = mergedGroupsMap.get(titleKey);
+        const targetIdSet = groupKeywordIdSets.get(titleKey);
+
+        if (Array.isArray(group.keywords)) {
+          for (const kw of group.keywords) {
+            const kwId = kw?.id ? String(kw.id).trim() : null;
+            if (kwId) {
+              assignedChunkIds.add(kwId);
+              if (!targetIdSet.has(kwId)) {
+                targetIdSet.add(kwId);
+                targetGroup.keywords.push({ id: kwId });
+              }
+            }
+          }
+        }
+      }
+
+      // Safeguard: Ensure no keyword in currentChunk was dropped
+      const unassignedKeywords = currentChunk.filter(
+        (k) => !assignedChunkIds.has(String(k.id)),
+      );
+      if (unassignedKeywords.length > 0) {
+        console.warn(
+          `⚠️ Chunk ${chunkIndex + 1}: ${unassignedKeywords.length} keywords were unassigned by the model. Adding to 'General' group.`,
+        );
+        const fallbackTitle = "General";
+        const fallbackKey = fallbackTitle.toLowerCase();
+        if (!mergedGroupsMap.has(fallbackKey)) {
+          mergedGroupsMap.set(fallbackKey, {
+            title: fallbackTitle,
+            keywords: [],
+          });
+          groupKeywordIdSets.set(fallbackKey, new Set());
+        }
+        const fallbackGroup = mergedGroupsMap.get(fallbackKey);
+        const fallbackIdSet = groupKeywordIdSets.get(fallbackKey);
+        for (const unassigned of unassignedKeywords) {
+          const uId = String(unassigned.id);
+          if (!fallbackIdSet.has(uId)) {
+            fallbackIdSet.add(uId);
+            fallbackGroup.keywords.push({ id: uId });
+          }
+        }
+      }
+
+      console.log(`✅ Finished chunk ${chunkIndex + 1}/${chunks.length}`);
+
+      // Short delay between chunks to avoid rate limiting
+      if (chunkIndex < chunks.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
     }
-    const groupings = JSON.parse(cleanedText);
-    console.log(`✅ Generated ${groupings.length} keyword groups.`);
-    return groupings;
+
+    const finalGroupings = Array.from(mergedGroupsMap.values());
+    console.log(`✅ Successfully segregated all keywords into ${finalGroupings.length} total groups.`);
+    return finalGroupings;
   } catch (error) {
     console.error('❌ Error segregating keywords:', error.message);
     throw new Error(`Failed to segregate keywords: ${error.message}`);

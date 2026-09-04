@@ -108,7 +108,7 @@ function parseArgs() {
  * Main TTS conversion function
  */
 async function main() {
-  console.log('🎵 TTS Converter - Vertex AI to MP3\n');
+  console.log('🎵 TTS Converter - Gemini AI to MP3\n');
 
   const { text, outputPath, voice } = parseArgs();
 
@@ -129,29 +129,42 @@ async function main() {
 
   try {
     let ai;
-    const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    const useVertexAI = process.env.USE_VERTEX_AI === 'true';
+
     if (useVertexAI) {
       console.log('🎯 Initializing Vertex AI...');
       ai = new GoogleGenAI({
         vertexai: true,
-        project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
-        location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
+        project:
+          process.env.GCP_PROJECT ||
+          process.env.GOOGLE_CLOUD_PROJECT ||
+          'softfix-helper',
+        location:
+          process.env.GCP_LOCATION ||
+          process.env.GOOGLE_CLOUD_LOCATION ||
+          process.env.VERTEXAI_LOCATION ||
+          'global',
       });
-    } else if (process.env.GEMINI_API_KEY) {
-      console.log('🎯 Initializing Google AI Studio (Gemini API)...');
-      ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     } else {
-      console.log('🎯 Initializing Vertex AI (Fallback)...');
-      ai = new GoogleGenAI({
-        vertexai: true,
-        project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-helper',
-        location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
-      });
+      console.log(
+        '🎯 Initializing Google AI Studio (Gemini API with API key)...',
+      );
+      ai = new GoogleGenAI({ apiKey: apiKey || '' });
+      if (!apiKey) {
+        console.warn(
+          '⚠️  Warning: Neither GEMINI_API_KEY nor GOOGLE_API_KEY was found in environment variables.',
+        );
+      }
     }
 
-    console.log('🗣️  Converting text to speech using Vertex AI...');
+    const ttsModel =
+      process.env.TTS_MODEL ||
+      process.env.GEMINI_TTS_MODEL ||
+      'gemini-2.5-flash-preview-tts';
+    console.log(`🗣️  Converting text to speech using ${ttsModel}...`);
     const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-tts',
+      model: ttsModel,
       contents: `Read aloud in a warm,friendly tone with no background noise and echo: ${text}`,
       config: {
         responseModalities: ['AUDIO'],
@@ -168,7 +181,7 @@ async function main() {
 
     if (!data) {
       throw new Error(
-        'Could not extract audio data from Gemini response. Note: Ensure your GCP credentials have audio generation permissions.',
+        'Could not extract audio data from Gemini response. Ensure your API key has audio generation permissions or verify the model name.',
       );
     }
 

@@ -8,25 +8,34 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let ai;
-const useVertexAI = process.env.USE_VERTEX_AI !== 'false';
+const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+const useVertexAI = process.env.USE_VERTEX_AI === 'true';
 
 if (useVertexAI) {
   ai = new GoogleGenAI({
     vertexai: true,
-    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: process.env.GCP_LOCATION || process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEXAI_LOCATION || 'global'
+    project:
+      process.env.GCP_PROJECT ||
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      'softfix-498215',
+    location:
+      process.env.GCP_LOCATION ||
+      process.env.GOOGLE_CLOUD_LOCATION ||
+      process.env.VERTEXAI_LOCATION ||
+      'global',
   });
   console.log(`🎯 Vertex AI Service Initialized for Audio Service`);
-} else if (process.env.GEMINI_API_KEY) {
-  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  console.log(`🎯 Google AI Studio (Gemini API) Initialized for Audio Service using GEMINI_API_KEY`);
 } else {
-  ai = new GoogleGenAI({
-    vertexai: true,
-    project: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'softfix-498215',
-    location: "global"
-  });
-  console.log(`🎯 Vertex AI Service Initialized as Fallback for Audio Service`);
+  ai = new GoogleGenAI({ apiKey: apiKey || '' });
+  if (!apiKey) {
+    console.warn(
+      `⚠️ Warning: Neither GEMINI_API_KEY nor GOOGLE_API_KEY was found. Please set GEMINI_API_KEY in your .env file.`,
+    );
+  } else {
+    console.log(
+      `🎯 Google AI Studio (Gemini API) Initialized for Audio Service using GEMINI_API_KEY`,
+    );
+  }
 }
 
 /**
@@ -101,7 +110,11 @@ DIRECTOR'S NOTES:
   when introducing something new — the way people naturally do when walking through instructions.
 `;
 
-    console.log(`🎵 Generating audio for ${scriptChunks.length} chunks using gemini-2.5-pro-preview-tts...`);
+    const ttsModel =
+      process.env.TTS_MODEL ||
+      process.env.GEMINI_TTS_MODEL ||
+      'gemini-2.5-pro-preview-tts';
+    console.log(`🎵 Generating audio for ${scriptChunks.length} chunks using ${ttsModel}...`);
 
     const rawBuffers = [];
 
@@ -112,7 +125,7 @@ DIRECTOR'S NOTES:
       console.log(`⏳ Processing audio chunk ${i + 1}/${scriptChunks.length}...`);
 
       const result = await ai.models.generateContent({
-        model: 'gemini-2.5-pro-preview-tts',
+        model: ttsModel,
         contents: [
           { text: chunkPrompt },
           { text: chunk.text }
