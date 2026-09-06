@@ -1,221 +1,155 @@
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { uploadImageToS3 } from './s3Service.js';
 
-let ai;
-let PRO_MODEL;
-let FLASH_MODEL;
-let IMAGE_MODEL;
+const apiKey =
+  process.env.OPENAI_API_KEY ||
+  process.env.GEMINI_API_KEY ||
+  process.env.API_KEY ||
+  '';
 
-// Google AI Studio is used by default with an API Key to utilize free tier usage.
-// Set USE_VERTEX_AI=true in your environment if you wish to fall back to GCP Vertex AI with ADC.
-const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-const useVertexAI = process.env.USE_VERTEX_AI === 'true';
+const baseURL =
+  process.env.OPENAI_BASE_URL ||
+  process.env.OPENAI_ENDPOINT ||
+  (process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY
+    ? 'https://api.openai.com/v1'
+    : 'https://generativelanguage.googleapis.com/v1beta/openai/');
 
-if (useVertexAI) {
-  const location =
-    process.env.GCP_LOCATION ||
-    process.env.GOOGLE_CLOUD_LOCATION ||
-    process.env.VERTEXAI_LOCATION ||
-    'global';
-  ai = new GoogleGenAI({
-    vertexai: true,
-    project:
-      process.env.GCP_PROJECT ||
-      process.env.GOOGLE_CLOUD_PROJECT ||
-      'softfix-498215',
-    location: location,
-  });
-  PRO_MODEL =
-    process.env.VERTEX_PRO_MODEL ||
-    process.env.GEMINI_PRO_MODEL ||
-    'gemini-3.1-pro-preview';
-  FLASH_MODEL =
-    process.env.VERTEX_FLASH_MODEL ||
-    process.env.GEMINI_FLASH_MODEL ||
-    'gemini-3.5-flash';
-  IMAGE_MODEL =
-    process.env.VERTEX_IMAGE_MODEL ||
-    process.env.GEMINI_IMAGE_MODEL ||
-    'imagen-3.0-generate-001';
-  console.log(
-    `🎯 Vertex AI Service Initialized (using @google/genai in ${location})`,
+const openai = new OpenAI({
+  apiKey: apiKey || 'missing-key',
+  baseURL: baseURL,
+});
+
+// Single model used across all text operations
+export const MODEL =
+  process.env.OPENAI_MODEL ||
+  process.env.MODEL ||
+  process.env.GEMINI_MODEL ||
+  'auto';
+
+export const IMAGE_MODEL =
+  process.env.OPENAI_IMAGE_MODEL ||
+  process.env.IMAGE_MODEL ||
+  'dall-e-3';
+
+// Export aliases for backwards compatibility
+export const PRO_MODEL = MODEL;
+export const FLASH_MODEL = MODEL;
+
+if (!apiKey) {
+  console.warn(
+    '⚠️ Warning: No API key found. Please set OPENAI_API_KEY or GEMINI_API_KEY in your .env.',
   );
 } else {
-  ai = new GoogleGenAI({ apiKey: apiKey || '' });
-  PRO_MODEL =
-    process.env.GEMINI_PRO_MODEL ||
-    process.env.VERTEX_PRO_MODEL ||
-    'gemini-2.5-pro';
-  FLASH_MODEL =
-    process.env.GEMINI_FLASH_MODEL ||
-    process.env.VERTEX_FLASH_MODEL ||
-    'gemini-2.5-flash';
-  IMAGE_MODEL =
-    process.env.GEMINI_IMAGE_MODEL ||
-    process.env.VERTEX_IMAGE_MODEL ||
-    'imagen-3.0-generate-002';
+  console.log(
+    `🎯 OpenAI API Initialized (Endpoint: ${baseURL}, Model: ${MODEL})`,
+  );
+}
 
-  if (!apiKey) {
-    console.warn(
-      '⚠️ Warning: Neither GEMINI_API_KEY nor GOOGLE_API_KEY was found in environment variables. Please add GEMINI_API_KEY to your .env to use Google AI Studio free tier.',
-    );
-  } else {
-    console.log(
-      '🎯 Google AI Studio Service Initialized (using standard Gemini API with GEMINI_API_KEY)',
-    );
+function stripMarkdownFence(text) {
+  let cleaned = (text || '').trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/, '')
+      .replace(/```$/, '')
+      .trim();
   }
+  return cleaned;
 }
 
 /**
- * Robust helper to extract text content from generateContent responses
+ * Robust helper to extract text content from OpenAI completion responses
  */
 function getTextFromResponse(result) {
   if (!result) return '';
-  if (typeof result.text === 'string') {
-    return result.text;
+  if (result.choices?.[0]?.message?.content !== undefined) {
+    return result.choices[0].message.content || '';
   }
-  if (typeof result.text === 'function') {
-    return result.text();
+  if (typeof result === 'string') {
+    return result;
   }
-  return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return '';
 }
 
 /**
- * Robust helper to extract inline base64 image data from generateContent responses
- */
-function getImagePartFromResponse(result) {
-  const parts = result?.candidates?.[0]?.content?.parts;
-  if (!parts) return null;
-  return parts.find((p) => p.inlineData);
-}
-
-/**
- * Helper to call Gemini for text generation with optional features
+ * Helper to call OpenAI endpoint for text generation with optional features
  */
 async function generateText(
-  modelName,
-  prompt,
-  systemInstruction = null,
-  isJson = false,
-  hasSearch = false,
+  arg1,
+  arg2 = null,
+  arg3 = false,
 ) {
   try {
-    const config = {};
+    // Supports both generateText(prompt, systemInstruction, isJson)
+    // and legacy generateText(modelName, prompt, systemInstruction, isJson)
+    let prompt;
+    let systemInstruction = null;
+    let isJson = false;
 
+    if (typeof arg2 === 'string') {
+      prompt = arg2;
+      systemInstruction = typeof arg3 === 'string' ? arg3 : null;
+      isJson = Boolean(arguments[3] ?? (typeof arg3 === 'boolean' ? arg3 : false));
+    } else {
+      prompt = arg1;
+      systemInstruction = arg2;
+      isJson = Boolean(arg3);
+    }
+
+    const messages = [];
     if (systemInstruction) {
-      config.systemInstruction = systemInstruction;
+      messages.push({ role: 'system', content: systemInstruction });
     }
+    messages.push({ role: 'user', content: prompt });
 
-    if (hasSearch) {
-      config.tools = [{ googleSearch: {} }];
-    }
+    const requestPayload = {
+      model: MODEL,
+      messages: messages,
+    };
 
-    if (isJson) {
-      config.responseMimeType = 'application/json';
-    }
-
-    const result = await ai.models.generateContent({
-      model: modelName,
-      contents: prompt,
-      config: config,
-    });
-    return getTextFromResponse(result);
+    const response = await openai.chat.completions.create(requestPayload);
+    return getTextFromResponse(response);
   } catch (error) {
-    console.error('❌ Error in generateText:', error.message);
-    if (error.response) {
-      try {
-        const rawBody =
-          typeof error.response.text === 'function'
-            ? await error.response.text()
-            : typeof error.response === 'string'
-              ? error.response
-              : JSON.stringify(error.response);
-        console.error('📄 Raw API Error Response:', rawBody);
-        const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
-        const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
-        const title = titleMatch ? titleMatch[1].trim() : '';
-        const body = bodyMatch
-          ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ')
-          : '';
-        throw new Error(
-          `Gemini API Error: ${title || 'Error'} - ${body.substring(0, 300) || error.message}`,
-        );
-      } catch (e) {
-        throw new Error(
-          `Gemini API Error: ${error.message}. Additional context: ${e.message}`,
-        );
-      }
-    }
+    console.error('❌ Error in generateText (OpenAI API):', error.message);
     throw error;
   }
 }
 
 /**
- * Helper to call Gemini / Imagen for image generation
+ * Helper to call OpenAI endpoint for image generation
  */
-async function generateImage(modelName, prompt, temperature = 0.9) {
+async function generateImage(arg1, arg2 = 0.9) {
   try {
-    // Try generateImages if available (standard Imagen 3 method in @google/genai for AI Studio)
-    if (ai?.models && typeof ai.models.generateImages === 'function') {
-      try {
-        const imgResult = await ai.models.generateImages({
-          model: modelName,
-          prompt: prompt,
-          config: {
-            numberOfImages: 1,
-            outputMimeType: 'image/png',
-            aspectRatio: '16:9',
-          },
-        });
-        const base64Data =
-          imgResult?.generatedImages?.[0]?.image?.imageBytes;
-        if (base64Data) {
-          return { inlineData: { data: base64Data, mimeType: 'image/png' } };
-        }
-      } catch (genImagesError) {
-        console.warn(
-          '⚠️ generateImages attempt returned:',
-          genImagesError.message,
-          '- falling back to generateContent.',
-        );
-      }
+    const prompt = typeof arg2 === 'string' ? arg2 : arg1;
+    const imgPayload = {
+      model: IMAGE_MODEL,
+      prompt: prompt,
+      n: 1,
+      response_format: 'b64_json',
+      size: '1024x1024',
+    };
+
+    const imgResponse = await openai.images.generate(imgPayload);
+    const b64 = imgResponse.data?.[0]?.b64_json;
+    if (b64) {
+      return { inlineData: { data: b64, mimeType: 'image/png' } };
     }
 
-    const result = await ai.models.generateContent({
-      model: modelName,
-      contents: prompt,
-      config: {
-        temperature,
-      },
-    });
-    const part = getImagePartFromResponse(result);
-    return part;
-  } catch (error) {
-    console.error('❌ Error in generateImage:', error.message);
-    if (error.response) {
-      try {
-        const rawBody =
-          typeof error.response.text === 'function'
-            ? await error.response.text()
-            : typeof error.response === 'string'
-              ? error.response
-              : JSON.stringify(error.response);
-        console.error('📄 Raw API Error Response:', rawBody);
-        const titleMatch = rawBody.match(/<title>([\s\S]*?)<\/title>/i);
-        const bodyMatch = rawBody.match(/<body>([\s\S]*?)<\/body>/i);
-        const title = titleMatch ? titleMatch[1].trim() : '';
-        const body = bodyMatch
-          ? bodyMatch[1].trim().replace(/<[^>]*>/g, ' ')
-          : '';
-        throw new Error(
-          `Gemini API Error: ${title || 'Error'} - ${body.substring(0, 300) || error.message}`,
-        );
-      } catch (e) {
-        throw new Error(
-          `Gemini API Error: ${error.message}. Additional context: ${e.message}`,
-        );
-      }
+    const imgUrl = imgResponse.data?.[0]?.url;
+    if (imgUrl) {
+      const resp = await fetch(imgUrl);
+      const arrayBuf = await resp.arrayBuffer();
+      return {
+        inlineData: {
+          data: Buffer.from(arrayBuf).toString('base64'),
+          mimeType: 'image/png',
+        },
+      };
     }
+
+    return null;
+  } catch (error) {
+    console.error('❌ Error in generateImage (OpenAI API):', error.message);
     throw error;
   }
 }
@@ -236,13 +170,7 @@ Script:
 "${script}"`;
     
     console.log('⏳ Generating recording cues...');
-    let responseText = await generateText(
-      FLASH_MODEL,
-      prompt,
-      null,
-      false,
-      false
-    );
+    let responseText = await generateText(prompt);
     console.log('✅ Generated recording cues');
     
     // Clean up markdown code blocks if the model wrapped the response
@@ -343,14 +271,8 @@ Insert [long pause] between major sections (setup vs. install vs. usage).
 Keep tone understated — no hype, no exclamation-heavy enthusiasm.
 The script should sound like a knowledgeable friend sitting beside the viewer, narrating their own screen back to them as they work through it — direct, clear, and efficient.`;
 
-    console.log(`⏳ Generating narration script using PRO model...`);
-    const responseText = await generateText(
-      PRO_MODEL,
-      prompt,
-      null,
-      false,
-      true,
-    );
+    console.log(`⏳ Generating narration script...`);
+    const responseText = await generateText(prompt);
     console.log(`✅ Generated narration script`);
 
     return [responseText];
@@ -381,9 +303,13 @@ ${paragraphs.map((p, i) => `[Paragraph ${i + 1}]:\n${p}`).join('\n\n')}
 `;
 
   try {
-    const responseText = await generateText(FLASH_MODEL, prompt, null, true, false);
-    const modifiers = JSON.parse(responseText);
-    return paragraphs.map((text, i) => ({ text, modifier: modifiers[i] || "This is an instructional section — stay clear, patient, and measured. Give exact click targets a beat of emphasis." }));
+    const responseText = await generateText(prompt, null, true);
+    let modifiers = JSON.parse(stripMarkdownFence(responseText));
+    if (!Array.isArray(modifiers) && typeof modifiers === 'object' && modifiers !== null) {
+      const possibleArray = Object.values(modifiers).find(Array.isArray);
+      if (possibleArray) modifiers = possibleArray;
+    }
+    return paragraphs.map((text, i) => ({ text, modifier: (Array.isArray(modifiers) && modifiers[i]) || "This is an instructional section — stay clear, patient, and measured. Give exact click targets a beat of emphasis." }));
   } catch (e) {
     console.error("❌ Error generating script chunk annotations:", e.message);
     // Fallback to instructional modifier for all chunks if it fails
@@ -429,13 +355,7 @@ export async function generateNarrationScriptVariations(
 
 Topic: "${topic}"${descriptionText}${keywordsText}`;
 
-          const responseText = await generateText(
-            PRO_MODEL,
-            fullPrompt,
-            null,
-            false,
-            true,
-          );
+          const responseText = await generateText(fullPrompt);
           console.log(`✅ Generated variation ${index + 1}/${prompts.length}`);
 
           return {
@@ -503,7 +423,7 @@ export async function generateThumbnailVariations(
 Topic: "${topic}"
 Title: "${title}"${keywordsText}`;
 
-        const part = await generateImage(IMAGE_MODEL, fullPrompt, 0.9);
+        const part = await generateImage(fullPrompt, 0.9);
         if (part && part.inlineData) {
           const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
           const s3Url = await uploadImageToS3(
@@ -593,13 +513,7 @@ export async function generateTitleVariations(
 
 Topic: "${topic}"${descriptionText}${scriptText}${keywordsText}`;
 
-          const responseText = await generateText(
-            FLASH_MODEL,
-            fullPrompt,
-            null,
-            false,
-            true,
-          );
+          const responseText = await generateText(fullPrompt);
           console.log(
             `✅ Generated title variation ${index + 1}/${prompts.length}`,
           );
@@ -734,7 +648,7 @@ WHAT MAKES A GOOD SOFTFIX CENTRAL TITLE:
 
 Return ONLY the 20 titles, numbered 1-20, one per line. No additional commentary.`;
 
-    const responseText = await generateText(PRO_MODEL, prompt);
+    const responseText = await generateText(prompt);
 
     const titles = responseText
       .split('\n')
@@ -832,7 +746,7 @@ The thumbnails should look like they belong to a trusted, professional tech tuto
 
         console.log(`⏳ Generating thumbnail set ${i + 1}/2...`);
 
-        const part = await generateImage(IMAGE_MODEL, designPrompt, 0.9);
+        const part = await generateImage(designPrompt, 0.9);
         if (part && part.inlineData) {
           const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
           const s3Url = await uploadImageToS3(
@@ -900,26 +814,15 @@ Example:
   { "time": "0:38", "description": "Open Settings" }
 ]`;
 
-    console.log('⏳ Generating video chapters with Flash model...');
-    const responseText = await generateText(
-      FLASH_MODEL,
-      prompt,
-      null,
-      true,
-      false,
-    );
+    console.log('⏳ Generating video chapters...');
+    const responseText = await generateText(prompt, null, true);
     console.log('✅ Generated video chapters');
 
-    let cleanedText = (responseText || '').trim();
-    if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/, '')
-        .replace(/```$/, '')
-        .trim();
+    let parsed = JSON.parse(stripMarkdownFence(responseText));
+    if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed !== null) {
+      const possibleArray = Object.values(parsed).find(Array.isArray);
+      if (possibleArray) parsed = possibleArray;
     }
-
-    const parsed = JSON.parse(cleanedText);
     if (!Array.isArray(parsed)) {
       throw new Error('Chapter generator did not return an array');
     }
@@ -1041,7 +944,7 @@ TONE:
 
 Return ONLY the description text with hashtags at the end. No additional commentary, formatting markers, or explanations.`;
 
-    const responseText = await generateText(FLASH_MODEL, prompt);
+    const responseText = await generateText(prompt);
     return responseText.trim();
   } catch (error) {
     console.error('❌ Error generating SEO description:', error.message);
@@ -1138,7 +1041,7 @@ Better to have 15 highly relevant tags than 25 mediocre ones. Focus on tags that
 
 Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbering, no additional text or explanation.`;
 
-    const responseText = await generateText(FLASH_MODEL, prompt);
+    const responseText = await generateText(prompt);
 
     const tags = responseText
       .split('\n')
@@ -1156,7 +1059,7 @@ Return ONLY the tags, one per line, in lowercase, WITHOUT the # symbol. No numbe
 export async function filterNonEnglishKeywords(keywordsArray) {
   try {
     console.log(
-      `🔍 Filtering non-English keywords from ${keywordsArray.length} items using Flash model...`,
+      `🔍 Filtering non-English keywords from ${keywordsArray.length} items...`,
     );
 
     if (!keywordsArray || keywordsArray.length === 0) {
@@ -1179,19 +1082,14 @@ Keywords to filter:
 ${JSON.stringify(chunk)}
 `;
 
-      const responseText = await generateText(FLASH_MODEL, prompt, null, true);
-
-      let cleanedText = (responseText || '').trim();
-      if (cleanedText.startsWith('```')) {
-        cleanedText = cleanedText
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
-          .replace(/```$/, '')
-          .trim();
-      }
+      const responseText = await generateText(prompt, null, true);
 
       try {
-        const englishKeywords = JSON.parse(cleanedText);
+        let englishKeywords = JSON.parse(stripMarkdownFence(responseText));
+        if (!Array.isArray(englishKeywords) && typeof englishKeywords === 'object' && englishKeywords !== null) {
+          const possibleArray = Object.values(englishKeywords).find(Array.isArray);
+          if (possibleArray) englishKeywords = possibleArray;
+        }
         if (Array.isArray(englishKeywords)) {
           allEnglishKeywords.push(...englishKeywords);
         }
@@ -1215,29 +1113,76 @@ ${JSON.stringify(chunk)}
   }
 }
 
+function parseCustomGroupsList(customGroupsList) {
+  if (!customGroupsList || !String(customGroupsList).trim()) return [];
+
+  const parts = String(customGroupsList).split(/[\n,]+/);
+  const parsed = [];
+  const seen = new Set();
+
+  for (const part of parts) {
+    let line = part.trim();
+    if (!line) continue;
+    if (line.startsWith('-')) line = line.substring(1).trim();
+
+    const splitIndex = line.indexOf('|');
+    const title = (splitIndex !== -1 ? line.substring(0, splitIndex) : line).trim();
+    const description = splitIndex !== -1 ? line.substring(splitIndex + 1).trim() : '';
+    if (!title) continue;
+
+    const key = title.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    parsed.push({ title, description });
+  }
+
+  return parsed;
+}
+
+function normalizeGroupingTitle(rawTitle) {
+  let title = String(rawTitle || '').trim();
+  if (title.startsWith('-')) title = title.substring(1).trim();
+  const pipeIndex = title.indexOf('|');
+  if (pipeIndex !== -1) {
+    title = title.substring(0, pipeIndex).trim();
+  }
+  return title;
+}
+
 export async function segregateKeywordsIntoGroups(keywordsWithData, customGroupsList = '') {
   try {
     console.log(
-      `🧠 Segregating ${keywordsWithData.length} keywords into groups using Gemini 2.5 Flash model...`,
+      `🧠 Segregating ${keywordsWithData.length} keywords into groups...`,
     );
 
     if (!keywordsWithData || keywordsWithData.length === 0) {
       return [];
     }
 
+    const providedGroups = parseCustomGroupsList(customGroupsList);
     let providedGroupsInstruction = '';
-    if (customGroupsList && customGroupsList.trim()) {
+    if (providedGroups.length > 0) {
+      const formattedGroups = providedGroups
+        .map((g) =>
+          g.description
+            ? `- Title: "${g.title}"\n  Description: ${g.description}`
+            : `- Title: "${g.title}"`,
+        )
+        .join('\n');
+
       providedGroupsInstruction = `
 I have provided a specific list of groups (with titles and descriptions) below. You MUST segregate the keywords into these provided groups based on their description.
 If a keyword fits into one or more of these provided groups, you must add it to them.
 You can create additional groups if you find keywords that do not fit into any of the provided groups, but DO NOT skip any of the provided groups if there are keywords that fit them.
 
+CRITICAL TITLE RULE: Each provided group has a Title and an optional Description. The JSON "title" field MUST be exactly the Title only. NEVER copy the Description into the title. NEVER use "Title | Description" as the group title.
+
 Provided Groups:
-${customGroupsList.trim()}
+${formattedGroups}
 `;
     }
 
-    // Chunk keywords to ensure Flash model can comfortably process and return complete JSON without hitting token limits
+    // Chunk keywords to ensure the model can comfortably process and return complete JSON without hitting token limits
     const CHUNK_SIZE = 100;
     const chunks = [];
     for (let i = 0; i < keywordsWithData.length; i += CHUNK_SIZE) {
@@ -1266,11 +1211,12 @@ ${providedGroupsInstruction}
 
 CRITICAL RULES FOR GROUPING:
 1. EVERY SINGLE keyword ID from the input list MUST be assigned to at least one group. Do NOT discard, omit, or leave out any keyword under any circumstances.
-2. DO NOT deduplicate, merge, or discard keywords that have similar phrasing or meaning. You must treat similar keywords as distinct, unique items.
+2. The "title" of each group must be a short group name only. If a provided group is "Title | Description", use only "Title". Do not create a second group whose title is the full "Title | Description" string.
+3. DO NOT deduplicate, merge, or discard keywords that have similar phrasing or meaning. You must treat similar keywords as distinct, unique items.
    - For example: if both 'idm alternative for pc' and 'idm alternative for pc free' are present, BOTH must be retained and assigned to groups.
    - For example: if both 'idm alternate' and 'idm alternative' are present, BOTH must be retained and assigned to groups.
    - Every input ID must find its way into the final grouped JSON structure.
-3. Do not attempt to merge close synonyms or keyword variants into a single representative ID. Keep every ID unique and intact.
+4. Do not attempt to merge close synonyms or keyword variants into a single representative ID. Keep every ID unique and intact.
 
 Provide the result as a JSON array of objects. Each object must have a "title" (the name of the group) and "keywords" (an array of keyword objects belonging to this group). Each keyword object in the array must contain ONLY the "id" of the keyword. Do NOT include keyword text, search_volume, overall, or competition in the output keywords list.
 
@@ -1290,20 +1236,15 @@ Keywords to segregate:
 ${JSON.stringify(currentChunk)}
 `;
 
-      const responseText = await generateText(FLASH_MODEL, prompt, null, true);
-
-      let cleanedText = (responseText || '').trim();
-      if (cleanedText.startsWith('```')) {
-        cleanedText = cleanedText
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
-          .replace(/```$/, '')
-          .trim();
-      }
+      const responseText = await generateText(prompt, null, true);
 
       let chunkGroupings = [];
       try {
-        chunkGroupings = JSON.parse(cleanedText);
+        chunkGroupings = JSON.parse(stripMarkdownFence(responseText));
+        if (!Array.isArray(chunkGroupings) && typeof chunkGroupings === 'object' && chunkGroupings !== null) {
+          const possibleArray = Object.values(chunkGroupings).find(Array.isArray);
+          if (possibleArray) chunkGroupings = possibleArray;
+        }
         if (!Array.isArray(chunkGroupings)) {
           console.warn(`⚠️ Chunk ${chunkIndex + 1} did not return an array, fallback to default group.`);
           chunkGroupings = [];
@@ -1323,7 +1264,8 @@ ${JSON.stringify(currentChunk)}
 
       for (const group of chunkGroupings) {
         if (!group || !group.title) continue;
-        const cleanTitle = group.title.trim();
+        const cleanTitle = normalizeGroupingTitle(group.title);
+        if (!cleanTitle) continue;
         const titleKey = cleanTitle.toLowerCase();
 
         if (!mergedGroupsMap.has(titleKey)) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getGroupingsGroup,
@@ -28,6 +28,9 @@ const GroupingsGroupDetail = () => {
   const [sortConfig, setSortConfig] = useState({});
   const [activeDropdownKeywordId, setActiveDropdownKeywordId] = useState(null);
   const [dropdownGroupSelections, setDropdownGroupSelections] = useState({});
+  const [subgroupSearch, setSubgroupSearch] = useState('');
+  const [subgroupHighlightIndex, setSubgroupHighlightIndex] = useState(-1);
+  const subgroupSearchRef = useRef(null);
   const [editingGroupId, setEditingGroupId] = useState(null);
   const [editTitleText, setEditTitleText] = useState('');
   const [editingDescGroupId, setEditingDescGroupId] = useState(null);
@@ -346,6 +349,8 @@ const GroupingsGroupDetail = () => {
     const kwId = kw.id || kw._id;
     if (activeDropdownKeywordId === kwId) {
       setActiveDropdownKeywordId(null);
+      setSubgroupSearch('');
+      setSubgroupHighlightIndex(-1);
     } else {
       const initialSelections = {};
       groupings.forEach((group) => {
@@ -356,6 +361,8 @@ const GroupingsGroupDetail = () => {
         initialSelections[group._id] = exists;
       });
       setDropdownGroupSelections(initialSelections);
+      setSubgroupSearch('');
+      setSubgroupHighlightIndex(-1);
       setActiveDropdownKeywordId(kwId);
     }
   };
@@ -471,6 +478,60 @@ const GroupingsGroupDetail = () => {
     }
   };
 
+
+  const filteredSubgroupGroupings = useMemo(() => {
+    const query = subgroupSearch.trim().toLowerCase();
+    if (!query) return groupings;
+    return groupings.filter((g) =>
+      (g.title || '').toLowerCase().includes(query),
+    );
+  }, [groupings, subgroupSearch]);
+
+  useEffect(() => {
+    if (!activeDropdownKeywordId) return;
+    const frame = requestAnimationFrame(() => {
+      subgroupSearchRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [activeDropdownKeywordId]);
+
+  useEffect(() => {
+    if (subgroupHighlightIndex < 0) return;
+    const el = document.getElementById(`subgroup-pick-${subgroupHighlightIndex}`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [subgroupHighlightIndex]);
+
+  const handleSubgroupSearchKeyDown = (e) => {
+    const resultCount = filteredSubgroupGroupings.length;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (resultCount === 0) return;
+      setSubgroupHighlightIndex((prev) =>
+        prev < 0 ? 0 : Math.min(prev + 1, resultCount - 1),
+      );
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSubgroupHighlightIndex((prev) => (prev <= 0 ? -1 : prev - 1));
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (subgroupHighlightIndex < 0 || !filteredSubgroupGroupings[subgroupHighlightIndex]) {
+        return;
+      }
+      const group = filteredSubgroupGroupings[subgroupHighlightIndex];
+      handleCheckboxChange(group._id, !dropdownGroupSelections[group._id]);
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setActiveDropdownKeywordId(null);
+      setSubgroupSearch('');
+      setSubgroupHighlightIndex(-1);
+    }
+  };
 
   const priorityCount = groupings.filter((group) => group.priority).length;
 
@@ -955,51 +1016,76 @@ const GroupingsGroupDetail = () => {
                                       +
                                     </button>
                                     {activeDropdownKeywordId === kwId && (
-                                      <div className="absolute left-2 sm:left-4 mt-2 w-56 sm:w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-3 sm:p-4 text-left animate-fade-in">
-                                        <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-2 sm:mb-3">
-                                          Manage Subgroups
-                                        </h4>
-                                        <div className="max-h-48 overflow-y-auto space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 custom-scrollbar">
-                                          {groupings.map((g) => (
-                                            <label
-                                              key={g._id}
-                                              className="flex items-center gap-2 cursor-pointer text-xs sm:text-sm text-gray-700 hover:bg-gray-50 p-1 sm:p-1.5 rounded transition-colors"
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                checked={
-                                                  !!dropdownGroupSelections[g._id]
-                                                }
-                                                onChange={(e) =>
-                                                  handleCheckboxChange(
-                                                    g._id,
-                                                    e.target.checked,
-                                                  )
-                                                }
-                                                className="rounded text-indigo-600 focus:ring-indigo-500"
-                                              />
-                                              <span
-                                                className="truncate"
-                                                title={g.title}
+                                      <div
+                                        className="absolute left-1 sm:left-2 mt-1 w-52 sm:w-60 bg-white border border-gray-200 rounded shadow-lg z-50 p-1 text-left"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <input
+                                          ref={subgroupSearchRef}
+                                          type="text"
+                                          value={subgroupSearch}
+                                          onChange={(e) => {
+                                            setSubgroupSearch(e.target.value);
+                                            setSubgroupHighlightIndex(-1);
+                                          }}
+                                          placeholder="Search subgroups"
+                                          onKeyDown={handleSubgroupSearchKeyDown}
+                                          className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                          autoFocus
+                                        />
+                                        <div className="max-h-40 overflow-y-auto mt-1 custom-scrollbar">
+                                          {filteredSubgroupGroupings.length === 0 ? (
+                                            <div className="px-1 py-1 text-xs text-gray-400">
+                                              No matches
+                                            </div>
+                                          ) : (
+                                            filteredSubgroupGroupings.map((g, idx) => (
+                                              <label
+                                                key={g._id}
+                                                id={`subgroup-pick-${idx}`}
+                                                className={`flex items-center gap-1 cursor-pointer text-xs text-gray-700 px-1 py-0.5 ${
+                                                  idx === subgroupHighlightIndex
+                                                    ? 'bg-indigo-100'
+                                                    : 'hover:bg-gray-50'
+                                                }`}
+                                                onMouseEnter={() => setSubgroupHighlightIndex(idx)}
                                               >
-                                                {g.title}
-                                              </span>
-                                            </label>
-                                          ))}
+                                                <input
+                                                  type="checkbox"
+                                                  tabIndex={-1}
+                                                  checked={!!dropdownGroupSelections[g._id]}
+                                                  onChange={(e) => {
+                                                    handleCheckboxChange(
+                                                      g._id,
+                                                      e.target.checked,
+                                                    );
+                                                    subgroupSearchRef.current?.focus();
+                                                  }}
+                                                  className="rounded text-indigo-600 focus:ring-indigo-500 m-0"
+                                                />
+                                                <span
+                                                  className="truncate"
+                                                  title={g.title}
+                                                >
+                                                  {g.title}
+                                                </span>
+                                              </label>
+                                            ))
+                                          )}
                                         </div>
-                                        <div className="flex justify-end gap-2 border-t border-gray-100 pt-2 sm:pt-3">
+                                        <div className="flex justify-end gap-1 border-t border-gray-100 mt-1 pt-1">
                                           <button
                                             onClick={() =>
                                               setActiveDropdownKeywordId(null)
                                             }
-                                            className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1"
+                                            className="text-xs text-gray-500 hover:text-gray-700 px-1 py-0.5"
                                           >
                                             Cancel
                                           </button>
                                           <button
                                             onClick={() => handleSaveGroups(kw)}
                                             disabled={processing}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-0.5 rounded text-xs font-bold disabled:opacity-50"
                                           >
                                             Save
                                           </button>
