@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { generateExtraAssets, regenerateAudio, fetchMediaAsBlobUrl } from '../api/client';
 

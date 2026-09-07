@@ -1,0 +1,17 @@
+apps:
+  - name: 'softfix-helper'
+    script: 'npm'
+    args: 'start'
+    cwd: './frontend'
+    node_args: '--max-old-space-size=4096'
+    watch: true
+    ignore_watch:
+      - 'node_modules'
+      - '.next'
+      - '.next/**'
+      - 'temp'
+      - 'temp/**'
+      - 'uploads'
+      - 'uploads/**'
+      - '*.log'
+      - 'tmpfile'

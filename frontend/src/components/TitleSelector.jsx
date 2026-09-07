@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { generateTitles, updateTitle } from '../api/client';
 

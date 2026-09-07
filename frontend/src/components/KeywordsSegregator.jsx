@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import {
   getGroupingsGroups,
   createGroupingsGroupEmpty,
@@ -10,7 +12,7 @@ import {
 } from '../api/client';
 
 const KeywordsSegregator = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [files, setFiles] = useState([]);
   const [sessionTitle, setSessionTitle] = useState('');

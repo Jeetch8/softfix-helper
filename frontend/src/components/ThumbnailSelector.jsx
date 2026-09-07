@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { uploadThumbnail, skipThumbnail, selectThumbnail, fetchMediaAsBlobUrl } from '../api/client';
 import Paginator from './Paginator';

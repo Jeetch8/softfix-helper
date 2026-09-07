@@ -1,9 +1,13 @@
+'use client';
+
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import StatusBadge from './StatusBadge';
 
 const TopicCard = ({ topic, onDelete }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-3 sm:p-6 border border-gray-200">
@@ -67,7 +71,7 @@ const TopicCard = ({ topic, onDelete }) => {
 
       <div className="flex gap-1.5 sm:gap-2 flex-wrap">
         <button
-          onClick={() => navigate(`/topics/${topic._id}`)}
+          onClick={() => router.push(`/topics/${topic._id}`)}
           className="flex-1 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded transition-colors"
         >
           📖 View

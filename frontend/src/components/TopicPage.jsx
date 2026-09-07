@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import {
   getTopic,
   updateScript,
@@ -210,9 +212,9 @@ const renderMarkdown = (text) => {
   return <div className="markdown-preview font-sans">{elements}</div>;
 };
 
-const TopicPage = () => {
-  const { topicId } = useParams();
-  const navigate = useNavigate();
+const TopicPage = ({ topicId }) => {
+  const router = useRouter();
+  // topicId is passed as a prop from the parent page component
   const [topic, setTopic] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -526,7 +528,7 @@ const TopicPage = () => {
           <div className="text-center py-8 sm:py-12">
             <p className="text-gray-600 text-base sm:text-lg">Topic not found</p>
             <button
-              onClick={() => navigate('/topics')}
+              onClick={() => router.push('/topics')}
               className="mt-3 sm:mt-4 px-4 sm:px-6 py-1.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg"
             >
               ← Back to Topics
@@ -600,7 +602,7 @@ const TopicPage = () => {
           <div className="flex justify-between items-start mb-3 sm:mb-4">
             <div className="flex-1 min-w-0">
               <button
-                onClick={() => navigate('/topics')}
+                onClick={() => router.push('/topics')}
                 className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 inline-flex items-center"
               >
                 ← Back to Topics
