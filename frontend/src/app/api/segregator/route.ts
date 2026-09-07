@@ -30,28 +30,49 @@ const parseSearchVolume = (val: any) => {
 const tempDir = path.join(process.cwd(), 'temp');
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-// ---- Helper to read form data file uploads ----
-async function getFilesFromForm(formData: FormData): Promise<File[]> {
-  const files = formData.getAll('files') as File[];
-  return files;
-}
-
-async function saveFileToTemp(file: File & { name?: string }): Promise<string> {
+async function saveFileToTemp(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const fileName = Date.now() + '-' + (file.name || file['webkitRelativePath'] || 'file').replace(/[^a-zA-Z0-9.]/g, '_');
+  const fileName = Date.now() + '-' + (file.name || 'file').replace(/[^a-zA-Z0-9.]/g, '_');
   const filePath = path.join(tempDir, fileName);
   fs.writeFileSync(filePath, buffer);
   return filePath;
 }
 
-// ============ ROUTES ============
-
-// GET /api/segregator/groups/keywords
+// ============ GET ============
 export async function GET(request: NextRequest) {
+  await connectDB();
   const { searchParams } = new URL(request.url);
-  const path = searchParams.get('_path');
+  const pathname = request.nextUrl.pathname;
 
-  if (path === '/api/segregator/groups/keywords') {
+  // GET /api/segregator/groupings-groups - list all sessions
+  if (pathname.endsWith('/groupings-groups')) {
+    const userId = searchParams.get('userId');
+    const query = userId ? { userId } : {};
+    const groups = await GroupingsGroup.find(query).sort({ createdAt: -1 });
+    return NextResponse.json({ success: true, data: groups });
+  }
+
+  // GET /api/segregator/groups - list groups within a session
+  if (pathname.endsWith('/groups') && !pathname.includes('groupings-groups')) {
+    const userId = searchParams.get('userId');
+    const groupingsGroupId = searchParams.get('groupingsGroupId');
+    const query: Record<string, any> = userId ? { userId } : {};
+    if (groupingsGroupId) query.groupingsGroupId = groupingsGroupId;
+    const groups = await Grouping.find(query).sort({ createdAt: -1 });
+    for (const group of groups) {
+      const obj = (group as any).toObject({ defaults: false });
+      if (obj.priority === undefined) {
+        await Grouping.findByIdAndUpdate(group._id, { priority: false });
+        (group as any).priority = false;
+        // @ts-ignore
+        if (group._doc) group._doc.priority = false;
+      }
+    }
+    return NextResponse.json({ success: true, message: 'Groupings retrieved successfully', count: groups.length, data: groups });
+  }
+
+  // GET /api/segregator/groups/keywords
+  if (pathname.endsWith('/groups/keywords')) {
     const groupIds = searchParams.get('groupIds');
     if (!groupIds) return NextResponse.json({ success: false, message: 'Group IDs are required' }, { status: 400 });
     const ids = typeof groupIds === 'string' ? groupIds.split(',').map((id) => id.trim()) : [groupIds];
@@ -59,41 +80,33 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Unique keywords retrieved successfully', count: keywords.length, data: keywords });
   }
 
-  if (path === '/api/segregator/groups') {
-    await connectDB();
-    const userId = searchParams.get('userId');
-    const groupingsGroupId = searchParams.get('groupingsGroupId');
-    const query: Record<string, any> = userId ? { userId } : {};
-    if (groupingsGroupId) query.groupingsGroupId = groupingsGroupId;
-    const groups = await Grouping.find(query).sort({ createdAt: -1 });
-    for (const group of groups) {
-      const obj = ((group as any).toObject({ defaults: false }) as any);
-      if (obj.priority === undefined) {
-        await Grouping.findByIdAndUpdate(group._id, { priority: false });
-        group.priority = false;
-        // @ts-ignore - _doc is set by Mongoose
-      if (group._doc) (group as any)._doc.priority = false;
-      }
-    }
-    return NextResponse.json({ success: true, message: 'Groupings retrieved successfully', count: groups.length, data: groups });
-  }
-
-  if (path === '/api/segregator/groupings-groups') {
-    await connectDB();
-    const userId = searchParams.get('userId');
-    const query = userId ? { userId } : {};
-    const groups = await GroupingsGroup.find(query).sort({ createdAt: -1 });
-    return NextResponse.json({ success: true, data: groups });
+  // GET /api/segregator/groupings-groups/:id - get single session
+  const sessionMatch = pathname.match(/\/api\/segregator\/groupings-groups\/([^/]+)/);
+  if (sessionMatch && !pathname.includes('upload')) {
+    const group = await GroupingsGroup.findById(sessionMatch[1]);
+    if (!group) return NextResponse.json({ success: false, message: 'Groupings group not found' }, { status: 404 });
+    return NextResponse.json({ success: true, data: group });
   }
 
   return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 });
 }
 
-// POST /api/segregator/*
+// ============ POST ============
 export async function POST(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   try {
+    // POST /api/segregator/groupings-groups - create new session
+    if (pathname === '/api/segregator/groupings-groups' || pathname.endsWith('/groupings-groups')) {
+      await connectDB();
+      const body = await request.json();
+      const { title, description, userId = 'default-user' } = body;
+      if (!title) return NextResponse.json({ success: false, message: 'Title is required' }, { status: 400 });
+      const newGroup = await GroupingsGroup.create({ title, description: description || '', userId });
+      return NextResponse.json({ success: true, message: 'Groupings group created successfully', data: newGroup });
+    }
+
+    // POST /api/segregator/groups - create new group
     if (pathname === '/api/segregator/groups') {
       await connectDB();
       const body = await request.json();
@@ -106,11 +119,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Group created successfully', data: newGroup });
     }
 
-    if (pathname.startsWith('/api/segregator/groups/') && pathname.endsWith('/upload')) {
-      const groupIdMatch = pathname.match(/\/api\/segregator\/groups\/([^/]+)\/upload/);
-      if (!groupIdMatch) return NextResponse.json({ success: false, message: 'Invalid route' }, { status: 404 });
+    // POST /api/segregator/groups/:id/upload - upload to existing session
+    const uploadMatch = pathname.match(/\/api\/segregator\/groups\/([^/]+)\/upload/);
+    if (uploadMatch) {
       await connectDB();
-      const parentGroupId = groupIdMatch[1];
+      const parentGroupId = uploadMatch[1];
       const parentGroup = await GroupingsGroup.findById(parentGroupId);
       if (!parentGroup) return NextResponse.json({ success: false, message: 'Groupings group not found' }, { status: 404 });
 
@@ -222,6 +235,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: `Successfully uploaded and added ${newKeywordsToPush.length} new keywords to 'uploaded' group`, data: uploadedGroup });
     }
 
+    // POST /api/segregator/upload - main upload with AI segregation
     if (pathname === '/api/segregator/upload') {
       await connectDB();
       const formData = await request.formData();
@@ -249,7 +263,7 @@ export async function POST(request: NextRequest) {
             if (typeof rawKeyword !== 'string') { if (typeof rawKeyword.toString === 'function') rawKeyword = rawKeyword.toString(); else continue; }
             const keyword = rawKeyword.trim().replace(/\s+/g, ' ');
             if (!keyword) continue;
-            const { isLessThan, value: searchVolume } = parseSearchVolume(row['Search volume'] || row['Search Volume'] || row['searchVolume'] || row['search_volume'] || row['Search vol'] || row['Volume']);
+            const { isLessThan, value: searchVolume } = parseSearchVolume(r['Search volume'] || r['Search Volume'] || r['searchVolume'] || r['search_volume'] || r['Search vol'] || r['Volume']);
             if (isLessThan || searchVolume < 750) continue;
             const overall = parseFloat(String(r['Overall'] || r['overall'] || 0).replace(/[^0-9.-]/g, '')) || 0;
             const normalizedKeyword = keyword.toLowerCase();
@@ -257,7 +271,7 @@ export async function POST(request: NextRequest) {
               uniqueKeywordsMap.set(normalizedKeyword, { keyword, competition: roundDownToOneDecimal(r['Competition'] || r['competition']), overall: roundDownToOneDecimal(overall), searchVolume, thirtyDayAgoSearches: parseInt(String(r['30d ago searches'] || r['thirtyDayAgoSearches'] || 0).replace(/[^0-9]/g, '')) || 0, timestamp: parseInt(r['Timestamp'] || r['timestamp'], 10) || null, numberOfWords: parseInt(r['Number of words'] || r['numberOfWords'] || r['number_of_words'], 10) || keyword.split(/\s+/).length, userId });
             } else {
               const existing = uniqueKeywordsMap.get(normalizedKeyword);
-              if (searchVolume > existing.searchVolume) { uniqueKeywordsMap.set(normalizedKeyword, { ...existing, keyword, searchVolume, competition: roundDownToOneDecimal(r['Competition'] || r['competition']), overall: roundDownToOneDecimal(overall) }); }
+              if (searchVolume > (existing as any).searchVolume) { uniqueKeywordsMap.set(normalizedKeyword, { ...existing, keyword, searchVolume, competition: roundDownToOneDecimal(r['Competition'] || r['competition']), overall: roundDownToOneDecimal(overall) }); }
             }
           }
         }
@@ -272,7 +286,7 @@ export async function POST(request: NextRequest) {
       const finalFilteredKeywordsData = allParsedKeywords.filter((k: any) => englishKeywordSet.has(k.keyword.toLowerCase()));
       if (finalFilteredKeywordsData.length === 0) return NextResponse.json({ success: false, message: 'No English keywords found after language filtering' }, { status: 400 });
 
-      const savedKeywordsInfo = [];
+      const savedKeywordsInfo: any[] = [];
       for (const kData of finalFilteredKeywordsData) {
         const existing = await QuestionKeyword.findOne({ keyword: { $regex: new RegExp('^' + kData.keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') }, userId: kData.userId });
         const savedKeyword = (existing ? await QuestionKeyword.findByIdAndUpdate(existing._id, kData, { new: true }) : await QuestionKeyword.create(kData)) as any;
@@ -298,7 +312,7 @@ export async function POST(request: NextRequest) {
       const savedGroups = [];
 
       for (const group of groupingsData) {
-        const populatedKeywords = [];
+        const populatedKeywords: any[] = [];
         let highestSearchVolume = 0;
         if (group.keywords && Array.isArray(group.keywords)) {
           for (const kw of group.keywords) {
@@ -335,7 +349,8 @@ export async function PUT(request: NextRequest) {
     await connectDB();
     const body = await request.json();
 
-    if (pathname === '/api/segregator/groups/keyword') {
+    // PUT /api/segregator/groups/keyword
+    if (pathname.endsWith('/groups/keyword')) {
       const { keyword, targetGroupIds, groupingsGroupId, userId = 'default-user' } = body;
       if (!keyword || !keyword.id || !Array.isArray(targetGroupIds)) {
         return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
@@ -356,9 +371,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Keyword groups updated successfully' });
     }
 
-    const idMatch = pathname.match(/\/api\/segregator\/groups\/([^/]+)/);
-    if (idMatch) {
-      const id = idMatch[1];
+    // PUT /api/segregator/groups/:id
+    const groupMatch = pathname.match(/\/api\/segregator\/groups\/([^/]+)/);
+    if (groupMatch) {
+      const id = groupMatch[1];
       if (pathname.includes('/description')) {
         const updatedGroup = await Grouping.findByIdAndUpdate(id, { description: body.description ?? '' }, { new: true });
         if (!updatedGroup) return NextResponse.json({ success: false, message: 'Group not found' }, { status: 404 });
@@ -370,22 +386,21 @@ export async function PUT(request: NextRequest) {
         if (!updatedGroup) return NextResponse.json({ success: false, message: 'Group not found' }, { status: 404 });
         return NextResponse.json({ success: true, message: 'Group priority updated successfully', data: updatedGroup });
       }
-      if (pathname.endsWith('/groups')) {
-        const { title } = body;
-        if (!title) return NextResponse.json({ success: false, message: 'Title is required' }, { status: 400 });
-        const updatedGroup = await Grouping.findByIdAndUpdate(id, { title }, { new: true });
-        if (!updatedGroup) return NextResponse.json({ success: false, message: 'Group not found' }, { status: 404 });
-        return NextResponse.json({ success: true, message: 'Group title updated successfully', data: updatedGroup });
-      }
+      const { title } = body;
+      if (!title) return NextResponse.json({ success: false, message: 'Title is required' }, { status: 400 });
+      const updatedGroup = await Grouping.findByIdAndUpdate(id, { title }, { new: true });
+      if (!updatedGroup) return NextResponse.json({ success: false, message: 'Group not found' }, { status: 404 });
+      return NextResponse.json({ success: true, message: 'Group title updated successfully', data: updatedGroup });
     }
 
-    const groupMatch = pathname.match(/\/api\/segregator\/groupings-groups\/([^/]+)/);
-    if (groupMatch) {
+    // PUT /api/segregator/groupings-groups/:id
+    const groupingsGroupMatch = pathname.match(/\/api\/segregator\/groupings-groups\/([^/]+)/);
+    if (groupingsGroupMatch) {
       const { title, description } = body;
       const updateFields: Record<string, any> = {};
       if (title !== undefined) { if (!title) return NextResponse.json({ success: false, message: 'Title is required' }, { status: 400 }); updateFields.title = title; }
       if (description !== undefined) updateFields.description = description;
-      const group = await GroupingsGroup.findByIdAndUpdate(groupMatch[1], updateFields, { new: true });
+      const group = await GroupingsGroup.findByIdAndUpdate(groupingsGroupMatch[1], updateFields, { new: true });
       if (!group) return NextResponse.json({ success: false, message: 'Groupings group not found' }, { status: 404 });
       return NextResponse.json({ success: true, data: group });
     }
@@ -403,16 +418,20 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
 
-    if (pathname === '/api/segregator/groups') {
+    // DELETE /api/segregator/groups
+    if (pathname.endsWith('/groups') && !pathname.includes('groupings-groups')) {
       await Grouping.deleteMany({});
       return NextResponse.json({ success: true, message: 'All groupings deleted successfully' });
     }
-    if (pathname === '/api/segregator/groupings-groups') {
+
+    // DELETE /api/segregator/groupings-groups
+    if (pathname.endsWith('/groupings-groups')) {
       await Grouping.deleteMany({});
       await GroupingsGroup.deleteMany({});
       return NextResponse.json({ success: true, message: 'All groupings groups and groupings deleted successfully' });
     }
 
+    // DELETE /api/segregator/groups/:id
     const groupMatch = pathname.match(/\/api\/segregator\/groups\/([^/]+)/);
     if (groupMatch) {
       const id = groupMatch[1];
@@ -433,6 +452,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Group deleted successfully' });
     }
 
+    // DELETE /api/segregator/groupings-groups/:id
     const groupingsGroupMatch = pathname.match(/\/api\/segregator\/groupings-groups\/([^/]+)/);
     if (groupingsGroupMatch) {
       const id = groupingsGroupMatch[1];
