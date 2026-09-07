@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "outputDirectory": ".next",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "environmentVariables": {
+    "MONGODB_URI": "@mongodb_uri",
+    "BACKBLAZE_BUCKET_NAME": "@BACKBLAZE_BUCKET_NAME",
+    "BACKBLAZE_ENDPOINT_URL": "@BACKBLAZE_ENDPOINT_URL",
+    "BACKBLAZE_REGION": "@BACKBLAZE_REGION",
+    "BACKBLAZE_KEY_ID": "@BACKBLAZE_KEY_ID",
+    "BACKBLAZE_APPLICATION_KEY": "@BACKBLAE_APPLICATION_KEY",
+    "GEMINI_API_KEY": "@GEMINI_API_KEY",
+    "OPENAI_API_KEY": "@OPENAI_API_KEY",
+    "USE_VERTEX_AI": "@USE_VERTEX_AI",
+    "GEMINI_FLASH_MODEL": "@GEMINI_FLASH_MODEL",
+    "OPENAI_BASE_URL": "@OPENAI_BASE_URL"
+  }
+}
