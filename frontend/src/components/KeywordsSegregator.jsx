@@ -421,7 +421,7 @@ const KeywordsSegregator = () => {
             {sessions.map((session) => (
               <div
                 key={session._id}
-                onClick={() => navigate(`/segregator/groups/${session._id}`)}
+                onClick={() => router.push(`/segregator/groups/${session._id}`)}
                 className="bg-white rounded-2xl border border-gray-200 p-3.5 sm:p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[11rem] sm:min-h-[14rem] h-auto pb-3.5 sm:pb-6 relative overflow-hidden group shadow-sm"
               >
                 {/* Visual Accent Bar */}
