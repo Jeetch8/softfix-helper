@@ -1,9 +1,10 @@
 import TopicPage from '@/components/TopicPage';
 
-export default function TopicPageContainer({ params }: { params: { topicId: string } }) {
+export default async function TopicPageContainer({ params }: { params: Promise<{ topicId: string }> }) {
+  const { topicId } = await params;
   return (
     <main>
-      <TopicPage topicId={params.topicId} />
+      <TopicPage topicId={topicId} />
     </main>
   );
 }

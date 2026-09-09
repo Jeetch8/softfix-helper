@@ -1,9 +1,10 @@
 import GroupingsGroupDetail from '@/components/GroupingsGroupDetail';
 
-export default function SegregatorGroupPage({ params }: { params: { groupingsGroupId: string } }) {
+export default async function SegregatorGroupPage({ params }: { params: Promise<{ groupingsGroupId: string }> }) {
+  const { groupingsGroupId } = await params;
   return (
     <main>
-      <GroupingsGroupDetail groupId={params.groupingsGroupId} />
+      <GroupingsGroupDetail groupId={groupingsGroupId} />
     </main>
   );
 }
